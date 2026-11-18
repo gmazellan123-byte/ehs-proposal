@@ -31,17 +31,26 @@ jobs:
       - name: 서명키 준비
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          KEYSTORE_PASSWORD_RAW: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: |
           if [ -z "$KEYSTORE_B64" ]; then
             echo "::error::저장소 Settings → Secrets and variables → Actions 에 ANDROID_KEYSTORE_B64 가 없습니다"
             exit 1
           fi
-          echo "$KEYSTORE_B64" | base64 -d > android/app/release.keystore
+          # 붙여넣을 때 섞인 공백·줄바꿈 제거
+          printf '%s' "$KEYSTORE_B64" | tr -d ' \r\n\t' | base64 -d > android/app/release.keystore
+          PW=$(printf '%s' "$KEYSTORE_PASSWORD_RAW" | tr -d ' \r\n\t')
+          echo "::add-mask::$PW"
+          echo "KEYSTORE_PASSWORD=$PW" >> "$GITHUB_ENV"
+          echo "서명키 지문(앞 16자): $(sha256sum android/app/release.keystore | cut -c1-16)  (정상값: 527d5ef670576780)"
+          if ! keytool -list -keystore android/app/release.keystore -storepass "$PW" -alias ehs >/dev/null 2>&1; then
+            echo "::error::서명키를 열 수 없습니다. ANDROID_KEYSTORE_PASSWORD 값(비밀번호 32자) 또는 ANDROID_KEYSTORE_B64 값(긴 한 줄 전체)을 다시 확인해 등록하세요"
+            exit 1
+          fi
+          keytool -list -v -keystore android/app/release.keystore -storepass "$PW" -alias ehs 2>/dev/null | grep "SHA256:"
 
       - name: APK 빌드
         working-directory: android
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon assembleRelease
