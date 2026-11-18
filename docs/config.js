@@ -5,11 +5,11 @@
 // =====================================================================
 window.APP_CONFIG = {
   // ① Supabase > Project Settings > API (또는 Connect 버튼) 에서 복사
-  SUPABASE_URL: "",   // 예: "https://abcdefghijk.supabase.co"
+  SUPABASE_URL: "",   // https://txwnxndkgdfietzyjtij.supabase.co
 
   // ② Publishable key (sb_publishable_...) 또는 legacy anon key
   //    ※ 공개되어도 되는 키입니다. service_role / secret 키는 절대 넣지 마세요.
-  SUPABASE_KEY: "",
+  SUPABASE_KEY: "sb_publishable_Ypdv4ksAyI8NkGGcCLJx8A_-x6w2ePc", 
 
   // ③ Edge Function 이름 (가이드대로 만들었다면 그대로 두세요)
   FUNCTION_NAME: "api",
