@@ -474,6 +474,7 @@ select:disabled{opacity:.6;}
 
 
 
+
 /* ===== v3: 공통 추가 ===== */
 .item .r4 > span{white-space:nowrap;}
 .item .r4 .unit{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;}
@@ -643,6 +644,25 @@ body.desk .toast{bottom:28px;}
 .dtable td{padding:8px 10px;}
 
 .dtable .nm{font-size:12px;color:var(--ink-soft);}
+
+/* 앱 설치 안내 */
+.install-card{position:relative;display:flex;align-items:center;gap:12px;margin-top:14px;padding:12px 40px 12px 12px;border-radius:var(--r-md);
+  background:linear-gradient(160deg,#F2F9FE,#E3F1FC);border:1px solid #BFE2F7;box-shadow:var(--sh-2);}
+.install-card .ic-icon{width:44px;height:44px;flex:none;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(11,95,168,.18);}
+.install-card .ic-icon img{height:30px;}
+.install-card .ic-text{flex:1;min-width:0;}
+.install-card .ic-text b{display:block;font-size:14px;font-weight:800;}
+.install-card .ic-text span{display:block;font-size:11.5px;color:var(--ink-soft);margin-top:2px;line-height:1.45;}
+.install-card .ic-btn{width:auto;padding:10px 16px;font-size:14px;border-radius:10px;flex:none;}
+.install-card .ic-close{position:absolute;top:6px;right:6px;border:none;background:none;color:var(--ink-faint);font-size:13px;padding:6px;cursor:pointer;}
+.inst-lead{font-size:14px;line-height:1.65;color:var(--ink-soft);margin:0 0 12px;}
+.inst-steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;}
+.inst-steps li{display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:var(--r-sm);background:var(--bg2);border:1px solid var(--line);font-size:14px;line-height:1.6;}
+.inst-steps .n{width:26px;height:26px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff;background:linear-gradient(180deg,#1E9BEA,#0B5FA8);}
+.inst-steps .ii{width:18px;height:18px;vertical-align:-3px;color:var(--brand);}
+.inst-steps .ii-t{display:inline-block;padding:0 6px;border-radius:5px;background:#fff;border:1px solid var(--line2);}
+.inst-url{display:flex;align-items:center;gap:8px;margin:0 0 12px;padding:10px 12px;border-radius:var(--r-sm);background:#fff;border:1px dashed var(--line2);}
+.inst-url .mono{flex:1;min-width:0;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 </style>
 </head>
 <body>
@@ -714,6 +734,13 @@ body.desk .toast{bottom:28px;}
         본사(9001)는 PC 화면(가로 900px 이상)에서 관리 콘솔로 열립니다
       </div>
     </form>
+
+    <div class="install-card hidden" id="installCard">
+      <div class="ic-icon"><img alt="" data-logo></div>
+      <div class="ic-text"><b>앱으로 설치하기</b><span id="installSub">홈 화면 아이콘으로 주소창 없이 전체화면 실행</span></div>
+      <button type="button" class="btn btn-primary ic-btn" id="installBtn">설치</button>
+      <button type="button" class="ic-close" id="installClose" aria-label="닫기">✕</button>
+    </div>
 
     <div class="login-foot">
       최초 사용 시 <b>[최초 등록]</b>에서 비밀번호를 설정하세요.<br>
@@ -2362,6 +2389,68 @@ $('#pwEmpBtn').addEventListener('click', async function(){
 });
 
 async function deskEnsureEmps(){ if (!state.employees || !state.employees.length) state.employees = await api.employees(); return state.employees; }
+/* =====================================================================
+   14-1. 앱 설치 안내 (홈 화면에 추가 → 주소창 없는 전체화면 실행)
+   ===================================================================== */
+var INSTALL = { evt:null };
+var UA = navigator.userAgent || '';
+var IS_IOS = /iPhone|iPad|iPod/i.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+var IS_ANDROID = /Android/i.test(UA);
+var IN_APP = /KAKAOTALK|NAVER\(inapp|Instagram|FBAN|FBAV|Line\/|DaumApps|everytimeApp/i.test(UA);
+var IS_SAMSUNG = /SamsungBrowser/i.test(UA);
+var IS_IOS_OTHER = IS_IOS && /CriOS|FxiOS|EdgiOS|Whale|NAVER/i.test(UA);
+function isStandalone(){ return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true; }
+function installDismissed(){ try { return sessionStorage.getItem('ehs-install-hide') === '1'; } catch(e){ return false; } }
+function refreshInstallCard(){
+  var card = $('#installCard'); if (!card) return;
+  var mobile = IS_IOS || IS_ANDROID;
+  var show = mobile && !isStandalone() && !installDismissed();
+  card.classList.toggle('hidden', !show);
+  if (!show) return;
+  $('#installSub').textContent = IN_APP ? '카카오톡 등 앱 안에서는 설치가 안 됩니다. 눌러서 방법 보기'
+    : INSTALL.evt ? '버튼을 누르면 바로 설치됩니다 (주소창 없는 전체화면)'
+    : '홈 화면 아이콘으로 주소창 없이 전체화면 실행';
+}
+window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); INSTALL.evt = e; refreshInstallCard(); });
+window.addEventListener('appinstalled', function(){ INSTALL.evt = null; refreshInstallCard(); toast('홈 화면에 설치되었습니다. 이제 아이콘으로 실행하세요'); });
+$('#installClose').addEventListener('click', function(){ try { sessionStorage.setItem('ehs-install-hide', '1'); } catch(e){} refreshInstallCard(); });
+function stepHtml(list){ return '<ol class="inst-steps">' + list.map(function(s, i){ return '<li><span class="n">'+(i+1)+'</span><div>'+s+'</div></li>'; }).join('') + '</ol>'; }
+var SHARE_ICO = '<svg class="ii" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 8 5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>';
+var PLUS_ICO = '<svg class="ii" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg>';
+var DOTS_ICO = '<b class="ii-t">⋮</b>';
+$('#installBtn').addEventListener('click', async function(){
+  if (INSTALL.evt && !IN_APP){
+    var e = INSTALL.evt; INSTALL.evt = null;
+    e.prompt();
+    try { var r = await e.userChoice; if (r && r.outcome === 'accepted') toast('설치를 진행합니다'); } catch(_){}
+    refreshInstallCard(); return;
+  }
+  var title = '앱으로 설치하기', body;
+  if (IN_APP){
+    body = '<p class="inst-lead">카카오톡·네이버 등 <b>앱 안의 브라우저</b>에서는 설치할 수 없습니다. 기본 브라우저로 다시 열어 주세요.</p>' +
+      stepHtml(IS_IOS ? ['화면 오른쪽 아래(또는 위)의 '+DOTS_ICO+' 또는 공유 버튼을 누릅니다', '<b>Safari로 열기</b>를 누릅니다', 'Safari에서 다시 [설치] 버튼을 누릅니다']
+                      : ['화면 오른쪽 위(또는 아래)의 '+DOTS_ICO+' 를 누릅니다', '<b>다른 브라우저로 열기</b>를 누릅니다 (Chrome 선택)', 'Chrome에서 다시 [설치] 버튼을 누릅니다']) +
+      '<div class="inst-url"><span class="mono">'+esc(location.origin + location.pathname)+'</span><button class="btn btn-ghost btn-sm" id="copyUrl">주소 복사</button></div>';
+  } else if (IS_IOS){
+    body = (IS_IOS_OTHER ? '<p class="inst-lead">아이폰은 <b>Safari</b>에서만 홈 화면에 추가할 수 있습니다. 주소를 복사해 Safari에서 열어 주세요.</p>' +
+        '<div class="inst-url"><span class="mono">'+esc(location.origin + location.pathname)+'</span><button class="btn btn-ghost btn-sm" id="copyUrl">주소 복사</button></div>' : '') +
+      stepHtml(['화면 아래(아이패드는 위)의 <b>공유 버튼</b> '+SHARE_ICO+' 을 누릅니다', '메뉴를 아래로 내려 <b>홈 화면에 추가</b> '+PLUS_ICO+' 를 누릅니다', '오른쪽 위 <b>추가</b>를 누릅니다', '홈 화면에 생긴 <b>안전제안</b> 아이콘으로 실행하면 주소창 없이 열립니다']);
+  } else if (IS_SAMSUNG){
+    body = stepHtml(['화면 아래 <b>≡ 메뉴</b>를 누릅니다', '<b>현재 페이지 추가</b> → <b>홈 화면</b>을 누릅니다', '홈 화면에 생긴 <b>안전제안</b> 아이콘으로 실행합니다']);
+  } else {
+    body = stepHtml(['Chrome 오른쪽 위 '+DOTS_ICO+' 메뉴를 누릅니다', '<b>앱 설치</b> 또는 <b>홈 화면에 추가</b>를 누릅니다', '<b>설치/추가</b>를 누른 뒤 홈 화면의 <b>안전제안</b> 아이콘으로 실행합니다']);
+  }
+  openSheet('<div class="sheet-head"><div class="h"><span class="kicker">INSTALL</span><h3>'+title+'</h3></div><button class="icon-btn" data-close>✕</button></div>' + body +
+    '<p class="note" style="margin-top:14px">설치한 아이콘으로 열면 주소창 없이 앱처럼 전체화면으로 실행됩니다. 로그인 정보·데이터는 같은 계정으로 그대로 이어집니다.</p>' +
+    '<button class="btn btn-ghost btn-block" data-close style="margin-top:6px">확인</button>');
+  $$('[data-close]', sheet).forEach(function(b){ b.onclick = closeSheet; });
+  var cu = $('#copyUrl'); if (cu) cu.onclick = async function(){ try { await navigator.clipboard.writeText(location.origin + location.pathname); toast('주소를 복사했습니다'); } catch(_){ toast('주소를 길게 눌러 복사해 주세요', true); } };
+});
+if ('serviceWorker' in navigator && location.protocol === 'https:'){
+  window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+}
+refreshInstallCard();
+
 /* =====================================================================
    15. 시작
    ===================================================================== */
