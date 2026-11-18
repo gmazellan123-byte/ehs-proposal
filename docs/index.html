@@ -472,6 +472,8 @@ select:disabled{opacity:.6;}
 
 
 
+
+
 /* ===== v3: 공통 추가 ===== */
 .item .r4 > span{white-space:nowrap;}
 .item .r4 .unit{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;}
@@ -639,6 +641,8 @@ body.desk .toast{bottom:28px;}
 .pw-direct input{width:140px;padding:8px 11px;}
 .dtable .btn-sm{padding:5px 11px;font-size:12px;}
 .dtable td{padding:8px 10px;}
+
+.dtable .nm{font-size:12px;color:var(--ink-soft);}
 </style>
 </head>
 <body>
@@ -936,7 +940,7 @@ body.desk .toast{bottom:28px;}
           <div class="dgrid g-2-1">
             <div class="panel box">
               <h3>1. 양식 준비 <span class="mono">STEP 1</span></h3>
-              <p class="note" style="margin-top:0">상단 [업로드 양식 다운로드]로 받은 엑셀에 <b>사번 · 그룹 · 팀 · 파트 · 권한</b>을 채웁니다. 인사 시스템에서 내려받은 파일도 첫 행에 같은 열 이름이 있으면 그대로 쓸 수 있습니다.</p>
+              <p class="note" style="margin-top:0">상단 [업로드 양식 다운로드]로 받은 엑셀에 <b>사번 · 성명 · 그룹 · 팀 · 파트 · 권한</b>을 채웁니다. 인사 시스템에서 내려받은 파일도 첫 행에 같은 열 이름이 있으면 그대로 쓸 수 있습니다.</p>
               <h3 style="margin-top:18px">2. 파일 선택 <span class="mono">STEP 2</span></h3>
               <label class="drop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
                 <b>엑셀 파일 선택 (.xlsx · .xls · .csv)</b><span id="impFileName">선택된 파일 없음</span><input type="file" id="impFile" accept=".xlsx,.xls,.csv"></label>
@@ -953,6 +957,7 @@ body.desk .toast{bottom:28px;}
                 <li>권한 칸이 비어 있으면 신규는 근로자, 기존 인원은 현재 권한을 유지합니다.</li>
                 <li>사업팀·본사 계정은 업로드로 바뀌지 않습니다.</li>
                 <li>그룹명은 서버 조직표와 정확히 같아야 합니다 (양식의 [그룹목록] 시트 참고).</li>
+                <li><b>성명은 브라우저에서 마스킹(예: 홍길동 → 홍*동)된 뒤 전송</b>되며, 원래 성명은 서버 어디에도 저장되지 않습니다.</li>
                 <li>업로드 파일은 서버에 저장되지 않습니다. 사번은 HTTPS로 전송되어 서버에서 암호화된 값으로만 저장됩니다.</li>
                 <li>이미 가입한 직원의 소속이 바뀌어도 로그인 정보는 그대로 유지되며, <b>이후 제출건부터</b> 새 소속으로 분류됩니다.</li>
               </ul>
@@ -1125,7 +1130,7 @@ function makeRealApi(){
       if (r.error) throw dbErr(r.error); return r.data; },
     remove: async function(rep){ var r = await sb.from('reports').delete().eq('id', rep.id); if (r.error) throw dbErr(r.error);
       if (rep.photo_path) await sb.storage.from(BUCKET).remove([rep.photo_path]); },
-    employees: async function(){ var r = await sb.from('employees').select('emp_hash, emp_code, role, team, site, dept, part, active, registered_at, created_at').order('created_at', { ascending:false });
+    employees: async function(){ var r = await sb.from('employees').select('emp_hash, emp_code, role, team, site, dept, part, name_mask, active, registered_at, created_at').order('created_at', { ascending:false });
       if (r.error) throw dbErr(r.error); return r.data; },
     register: function(ids, unit){ return fn('admin_register', { empIds:ids, role:unit.role, team:unit.team, site:unit.site, dept:unit.dept, part:unit.part }); },
     importEmployees: function(rows){ return fn('admin_import', { rows:rows }); },
@@ -1155,8 +1160,9 @@ function makeDemoApi(){
     if (u.role === 'worker' || u.role === 'manager'){ u.team = teamOf(u.site); if(!u.team) throw new Error('그룹을 선택해주세요'); u.dept = cleanT(u.dept); u.part = cleanT(u.part); }
     else if (u.role === 'team'){ u.site = null; u.dept = null; u.part = null; if (!ORG.some(function(o){ return o.team === u.team; })) throw new Error('사업팀을 선택해주세요'); }
     else { u.team = null; u.site = null; u.dept = null; u.part = null; } return u; }
-  function addEmp(id, role, site, team, reg, dept, part){ var h = h64(id); var u = norm({ role:role, site:site||null, team:team||null, dept:dept, part:part });
-    emps[h] = { emp_hash:h, emp_code:codeOf(h), role:u.role, team:u.team, site:u.site, dept:u.dept, part:u.part, active:true,
+  var SUR = '김이박최정강조윤장임한오서신권황안송류홍', GIV = ['민준','서연','도윤','지우','하준','서윤','예준','지민','시우','수빈','현우','지훈','은서','태호','영수'];
+  function addEmp(id, role, site, team, reg, dept, part, nm){ var h = h64(id); var u = norm({ role:role, site:site||null, team:team||null, dept:dept, part:part });
+    emps[h] = { emp_hash:h, emp_code:codeOf(h), name_mask: maskName(nm === undefined ? pickOne(SUR.split('')) + pickOne(GIV) : nm), role:u.role, team:u.team, site:u.site, dept:u.dept, part:u.part, active:true,
       registered_at: reg ? new Date(Date.now()-864e5*20).toISOString() : null, created_at:new Date(Date.now()-864e5*30).toISOString() };
     if (reg) pw[h] = 'demo1234'; return h; }
   addEmp('9001','hq',null,null,true); addEmp('8001','team',null,'4사업팀',true); addEmp('8002','team',null,'2사업팀',true);
@@ -1239,7 +1245,7 @@ function makeDemoApi(){
     lookup: async function(id){ await wait(); var a = staff(), h = hashOf(id), e = emps[h];
       var base = { empHash:h, empCode:codeOf(h), exists:!!e }; if (!e) return base;
       if (!canManage(a, e) && h !== me) return Object.assign(base, { outOfScope:true });
-      return Object.assign(base, { role:e.role, team:e.team, site:e.site, dept:e.dept, part:e.part, active:e.active, registered:!!e.registered_at, self:h===me,
+      return Object.assign(base, { role:e.role, team:e.team, site:e.site, dept:e.dept, part:e.part, nameMask:e.name_mask, active:e.active, registered:!!e.registered_at, self:h===me,
         reportCount: reports.filter(function(r){ return r.emp_hash === h; }).length }); },
     updateEmployee: async function(h, patch){ await wait(); var a = staff(), e = emps[h];
       if (h === me) throw new Error('본인 계정의 권한·소속은 직접 변경할 수 없습니다');
@@ -1263,9 +1269,9 @@ function makeDemoApi(){
         if (!EMP_RE.test(id)) return invalid.push({ row:r.row, reason:'사번 형식 오류' });
         if (!teamOf(r.site)) return invalid.push({ row:r.row, reason:'알 수 없는 그룹: ' + (r.site || '(빈칸)') });
         var h = h64(id), e = emps[h];
-        if (!e){ addEmp(id, r.role || 'worker', r.site, null, false, r.dept, r.part); ins++; }
+        if (!e){ addEmp(id, r.role || 'worker', r.site, null, false, r.dept, r.part, r.nameMask || null); ins++; }
         else if (e.role === 'team' || e.role === 'hq') skip++;
-        else { Object.assign(e, norm({ role: r.role || e.role, site:r.site, dept:r.dept, part:r.part })); upd++; } });
+        else { Object.assign(e, norm({ role: r.role || e.role, site:r.site, dept:r.dept, part:r.part })); if (r.nameMask) e.name_mask = maskName(r.nameMask); upd++; } });
       return { inserted:ins, updated:upd, skipped:skip, invalid:invalid }; }
   };
 }
@@ -1605,6 +1611,10 @@ async function openDetail(r, staffView){
    9. 관리: 조직 구조(사업팀 > 그룹 > 팀 > 파트) · 범위별 필터
    ===================================================================== */
 var LV_LABEL = { team:'사업팀', site:'그룹', dept:'팀', part:'파트' };
+/* 성명 마스킹: 첫 글자·끝 글자만 표시 (홍길동→홍*동, 남궁민수→남**수, 이산→이*) — 원래 성명은 서버로 보내지 않음 */
+function maskName(v){ var c = Array.from(String(v == null ? '' : v).trim().replace(/\s+/g, '')).slice(0, 20); if (!c.length) return null;
+  return c.length === 1 ? c[0] : c.length === 2 ? c[0] + '*' : c[0] + new Array(c.length - 1).join('*') + c[c.length - 1]; }
+function nameOf(hash){ if (!hash || !state.employees) return ''; var e = state.employees.find(function(x){ return x.emp_hash === hash; }); return e && e.name_mask ? e.name_mask : ''; }
 function fullUnit(o){ var a = [o.site, o.dept, o.part].filter(Boolean); return a.length ? a.join(' › ') : (o.team || '본사'); }
 function levelsFor(role){ return role === 'hq' ? ['team','site','dept','part'] : role === 'team' ? ['site','dept','part'] : role === 'manager' ? ['dept','part'] : []; }
 function newOrgSel(){ return { team:'all', site:'all', dept:'all', part:'all' }; }
@@ -1803,7 +1813,7 @@ function reloadPeopleViews(){ if (DESK.on){ if (DESK.screen === 'dpw') deskLoadP
 function openEmpSheet(emp){
   var u = state.user;
   openSheet('<div class="sheet-head"><div class="h"><span class="kicker">EMPLOYEE</span><h3 class="mono">'+esc(emp.emp_code)+'</h3></div><button class="icon-btn" data-close>✕</button></div>' +
-    '<div class="kv"><span>권한</span><b>'+roleChip(emp.role)+'</b><span>소속</span><b>'+esc(emp.team || '본사')+(emp.site ? ' › ' + esc(fullUnit(emp)) : '')+'</b><span>가입</span><b>'+(emp.registered_at ? fmt(emp.registered_at) : '가입 대기')+'</b><span>상태</span><b>'+(emp.active ? '사용중' : '사용중지')+'</b></div>' +
+    '<div class="kv">'+(emp.name_mask ? '<span>성명</span><b>'+esc(emp.name_mask)+'</b>' : '')+'<span>권한</span><b>'+roleChip(emp.role)+'</b><span>소속</span><b>'+esc(emp.team || '본사')+(emp.site ? ' › ' + esc(fullUnit(emp)) : '')+'</b><span>가입</span><b>'+(emp.registered_at ? fmt(emp.registered_at) : '가입 대기')+'</b><span>상태</span><b>'+(emp.active ? '사용중' : '사용중지')+'</b></div>' +
     '<div class="panel box" style="margin-top:14px"><h3>권한 · 소속 변경 <span class="mono">MOVE</span></h3>' +
       '<div class="frow" style="margin-top:0"><select id="mvRole">'+allowedRoles(u).map(function(r){ return '<option value="'+r+'"'+(r === emp.role ? ' selected' : '')+'>'+ROLE[r].ko+'</option>'; }).join('')+'</select><select id="mvUnit"></select></div>' +
       '<div class="frow" id="mvOrg"><input id="mvDept" placeholder="팀 (예: 보안1팀)" maxlength="50" value="'+esc(emp.dept || '')+'"><input id="mvPart" placeholder="파트 (예: 순찰파트)" maxlength="50" value="'+esc(emp.part || '')+'"></div>' +
@@ -1874,7 +1884,7 @@ $('#lkBtn').addEventListener('click', async function(){
     if (!r.exists) out.innerHTML = head + '<span>사번 등록</span><b style="color:var(--red)">미등록</b></div></div>';
     else if (r.outOfScope) out.innerHTML = head + '<span>사번 등록</span><b>등록됨</b><span>조회</span><b style="color:var(--amber)">관리 범위 밖의 인원입니다</b></div></div>';
     else {
-      out.innerHTML = head + '<span>권한</span><b>'+roleChip(r.role)+'</b><span>소속</span><b>'+esc(r.team || '본사')+(r.site ? ' › ' + esc(fullUnit(r)) : '')+'</b><span>가입</span><b>'+(r.registered ? '가입완료' : '가입대기')+'</b>' +
+      out.innerHTML = head + (r.nameMask ? '<span>성명</span><b>'+esc(r.nameMask)+'</b>' : '') + '<span>권한</span><b>'+roleChip(r.role)+'</b><span>소속</span><b>'+esc(r.team || '본사')+(r.site ? ' › ' + esc(fullUnit(r)) : '')+'</b><span>가입</span><b>'+(r.registered ? '가입완료' : '가입대기')+'</b>' +
         '<span>상태</span><b>'+(r.active ? '사용중' : '사용중지')+'</b><span>제출 건수</span><b>'+r.reportCount+'건</b></div>' +
         '<div class="actions-row">' + (r.reportCount ? '<button class="btn btn-ghost btn-sm" data-lk="reports">제출건 보기</button>' : '') +
         (!r.self ? '<button class="btn btn-ghost btn-sm" data-lk="manage">관리</button>' : '') + '</div></div>';
@@ -1912,15 +1922,15 @@ async function downloadXlsx(filename, sheets){
   } catch(e){ fail(e); }
 }
 function reportRows(L){
-  return [['접수번호','유형','상태','사업팀','그룹','팀','파트','장소','제안등급','결정등급','사고유형','발생일시','상세내용/상황설명','조치요청사항','재발방지의견','처리의견','제출자식별코드','제출일시','종료일시']]
+  return [['접수번호','유형','상태','사업팀','그룹','팀','파트','장소','제안등급','결정등급','사고유형','발생일시','상세내용/상황설명','조치요청사항','재발방지의견','처리의견','제출자식별코드','제출자성명(마스킹)','제출일시','종료일시']]
     .concat(L.map(function(r){ return [noOf(r.report_no), TYPE[r.type] ? TYPE[r.type].short : r.type, STATUS[r.status] || r.status, r.team || '본사', r.site || '', r.dept || '', r.part || '',
       r.location || '', r.proposed_grade || '', r.final_grade || '', r.category || '', r.occurred_at ? fmt(r.occurred_at) : '', r.detail || '', r.request || '', r.prevention || '',
-      r.admin_comment || '', codeOf(r.emp_hash), fmt(r.created_at), r.closed_at ? fmt(r.closed_at) : '']; }));
+      r.admin_comment || '', codeOf(r.emp_hash), nameOf(r.emp_hash), fmt(r.created_at), r.closed_at ? fmt(r.closed_at) : '']; }));
 }
 function employeeRows(E){
   var cnt = {}; state.all.forEach(function(r){ if (r.emp_hash) cnt[r.emp_hash] = (cnt[r.emp_hash] || 0) + 1; });
-  return [['식별코드','권한','사업팀','그룹','팀','파트','가입여부','가입일시','상태','제출건수','사번등록일']]
-    .concat(sortEmps(E.slice()).map(function(e){ return [e.emp_code, ROLE[e.role].ko, e.team || '본사', e.site || '', e.dept || '', e.part || '', e.registered_at ? '가입' : '미가입',
+  return [['식별코드','성명(마스킹)','권한','사업팀','그룹','팀','파트','가입여부','가입일시','상태','제출건수','사번등록일']]
+    .concat(sortEmps(E.slice()).map(function(e){ return [e.emp_code, e.name_mask || '', ROLE[e.role].ko, e.team || '본사', e.site || '', e.dept || '', e.part || '', e.registered_at ? '가입' : '미가입',
       e.registered_at ? fmt(e.registered_at) : '', e.active ? '사용중' : '사용중지', cnt[e.emp_hash] || 0, fmt(e.created_at)]; }));
 }
 function metrics(rows){
@@ -2018,7 +2028,7 @@ $('#dActions').addEventListener('click', function(e){
 /* ---- 대시보드 ---- */
 async function deskLoadDash(){
   if (!state.all.length) $('#dDash').innerHTML = '<div class="loading"><span class="spin"></span>불러오는 중</div>';
-  try { await fetchAll(); deskRenderDash(); } catch(e){ $('#dDash').innerHTML = emptyBox('불러오지 못했습니다'); fail(e); }
+  try { await Promise.all([fetchAll(), deskEnsureEmps()]); deskRenderDash(); } catch(e){ $('#dDash').innerHTML = emptyBox('불러오지 못했습니다'); fail(e); }
 }
 function deskRenderDash(){
   var A = state.all, now = new Date(), mStart = new Date(now.getFullYear(), now.getMonth(), 1), M = metrics(A);
@@ -2063,12 +2073,12 @@ $('#dDash').addEventListener('click', function(e){
 /* ---- 접수 관리 ---- */
 function reportTable(L){
   if (!L.length) return emptyBox('조건에 맞는 접수건이 없습니다');
-  return '<table class="dtable rep"><thead><tr><th>접수번호</th><th>유형</th><th>상태</th><th>사업팀</th><th>그룹</th><th>팀</th><th>파트</th><th>장소 / 발생일시</th><th>제안</th><th>결정</th><th>내용</th><th>제출일</th><th>종료일</th><th>식별코드</th></tr></thead><tbody>' +
+  return '<table class="dtable rep"><thead><tr><th>접수번호</th><th>유형</th><th>상태</th><th>사업팀</th><th>그룹</th><th>팀</th><th>파트</th><th>장소 / 발생일시</th><th>제안</th><th>결정</th><th>내용</th><th>제출일</th><th>종료일</th><th>제출자</th></tr></thead><tbody>' +
     L.map(function(r){ return '<tr data-id="'+esc(r.id)+'"><td class="mono">'+noOf(r.report_no)+'</td><td>'+typeTag(r.type)+'</td><td>'+statusTag(r.status)+'</td>' +
       '<td>'+esc(r.team || '본사')+'</td><td>'+esc(r.site || '-')+'</td><td>'+esc(r.dept || '-')+'</td><td>'+esc(r.part || '-')+'</td>' +
       '<td class="ell">'+(r.type === 'proposal' ? esc(r.location || '-') : '발생 ' + fmt(r.occurred_at))+'</td>' +
       '<td>'+(gradeTag(r.proposed_grade) || '-')+'</td><td>'+(gradeTag(r.final_grade) || '-')+'</td><td class="ell wide">'+esc(r.detail)+'</td>' +
-      '<td class="mono">'+fmt(r.created_at).slice(0, 10)+'</td><td class="mono">'+(r.closed_at ? fmt(r.closed_at).slice(0, 10) : '-')+'</td><td class="mono">'+esc(codeOf(r.emp_hash))+'</td></tr>'; }).join('') +
+      '<td class="mono">'+fmt(r.created_at).slice(0, 10)+'</td><td class="mono">'+(r.closed_at ? fmt(r.closed_at).slice(0, 10) : '-')+'</td><td><span class="mono">'+esc(codeOf(r.emp_hash))+'</span>'+(nameOf(r.emp_hash) ? ' <span class="nm">'+esc(nameOf(r.emp_hash))+'</span>' : '')+'</td></tr>'; }).join('') +
     '</tbody></table>';
 }
 function deskFiltered(){
@@ -2086,7 +2096,7 @@ function deskFiltered(){
 }
 async function deskLoadList(){
   if (!state.all.length) $('#dTableWrap').innerHTML = '<div class="loading"><span class="spin"></span>불러오는 중</div>';
-  try { await fetchAll(); } catch(e){ $('#dTableWrap').innerHTML = emptyBox('불러오지 못했습니다'); return fail(e); }
+  try { await Promise.all([fetchAll(), deskEnsureEmps()]); } catch(e){ $('#dTableWrap').innerHTML = emptyBox('불러오지 못했습니다'); return fail(e); }
   var f = DESK.f;
   $('#dfType').value = f.type; $('#dfStatus').value = f.status; $('#dfGrade').value = f.grade; $('#dfFrom').value = f.from; $('#dfTo').value = f.to; $('#dfQ').value = f.q;
   renderOrgSelects($('#dfOrg'), state.all, ['team','site','dept','part'], DESK.sel, function(){ DESK.page = 1; deskRenderList(); });
@@ -2172,9 +2182,9 @@ function deskRenderEmps(){
   var cnt = {}; state.all.forEach(function(r){ if (r.emp_hash) cnt[r.emp_hash] = (cnt[r.emp_hash] || 0) + 1; });
   var s = DESK.empSel, path = [s.team, s.site, s.dept, s.part].filter(function(x){ return x && x !== 'all'; });
   $('#dEmpCount').innerHTML = '<b>'+(path.length ? esc(path.join(' › ')) : '전체')+'</b> · '+E.length.toLocaleString()+'명 (가입 '+E.filter(function(e){ return e.registered_at; }).length.toLocaleString()+'명)';
-  $('#dEmpWrap').innerHTML = E.length ? '<table class="dtable"><thead><tr><th>식별코드</th><th>권한</th><th>사업팀</th><th>그룹</th><th>팀</th><th>파트</th><th>가입</th><th>상태</th><th>제출</th><th></th></tr></thead><tbody>' +
+  $('#dEmpWrap').innerHTML = E.length ? '<table class="dtable"><thead><tr><th>식별코드</th><th>성명</th><th>권한</th><th>사업팀</th><th>그룹</th><th>팀</th><th>파트</th><th>가입</th><th>상태</th><th>제출</th><th></th></tr></thead><tbody>' +
     E.slice((DESK.empPage - 1) * PAGE, DESK.empPage * PAGE).map(function(e){ var mine = e.emp_hash === u.hash;
-      return '<tr class="'+(e.active ? '' : 'off')+'"><td class="mono"><b>'+esc(e.emp_code)+'</b>'+(mine ? ' <span class="mini">나</span>' : '')+'</td><td>'+roleChip(e.role)+'</td><td>'+esc(e.team || '본사')+'</td><td>'+esc(e.site || '-')+'</td><td>'+esc(e.dept || '-')+'</td><td>'+esc(e.part || '-')+'</td>' +
+      return '<tr class="'+(e.active ? '' : 'off')+'"><td class="mono"><b>'+esc(e.emp_code)+'</b>'+(mine ? ' <span class="mini">나</span>' : '')+'</td><td>'+esc(e.name_mask || '-')+'</td><td>'+roleChip(e.role)+'</td><td>'+esc(e.team || '본사')+'</td><td>'+esc(e.site || '-')+'</td><td>'+esc(e.dept || '-')+'</td><td>'+esc(e.part || '-')+'</td>' +
         '<td>'+(e.registered_at ? '<span class="mini ok">가입</span>' : '<span class="mini wait">대기</span>')+'</td><td>'+(e.active ? '<span class="mini">사용중</span>' : '<span class="mini stop">중지</span>')+'</td>' +
         '<td class="num">'+(cnt[e.emp_hash] || 0)+'</td><td>'+(mine ? '' : '<button class="btn btn-ghost btn-sm" data-emp="'+esc(e.emp_hash)+'">관리</button>')+'</td></tr>'; }).join('') +
     '</tbody></table>' : emptyBox('조건에 맞는 인원이 없습니다');
@@ -2190,13 +2200,13 @@ $('#dEmpRole').addEventListener('change', function(){ DESK.empRole = this.value;
 function downloadTemplate(){
   var ex = sitesOf().slice(0, 2);
   downloadXlsx('조직백데이터_업로드양식.xlsx', [
-    { name:'백데이터', rows:[['사번','그룹','팀','파트','권한'], ['20240101', ex[0] || '평택그룹', '보안1팀', '순찰파트', '근로자'], ['20240102', ex[0] || '평택그룹', '보안1팀', '출입관리파트', ''], ['20240103', ex[1] || '천안그룹', '시설팀', '', '관리자']] },
+    { name:'백데이터', rows:[['사번','성명','그룹','팀','파트','권한'], ['20240101', '홍길동', ex[0] || '평택그룹', '보안1팀', '순찰파트', '근로자'], ['20240102', '김철수', ex[0] || '평택그룹', '보안1팀', '출입관리파트', ''], ['20240103', '남궁민수', ex[1] || '천안그룹', '시설팀', '', '관리자']] },
     { name:'그룹목록(참고)', rows:[['사업팀','그룹']].concat(state.org.map(function(o){ return [o.team, o.site]; })) },
-    { name:'작성방법', rows:[['항목','설명'], ['사번','필수. 영문·숫자 4~20자'], ['그룹','필수. [그룹목록(참고)] 시트의 그룹명과 정확히 같아야 함'], ['팀','선택. 그룹 아래 팀명'], ['파트','선택. 팀 아래 파트명'],
+    { name:'작성방법', rows:[['항목','설명'], ['사번','필수. 영문·숫자 4~20자'], ['성명','선택. 브라우저에서 마스킹(예: 홍*동) 후 전송되며, 원래 성명은 서버에 저장되지 않음'], ['그룹','필수. [그룹목록(참고)] 시트의 그룹명과 정확히 같아야 함'], ['팀','선택. 그룹 아래 팀명'], ['파트','선택. 팀 아래 파트명'],
       ['권한','선택. 근로자 / 관리자. 비워두면 신규는 근로자, 기존 인원은 현재 권한 유지'], ['참고','사업팀·본사 계정은 업로드로 변경되지 않습니다. 같은 사번이 여러 행이면 마지막 행이 적용됩니다.']] } ]);
 }
 function deskRenderImport(){ if (!DESK.imp) $('#impPreview').innerHTML = ''; $('#impRun').disabled = !DESK.imp || !DESK.imp.valid.length; }
-var IMP_COLS = { empId:['사번','사원번호','empid','emp_id'], site:['그룹','사업장','site'], dept:['팀','부서','dept'], part:['파트','part'], role:['권한','role'] };
+var IMP_COLS = { empId:['사번','사원번호','empid','emp_id'], name:['성명','이름','name'], site:['그룹','사업장','site'], dept:['팀','부서','dept'], part:['파트','part'], role:['권한','role'] };
 function roleCode(v){ v = String(v || '').trim(); if (!v) return ''; if (/^(근로자|worker|직원)$/i.test(v)) return 'worker'; if (/^(관리자|manager)$/i.test(v)) return 'manager'; return null; }
 $('#impFile').addEventListener('change', async function(){
   var file = this.files && this.files[0]; if (!file) return;
@@ -2215,15 +2225,15 @@ $('#impFile').addEventListener('change', async function(){
       var id = normEmp(g('empId')); if (!id && !g('site')) return;
       var reason = !EMP_RE.test(id) ? '사번 형식 오류' : sites.indexOf(g('site')) < 0 ? '알 수 없는 그룹: ' + (g('site') || '(빈칸)') : roleCode(g('role')) === null ? '권한 값 오류: ' + g('role') : '';
       if (reason) return invalid.push({ row:rowNo, id:id, reason:reason });
-      byId[id] = { row:rowNo, empId:id, site:g('site'), dept:g('dept'), part:g('part'), role:roleCode(g('role')) };
+      byId[id] = { row:rowNo, empId:id, nameMask:maskName(g('name')), site:g('site'), dept:g('dept'), part:g('part'), role:roleCode(g('role')) };   /* 성명은 여기서 마스킹되어 원문은 전송되지 않음 */
     });
     var valid = Object.keys(byId).map(function(k){ return byId[k]; });
     DESK.imp = { valid:valid, invalid:invalid, name:file.name };
     var bySite = {}; valid.forEach(function(v){ bySite[v.site] = (bySite[v.site] || 0) + 1; });
     $('#impPreview').innerHTML =
       '<div class="imp-sum"><div><b>'+valid.length.toLocaleString()+'</b><span>반영 대상</span></div><div class="'+(invalid.length ? 'bad' : '')+'"><b>'+invalid.length+'</b><span>오류 행 (제외)</span></div><div><b>'+Object.keys(bySite).length+'</b><span>그룹 수</span></div></div>' +
-      '<div class="dtable-wrap" style="max-height:260px"><table class="dtable"><thead><tr><th>행</th><th>사번</th><th>그룹</th><th>팀</th><th>파트</th><th>권한</th></tr></thead><tbody>' +
-        valid.slice(0, 15).map(function(v){ return '<tr><td class="num">'+v.row+'</td><td class="mono">'+esc(v.empId.replace(/.(?=.{2})/g, '•'))+'</td><td>'+esc(v.site)+'</td><td>'+esc(v.dept || '-')+'</td><td>'+esc(v.part || '-')+'</td><td>'+(v.role ? ROLE[v.role].ko : '<span style="color:var(--ink-faint)">유지/근로자</span>')+'</td></tr>'; }).join('') +
+      '<div class="dtable-wrap" style="max-height:260px"><table class="dtable"><thead><tr><th>행</th><th>사번</th><th>성명(마스킹)</th><th>그룹</th><th>팀</th><th>파트</th><th>권한</th></tr></thead><tbody>' +
+        valid.slice(0, 15).map(function(v){ return '<tr><td class="num">'+v.row+'</td><td class="mono">'+esc(v.empId.replace(/.(?=.{2})/g, '•'))+'</td><td>'+esc(v.nameMask || '-')+'</td><td>'+esc(v.site)+'</td><td>'+esc(v.dept || '-')+'</td><td>'+esc(v.part || '-')+'</td><td>'+(v.role ? ROLE[v.role].ko : '<span style="color:var(--ink-faint)">유지/근로자</span>')+'</td></tr>'; }).join('') +
       '</tbody></table></div>' + (valid.length > 15 ? '<p class="note">미리보기는 15행까지 표시합니다. 사번은 화면에서 가려 표시됩니다.</p>' : '') +
       (invalid.length ? '<div class="notice warn" style="margin-top:10px"><b>오류 행</b> · ' + invalid.slice(0, 30).map(function(x){ return x.row + '행(' + esc(x.reason) + ')'; }).join(', ') + (invalid.length > 30 ? ' 외 ' + (invalid.length - 30) + '건' : '') + '</div>' : '');
     $('#impRun').disabled = !valid.length; $('#impResult').innerHTML = '';
@@ -2296,10 +2306,10 @@ function deskRenderPw(){
   var allOn = selectable.length && selectable.every(function(e){ return P.checked[e.emp_hash]; });
   $('#pwCount').innerHTML = '대상 <b>'+L.length.toLocaleString()+'</b>명 · 가입 '+L.filter(function(e){ return e.registered_at; }).length.toLocaleString()+'명';
   $('#pwBulk').disabled = !selN; $('#pwBulk').textContent = selN ? '선택 '+selN+'명 초기화' : '선택 초기화';
-  $('#pwWrap').innerHTML = rows.length ? '<table class="dtable"><thead><tr><th class="cb"><input type="checkbox" id="pwAll"'+(allOn ? ' checked' : '')+(selectable.length ? '' : ' disabled')+' title="이 페이지 전체 선택"></th><th>식별코드</th><th>권한</th><th>사업팀</th><th>그룹</th><th>팀</th><th>파트</th><th>가입일시</th><th>상태</th><th style="width:110px"></th></tr></thead><tbody>' +
+  $('#pwWrap').innerHTML = rows.length ? '<table class="dtable"><thead><tr><th class="cb"><input type="checkbox" id="pwAll"'+(allOn ? ' checked' : '')+(selectable.length ? '' : ' disabled')+' title="이 페이지 전체 선택"></th><th>식별코드</th><th>성명</th><th>권한</th><th>사업팀</th><th>그룹</th><th>팀</th><th>파트</th><th>가입일시</th><th>상태</th><th style="width:110px"></th></tr></thead><tbody>' +
     rows.map(function(e){ var on = !!P.checked[e.emp_hash];
       return '<tr class="'+(on ? 'sel' : '')+(e.active ? '' : ' off')+'"><td class="cb"><input type="checkbox" data-pc="'+esc(e.emp_hash)+'"'+(on ? ' checked' : '')+(e.registered_at ? '' : ' disabled')+'></td>' +
-        '<td class="mono"><b>'+esc(e.emp_code)+'</b></td><td>'+roleChip(e.role)+'</td><td>'+esc(e.team || '-')+'</td><td>'+esc(e.site || '-')+'</td><td>'+esc(e.dept || '-')+'</td><td>'+esc(e.part || '-')+'</td>' +
+        '<td class="mono"><b>'+esc(e.emp_code)+'</b></td><td>'+esc(e.name_mask || '-')+'</td><td>'+roleChip(e.role)+'</td><td>'+esc(e.team || '-')+'</td><td>'+esc(e.site || '-')+'</td><td>'+esc(e.dept || '-')+'</td><td>'+esc(e.part || '-')+'</td>' +
         '<td class="mono">'+(e.registered_at ? fmt(e.registered_at) : '<span class="mini wait">가입 대기</span>')+'</td><td>'+(e.active ? '<span class="mini">사용중</span>' : '<span class="mini stop">중지</span>')+'</td>' +
         '<td>'+(e.registered_at ? '<button class="btn btn-ghost btn-sm" data-pr="'+esc(e.emp_hash)+'">초기화</button>' : '')+'</td></tr>'; }).join('') +
     '</tbody></table>' : emptyBox('조건에 맞는 계정이 없습니다');
@@ -2317,7 +2327,7 @@ $('#pwWrap').addEventListener('change', function(e){
 });
 function empByHash(h){ return state.employees.find(function(x){ return x.emp_hash === h; }); }
 function pwTargetHtml(list){
-  return '<div class="kv" style="margin:0 0 6px">' + list.slice(0, 8).map(function(e){ return '<span class="mono">'+esc(e.emp_code)+'</span><b>'+roleChip(e.role)+' '+esc(e.team || '')+(e.site ? ' › ' + esc(fullUnit(e)) : '')+'</b>'; }).join('') + '</div>' +
+  return '<div class="kv" style="margin:0 0 6px">' + list.slice(0, 8).map(function(e){ return '<span class="mono">'+esc(e.emp_code)+(e.name_mask ? ' '+esc(e.name_mask) : '')+'</span><b>'+roleChip(e.role)+' '+esc(e.team || '')+(e.site ? ' › ' + esc(fullUnit(e)) : '')+'</b>'; }).join('') + '</div>' +
     (list.length > 8 ? '<p class="note">외 '+(list.length - 8)+'명</p>' : '');
 }
 async function runPwReset(list){
@@ -2345,11 +2355,13 @@ $('#pwEmpBtn').addEventListener('click', async function(){
     if (r.role === 'hq') return toast('본사 계정은 이 화면에서 초기화하지 않습니다', true);
     if (r.self) return toast('본인 계정은 초기화할 수 없습니다', true);
     if (!r.registered) return toast('아직 가입하지 않은 사번입니다 (초기화 불필요)', true);
-    var emp = { emp_hash:r.empHash, emp_code:r.empCode, role:r.role, team:r.team, site:r.site, dept:r.dept, part:r.part };
+    var emp = { emp_hash:r.empHash, emp_code:r.empCode, name_mask:r.nameMask, role:r.role, team:r.team, site:r.site, dept:r.dept, part:r.part };
     deskConfirm('비밀번호 초기화', '<p>입력한 사번의 비밀번호를 초기화합니다. 본인이 <b>[최초 등록]</b>에서 새 비밀번호를 설정해야 합니다.</p>' + pwTargetHtml([emp]), '초기화',
       function(){ $('#pwEmp').value = ''; return runPwReset([emp]); });
   } catch(e){ fail(e); }
 });
+
+async function deskEnsureEmps(){ if (!state.employees || !state.employees.length) state.employees = await api.employees(); return state.employees; }
 /* =====================================================================
    15. 시작
    ===================================================================== */
