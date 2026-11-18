@@ -51,6 +51,8 @@ create table if not exists public.employees (
 );
 alter table public.employees add column if not exists dept text check (char_length(dept) <= 50);
 alter table public.employees add column if not exists part text check (char_length(part) <= 50);
+-- 성명은 마스킹된 형태(예: 홍*동)만 저장. 원래 성명은 브라우저에서 마스킹 후 전송되며 서버에 저장되지 않음
+alter table public.employees add column if not exists name_mask text check (char_length(name_mask) <= 20);
 create index if not exists employees_team_idx on public.employees (team);
 create index if not exists employees_site_idx on public.employees (site);
 
@@ -153,15 +155,16 @@ begin
     select role into v_cur from public.employees where emp_hash = r->>'emp_hash';
     v_role := nullif(r->>'role', '');
     if v_cur is null then
-      insert into public.employees (emp_hash, role, site, dept, part)
-      values (r->>'emp_hash', coalesce(v_role, 'worker'), r->>'site', nullif(r->>'dept', ''), nullif(r->>'part', ''));
+      insert into public.employees (emp_hash, role, site, dept, part, name_mask)
+      values (r->>'emp_hash', coalesce(v_role, 'worker'), r->>'site', nullif(r->>'dept', ''), nullif(r->>'part', ''), nullif(r->>'name_mask', ''));
       ins := ins + 1;
     elsif v_cur in ('team', 'hq') then
       skip := skip + 1;
     else
       update public.employees
          set role = coalesce(v_role, role), site = r->>'site',
-             dept = nullif(r->>'dept', ''), part = nullif(r->>'part', '')
+             dept = nullif(r->>'dept', ''), part = nullif(r->>'part', ''),
+             name_mask = coalesce(nullif(r->>'name_mask', ''), name_mask)
        where emp_hash = r->>'emp_hash';
       upd := upd + 1;
     end if;
