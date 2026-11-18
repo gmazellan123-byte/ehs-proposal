@@ -43,6 +43,7 @@ jobs:
           echo "::add-mask::$PW"
           echo "KEYSTORE_PASSWORD=$PW" >> "$GITHUB_ENV"
           echo "서명키 지문(앞 16자): $(sha256sum android/app/release.keystore | cut -c1-16)  (정상값: 527d5ef670576780)"
+          echo "비밀번호 확인값: 길이 ${#PW}자, 해시 $(printf '%s' "$PW" | sha256sum | cut -c1-8)  (정상값: 32자, 해시 4aeb9f3e)"
           if ! keytool -list -keystore android/app/release.keystore -storepass "$PW" -alias ehs >/dev/null 2>&1; then
             echo "::error::서명키를 열 수 없습니다. ANDROID_KEYSTORE_PASSWORD 값(비밀번호 32자) 또는 ANDROID_KEYSTORE_B64 값(긴 한 줄 전체)을 다시 확인해 등록하세요"
             exit 1
