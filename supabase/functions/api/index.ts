@@ -56,6 +56,16 @@ function cleanText(v: unknown, max = 50): string | null {
   return t ? t.slice(0, max) : null;
 }
 
+// 성명 마스킹: 첫 글자와 끝 글자만 남김 (홍길동→홍*동, 남궁민수→남**수, 이산→이*). 이미 마스킹된 값도 그대로 유지됨
+function maskName(v: unknown): string | null {
+  const n = String(v ?? "").trim().replace(/\s+/g, "").slice(0, 20);
+  if (!n) return null;
+  const c = [...n];
+  if (c.length === 1) return c[0];
+  if (c.length === 2) return c[0] + "*";
+  return c[0] + "*".repeat(c.length - 2) + c[c.length - 1];
+}
+
 function normEmp(v: unknown): string {
   return String(v ?? "").trim().toUpperCase().replace(/\s+/g, "");
 }
@@ -120,7 +130,7 @@ async function resolveUnit(roleRaw: unknown, teamRaw: unknown, siteRaw: unknown,
 
 async function findEmployee(hash: string) {
   const { data } = await db.from("employees")
-    .select("emp_hash, emp_code, role, team, site, dept, part, active, user_id, registered_at, created_at")
+    .select("emp_hash, emp_code, role, team, site, dept, part, name_mask, active, user_id, registered_at, created_at")
     .eq("emp_hash", hash).maybeSingle();
   return data;
 }
@@ -239,7 +249,7 @@ async function actLookup(req: Request, body: any) {
   if (!canManage(actor, row) && row.emp_hash !== actor.empHash) return { ...base, outOfScope: true };
   const { count } = await db.from("reports").select("id", { count: "exact", head: true }).eq("emp_hash", hash);
   return {
-    ...base, role: row.role, team: row.team, site: row.site, dept: row.dept, part: row.part, active: row.active,
+    ...base, role: row.role, team: row.team, site: row.site, dept: row.dept, part: row.part, nameMask: row.name_mask, active: row.active,
     registered: !!row.registered_at, reportCount: count ?? 0, self: row.emp_hash === actor.empHash,
   };
 }
@@ -309,7 +319,7 @@ async function actImport(req: Request, body: any) {
     const site = String(r.site ?? "").trim();
     if (!sites.has(site)) { invalid.push({ row: Number(r.row ?? i + 1), reason: `알 수 없는 그룹: ${site || "(빈칸)"}` }); continue; }
     const role = r.role === "manager" ? "manager" : r.role === "worker" ? "worker" : "";
-    byHash.set(await hmacHex(emp), { emp_hash: "", site, dept: cleanText(r.dept) ?? "", part: cleanText(r.part) ?? "", role });
+    byHash.set(await hmacHex(emp), { emp_hash: "", site, dept: cleanText(r.dept) ?? "", part: cleanText(r.part) ?? "", role, name_mask: maskName(r.nameMask) ?? "" });
   }
   const rows = [...byHash.entries()].map(([h, v]: [string, any]) => ({ ...v, emp_hash: h }));
   let result = { inserted: 0, updated: 0, skipped: 0 };
