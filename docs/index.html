@@ -469,6 +469,9 @@ select:disabled{opacity:.6;}
 
 
 
+
+
+
 /* ===== v3: 공통 추가 ===== */
 .item .r4 > span{white-space:nowrap;}
 .item .r4 .unit{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;}
@@ -524,7 +527,7 @@ body.desk #app{display:none;}
 .mcol b{font-family:var(--mono);font-size:12px;}
 .mcol span{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);}
 .dtable-wrap{overflow:auto;border-radius:var(--r-md);}
-.dtable-wrap.tall{max-height:calc(100vh - 290px);padding:0;}
+.dtable-wrap.tall{max-height:calc(100vh - 250px);min-height:240px;padding:0;}
 .dtable{width:100%;border-collapse:separate;border-spacing:0;font-size:13px;}
 .dtable th{position:sticky;top:0;z-index:1;background:linear-gradient(180deg,#F6F9FC,#EDF2F8);color:var(--ink-soft);font-weight:800;font-size:12px;text-align:left;padding:10px 10px;border-bottom:1px solid var(--line2);white-space:nowrap;}
 .dtable td{padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap;vertical-align:middle;}
@@ -599,6 +602,43 @@ body.desk .sheet{max-width:600px;max-height:100vh;height:100vh;border-radius:0;t
 body.desk .sheet-wrap.open .sheet{transform:none;}
 body.desk .grab{display:none;}
 body.desk .toast{bottom:28px;}
+
+/* v3.1: 본사 팝업 · 비밀번호 관리 · 크기 최적화 */
+.dtools .btn{padding:8px 14px;font-size:13px;white-space:nowrap;}
+.dtools .dbtn{padding:8px 16px !important;font-size:13px !important;}
+.dtools input{width:150px;}
+.dtools select{width:120px;}
+.dorg-grid{grid-template-columns:260px minmax(0,1fr);}
+.dtree{max-height:calc(100vh - 110px);}
+.dmodal-wrap{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(15,25,45,.42);backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:opacity .18s;}
+.dmodal-wrap.open{opacity:1;pointer-events:auto;}
+.dmodal{width:100%;max-width:560px;max-height:calc(100vh - 48px);display:flex;flex-direction:column;background:#fff;border-radius:18px;box-shadow:0 24px 60px rgba(15,25,45,.3);transform:translateY(10px);transition:transform .18s;}
+.dmodal-wrap.open .dmodal{transform:none;}
+.dmodal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px 12px;border-bottom:1px solid var(--line);}
+.dmodal-head h3{margin:0;font-size:18px;font-weight:800;letter-spacing:-.3px;}
+.dmodal-body{padding:16px 22px 22px;overflow:auto;}
+.dmodal .panel.box{box-shadow:none;border:none;border-radius:0;padding:0;margin:0;background:none;}
+.dmodal .panel.box::before{display:none;}
+.dmodal .panel.box > h3{display:none;}
+.dmodal #regList{min-height:140px;}
+.dmodal .frow{margin-top:10px;}
+.dmodal .btn-block{margin-top:12px !important;padding:13px;}
+.dconfirm p{margin:0 0 14px;font-size:14px;line-height:1.65;color:var(--ink-soft);}
+.dconfirm .actions-row{margin-top:18px;}
+.pw-direct{display:flex;gap:6px;margin-left:auto;}
+.pw-direct input{width:190px;padding:9px 11px;font-size:13px;}
+.pw-direct .btn{padding:9px 14px;font-size:13px;white-space:nowrap;}
+.dtable td.cb,.dtable th.cb{width:36px;text-align:center;}
+.dtable input[type=checkbox]{width:16px;height:16px;padding:0;margin:0;accent-color:var(--brand);-webkit-appearance:auto;appearance:auto;box-shadow:none;}
+.dtable tr.sel td{background:#EEF6FD;}
+.btn-danger:disabled{opacity:.45;}
+.pw-prog{font-size:13px;color:var(--ink-soft);}
+
+#pwQ{flex:1;min-width:160px;}
+.pw-direct{margin-left:0;}
+.pw-direct input{width:140px;padding:8px 11px;}
+.dtable .btn-sm{padding:5px 11px;font-size:12px;}
+.dtable td{padding:8px 10px;}
 </style>
 </head>
 <body>
@@ -834,6 +874,7 @@ body.desk .toast{bottom:28px;}
           <button data-dgo="ddash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>대시보드</button>
           <button data-dgo="dlist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg>접수 관리</button>
           <button data-dgo="dorg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>조직 · 인원</button>
+          <button data-dgo="dpw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.8-9.8"/><path d="m16 6 3 3"/><path d="m19 3 2 2"/></svg>비밀번호 관리</button>
           <button data-dgo="dimport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>백데이터 업로드</button>
         </nav>
         <div class="side-foot">
@@ -870,13 +911,25 @@ body.desk .toast{bottom:28px;}
             <div>
               <div class="dlisthead">
                 <span id="dEmpCount"></span>
-                <span class="dtools"><input id="dEmpQ" class="mono" placeholder="식별코드 검색"><select id="dEmpRole"><option value="all">권한 전체</option><option value="worker">근로자</option><option value="manager">관리자</option><option value="team">사업팀</option><option value="hq">본사</option></select></span>
+                <span class="dtools"><input id="dEmpQ" class="mono" placeholder="식별코드 검색"><select id="dEmpRole"><option value="all">권한 전체</option><option value="worker">근로자</option><option value="manager">관리자</option><option value="team">사업팀</option><option value="hq">본사</option></select>
+                  <button class="btn btn-primary dbtn" data-modal="reg">＋ 사번 등록</button><button class="btn btn-ghost" data-modal="lk">사번 조회</button></span>
               </div>
               <div class="panel dtable-wrap tall" id="dEmpWrap"></div>
               <div class="dpager" id="dEmpPager"></div>
-              <div class="dforms" id="dRegHolder"></div>
             </div>
           </div>
+        </section>
+
+        <section data-dscreen="dpw" class="hidden">
+          <div class="panel dfilters">
+            <select id="pwRole"><option value="all">권한 전체</option><option value="worker">근로자</option><option value="manager">관리자</option><option value="team">사업팀</option></select>
+            <div class="dorg" id="pwOrg"></div>
+            <select id="pwJoin"><option value="joined">가입 완료자</option><option value="all">가입 여부 전체</option><option value="wait">가입 대기자</option></select>
+            <input type="search" id="pwQ" class="mono" placeholder="식별코드 검색">
+          </div>
+          <div class="dlisthead"><span id="pwCount"></span><span class="note" style="margin:0">초기화 시 기존 비밀번호는 즉시 무효 · 본인이 [최초 등록]으로 재설정</span><span class="dtools"><span class="pw-direct"><input id="pwEmp" class="mono" placeholder="사번 입력" maxlength="20"><button class="btn btn-ghost" id="pwEmpBtn">사번으로 초기화</button></span><button class="btn btn-danger" id="pwBulk" disabled>선택 초기화</button></span></div>
+          <div class="panel dtable-wrap tall" id="pwWrap"></div>
+          <div class="dpager" id="pwPager"></div>
         </section>
 
         <section data-dscreen="dimport" class="hidden">
@@ -907,6 +960,16 @@ body.desk .toast{bottom:28px;}
           </div>
         </section>
       </main>
+    </div>
+    <div class="dmodal-wrap" id="dModal">
+      <div class="dmodal">
+        <div class="dmodal-head"><h3 id="dModalTitle"></h3><button class="icon-btn" id="dModalClose" aria-label="닫기">✕</button></div>
+        <div class="dmodal-body">
+          <div id="dRegHolder" class="hidden"></div>
+          <div id="dLkHolder" class="hidden"></div>
+          <div id="dConfirm" class="hidden"></div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -1735,7 +1798,7 @@ function renderEmps(){
 }
 $('#empQ').addEventListener('input', renderEmps);
 $('#empRefresh').addEventListener('click', loadPeople);
-function reloadPeopleViews(){ if (DESK.on) deskLoadOrg(); else loadPeople(); }
+function reloadPeopleViews(){ if (DESK.on){ if (DESK.screen === 'dpw') deskLoadPw(); else deskLoadOrg(); } else loadPeople(); }
 
 function openEmpSheet(emp){
   var u = state.user;
@@ -1815,10 +1878,10 @@ $('#lkBtn').addEventListener('click', async function(){
         '<span>상태</span><b>'+(r.active ? '사용중' : '사용중지')+'</b><span>제출 건수</span><b>'+r.reportCount+'건</b></div>' +
         '<div class="actions-row">' + (r.reportCount ? '<button class="btn btn-ghost btn-sm" data-lk="reports">제출건 보기</button>' : '') +
         (!r.self ? '<button class="btn btn-ghost btn-sm" data-lk="manage">관리</button>' : '') + '</div></div>';
-      var rb = $('[data-lk=reports]'); if (rb) rb.onclick = function(){ showEmpReports(r.empHash, r.empCode); };
+      var rb = $('[data-lk=reports]'); if (rb) rb.onclick = function(){ closeDeskModal(); showEmpReports(r.empHash, r.empCode); };
       var mb = $('[data-lk=manage]'); if (mb) mb.onclick = async function(){
         if (!state.employees.length) state.employees = await api.employees();
-        var emp = state.employees.find(function(x){ return x.emp_hash === r.empHash; }); if (emp) openEmpSheet(emp); };
+        var emp = state.employees.find(function(x){ return x.emp_hash === r.empHash; }); if (emp){ closeDeskModal(); openEmpSheet(emp); } };
     }
   } catch(e){ fail(e); } finally { btn.disabled = false; }
 });
@@ -1896,10 +1959,11 @@ function monthlyData(A, n){
    14. 본사 PC 콘솔 (화면 너비 900px 이상에서 본사 계정 로그인 시)
    ===================================================================== */
 var DESK = { on:false, screen:'ddash', sel:newOrgSel(), f:{ type:'all', status:'all', grade:'all', from:'', to:'', q:'' }, page:1, emp:null,
-  empSel:newOrgSel(), empQ:'', empRole:'all', empPage:1, imp:null, home:null };
+  empSel:newOrgSel(), empQ:'', empRole:'all', empPage:1, imp:null, home:null,
+  pw:{ role:'all', join:'joined', q:'', sel:newOrgSel(), page:1, checked:{} } };
 var PAGE = 50;
 var DTITLE = { ddash:['대시보드','전사 안전 개선제안 · 아차사고 접수 현황'], dlist:['접수 관리','전사 접수건 조회 · 처리 · 엑셀 다운로드'],
-  dorg:['조직 · 인원','사업팀 › 그룹 › 팀 › 파트 별 인원과 권한 관리'], dimport:['조직 백데이터 업로드','사번별 그룹 · 팀 · 파트 정보를 엑셀로 일괄 반영'] };
+  dorg:['조직 · 인원','사업팀 › 그룹 › 팀 › 파트 별 인원과 권한 관리'], dpw:['비밀번호 관리','근로자 · 관리자 · 사업팀 계정의 비밀번호 초기화'], dimport:['조직 백데이터 업로드','사번별 그룹 · 팀 · 파트 정보를 엑셀로 일괄 반영'] };
 function deskEligible(u){ return u.role === 'hq' && window.matchMedia('(min-width: 900px)').matches; }
 function enterDesk(user){
   DESK.on = true; document.body.classList.add('desk');
@@ -1907,14 +1971,14 @@ function enterDesk(user){
   $('#dRole').innerHTML = roleChip('hq'); $('#dCode').textContent = 'ID ' + user.code; $('#dDemo').classList.toggle('hidden', !DEMO);
   var reg = $('#regPanel'), lk = $('#lkPanel');
   if (!DESK.home) DESK.home = { parent:reg.parentNode, before:lk.nextSibling };
-  $('#dRegHolder').appendChild(reg); $('#dRegHolder').appendChild(lk);
+  $('#dRegHolder').appendChild(reg); $('#dLkHolder').appendChild(lk);
   setupStaffUI();
   DESK.sel = newOrgSel(); DESK.f = { type:'all', status:'all', grade:'all', from:'', to:'', q:'' }; DESK.emp = null; DESK.empSel = newOrgSel();
   dgo('ddash');
 }
 function leaveDesk(){
   if (!DESK.on) return;
-  DESK.on = false; document.body.classList.remove('desk'); $('#view-desk').classList.add('hidden');
+  DESK.on = false; closeDeskModal(); document.body.classList.remove('desk'); $('#view-desk').classList.add('hidden');
   if (DESK.home){ DESK.home.parent.insertBefore($('#regPanel'), DESK.home.before); DESK.home.parent.insertBefore($('#lkPanel'), DESK.home.before); }
 }
 $$('.side-nav button').forEach(function(b){ b.addEventListener('click', function(){ dgo(b.dataset.dgo); }); });
@@ -1930,11 +1994,13 @@ function dgo(s){
   if (s === 'dlist') act.innerHTML = '<button class="btn btn-ghost" data-da="refresh">새로고침</button><button class="btn btn-primary dbtn" data-da="xlsList">조회 결과 엑셀</button>';
   if (s === 'dorg') act.innerHTML = '<button class="btn btn-ghost" data-da="refresh">새로고침</button><button class="btn btn-primary dbtn" data-da="xlsEmp">인원 목록 엑셀</button>';
   if (s === 'dimport') act.innerHTML = '<button class="btn btn-primary dbtn" data-da="tpl">업로드 양식 다운로드</button>';
+  if (s === 'dpw') act.innerHTML = '<button class="btn btn-ghost" data-da="refresh">새로고침</button>';
   $('.desk-main').scrollTop = 0;
   if (s === 'ddash') deskLoadDash();
   if (s === 'dlist') deskLoadList();
   if (s === 'dorg') deskLoadOrg();
   if (s === 'dimport') deskRenderImport();
+  if (s === 'dpw') deskLoadPw();
 }
 $('#dActions').addEventListener('click', function(e){
   var b = e.target.closest('[data-da]'); if (!b) return; var k = b.dataset.da;
@@ -2180,6 +2246,110 @@ $('#impRun').addEventListener('click', async function(){
   } catch(e){ fail(e); btn.disabled = false; }
 });
 
+
+/* ---- 팝업 (사번 등록 · 사번 조회 · 확인창) ---- */
+function openDeskModal(kind, title){
+  ['dRegHolder','dLkHolder','dConfirm'].forEach(function(id){ $('#'+id).classList.toggle('hidden', id !== kind); });
+  $('#dModalTitle').textContent = title; $('#dModal').classList.add('open');
+  var f = kind === 'dRegHolder' ? $('#regList') : kind === 'dLkHolder' ? $('#lkEmp') : null; if (f) setTimeout(function(){ f.focus(); }, 60);
+}
+function closeDeskModal(){ var m = $('#dModal'); if (m) m.classList.remove('open'); }
+$('#dModalClose').addEventListener('click', closeDeskModal);
+$('#dModal').addEventListener('click', function(e){ if (e.target === this) closeDeskModal(); });
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && DESK.on){ closeDeskModal(); closeSheet(); } });
+$$('[data-modal]').forEach(function(b){ b.addEventListener('click', function(){
+  if (b.dataset.modal === 'reg'){ $('#regResult').innerHTML = ''; openDeskModal('dRegHolder', '사번 등록'); }
+  else { $('#lkResult').innerHTML = ''; $('#lkEmp').value = ''; openDeskModal('dLkHolder', '사번 조회'); } }); });
+function deskConfirm(title, html, okLabel, onOk){
+  $('#dConfirm').innerHTML = '<div class="dconfirm">'+html+'<div class="actions-row"><button class="btn btn-ghost" data-c="no">취소</button><button class="btn btn-danger" data-c="ok">'+esc(okLabel)+'</button></div></div>';
+  openDeskModal('dConfirm', title);
+  $('[data-c=no]', $('#dConfirm')).onclick = closeDeskModal;
+  $('[data-c=ok]', $('#dConfirm')).onclick = async function(){ this.disabled = true; try { await onOk(); } finally { closeDeskModal(); } };
+}
+
+/* ---- 비밀번호 관리 ---- */
+var PW_ROLES = ['worker','manager','team'];
+async function deskLoadPw(){
+  $('#pwWrap').innerHTML = '<div class="loading"><span class="spin"></span>불러오는 중</div>';
+  try { state.employees = await api.employees(); } catch(e){ $('#pwWrap').innerHTML = emptyBox('불러오지 못했습니다'); return fail(e); }
+  var P = DESK.pw; P.checked = {};
+  $('#pwRole').value = P.role; $('#pwJoin').value = P.join; $('#pwQ').value = P.q;
+  renderOrgSelects($('#pwOrg'), pwBase(), ['team','site','dept','part'], P.sel, function(){ P.page = 1; deskRenderPw(); });
+  deskRenderPw();
+}
+function pwBase(){ return state.employees.filter(function(e){ return PW_ROLES.indexOf(e.role) > -1; }); }
+function pwFiltered(){
+  var P = DESK.pw, q = normEmp(P.q);
+  return sortEmps(pwBase().filter(function(e){
+    if (P.role !== 'all' && e.role !== P.role) return false;
+    if (P.join === 'joined' && !e.registered_at) return false;
+    if (P.join === 'wait' && e.registered_at) return false;
+    if (!matchOrg(e, P.sel)) return false;
+    if (q && e.emp_code.indexOf(q) < 0) return false;
+    return true; }));
+}
+function deskRenderPw(){
+  var P = DESK.pw, L = pwFiltered(), pages = Math.max(1, Math.ceil(L.length / PAGE));
+  if (P.page > pages) P.page = pages;
+  var rows = L.slice((P.page - 1) * PAGE, P.page * PAGE), selN = Object.keys(P.checked).length;
+  var selectable = rows.filter(function(e){ return e.registered_at; });
+  var allOn = selectable.length && selectable.every(function(e){ return P.checked[e.emp_hash]; });
+  $('#pwCount').innerHTML = '대상 <b>'+L.length.toLocaleString()+'</b>명 · 가입 '+L.filter(function(e){ return e.registered_at; }).length.toLocaleString()+'명';
+  $('#pwBulk').disabled = !selN; $('#pwBulk').textContent = selN ? '선택 '+selN+'명 초기화' : '선택 초기화';
+  $('#pwWrap').innerHTML = rows.length ? '<table class="dtable"><thead><tr><th class="cb"><input type="checkbox" id="pwAll"'+(allOn ? ' checked' : '')+(selectable.length ? '' : ' disabled')+' title="이 페이지 전체 선택"></th><th>식별코드</th><th>권한</th><th>사업팀</th><th>그룹</th><th>팀</th><th>파트</th><th>가입일시</th><th>상태</th><th style="width:110px"></th></tr></thead><tbody>' +
+    rows.map(function(e){ var on = !!P.checked[e.emp_hash];
+      return '<tr class="'+(on ? 'sel' : '')+(e.active ? '' : ' off')+'"><td class="cb"><input type="checkbox" data-pc="'+esc(e.emp_hash)+'"'+(on ? ' checked' : '')+(e.registered_at ? '' : ' disabled')+'></td>' +
+        '<td class="mono"><b>'+esc(e.emp_code)+'</b></td><td>'+roleChip(e.role)+'</td><td>'+esc(e.team || '-')+'</td><td>'+esc(e.site || '-')+'</td><td>'+esc(e.dept || '-')+'</td><td>'+esc(e.part || '-')+'</td>' +
+        '<td class="mono">'+(e.registered_at ? fmt(e.registered_at) : '<span class="mini wait">가입 대기</span>')+'</td><td>'+(e.active ? '<span class="mini">사용중</span>' : '<span class="mini stop">중지</span>')+'</td>' +
+        '<td>'+(e.registered_at ? '<button class="btn btn-ghost btn-sm" data-pr="'+esc(e.emp_hash)+'">초기화</button>' : '')+'</td></tr>'; }).join('') +
+    '</tbody></table>' : emptyBox('조건에 맞는 계정이 없습니다');
+  $('#pwPager').innerHTML = pagerHtml(P.page, pages);
+}
+$('#pwRole').addEventListener('change', function(){ DESK.pw.role = this.value; DESK.pw.page = 1; deskRenderPw(); });
+$('#pwJoin').addEventListener('change', function(){ DESK.pw.join = this.value; DESK.pw.page = 1; deskRenderPw(); });
+$('#pwQ').addEventListener('input', function(){ DESK.pw.q = this.value; DESK.pw.page = 1; deskRenderPw(); });
+$('#pwPager').addEventListener('click', function(e){ var b = e.target.closest('[data-pg]'); if (!b || b.disabled) return; DESK.pw.page = +b.dataset.pg; deskRenderPw(); });
+$('#pwWrap').addEventListener('change', function(e){
+  var P = DESK.pw, t = e.target;
+  if (t.id === 'pwAll'){ $$('[data-pc]', $('#pwWrap')).forEach(function(c){ if (!c.disabled){ if (t.checked) P.checked[c.dataset.pc] = true; else delete P.checked[c.dataset.pc]; } }); }
+  else if (t.dataset.pc){ if (t.checked) P.checked[t.dataset.pc] = true; else delete P.checked[t.dataset.pc]; }
+  deskRenderPw();
+});
+function empByHash(h){ return state.employees.find(function(x){ return x.emp_hash === h; }); }
+function pwTargetHtml(list){
+  return '<div class="kv" style="margin:0 0 6px">' + list.slice(0, 8).map(function(e){ return '<span class="mono">'+esc(e.emp_code)+'</span><b>'+roleChip(e.role)+' '+esc(e.team || '')+(e.site ? ' › ' + esc(fullUnit(e)) : '')+'</b>'; }).join('') + '</div>' +
+    (list.length > 8 ? '<p class="note">외 '+(list.length - 8)+'명</p>' : '');
+}
+async function runPwReset(list){
+  var ok = 0, bad = [];
+  for (var i = 0; i < list.length; i++){
+    try { await api.reset(list[i].emp_hash); ok++; } catch(err){ bad.push(list[i].emp_code + ' (' + err.message + ')'); }
+  }
+  toast(ok + '명 초기화 완료' + (bad.length ? ' · 실패 ' + bad.length + '명' : ''), !!bad.length);
+  if (bad.length) console.warn('초기화 실패', bad);
+  DESK.pw.checked = {}; deskLoadPw();
+}
+$('#pwWrap').addEventListener('click', function(e){
+  var b = e.target.closest('[data-pr]'); if (!b) return; var emp = empByHash(b.dataset.pr); if (!emp) return;
+  deskConfirm('비밀번호 초기화', '<p>아래 계정의 비밀번호를 초기화합니다. 기존 비밀번호로는 더 이상 로그인할 수 없고, 본인이 <b>[최초 등록]</b>에서 사번과 새 비밀번호를 입력해야 합니다.</p>' + pwTargetHtml([emp]), '초기화', function(){ return runPwReset([emp]); });
+});
+$('#pwBulk').addEventListener('click', function(){
+  var list = Object.keys(DESK.pw.checked).map(empByHash).filter(Boolean); if (!list.length) return;
+  deskConfirm('선택 계정 비밀번호 초기화', '<p>선택한 <b>'+list.length+'명</b>의 비밀번호를 초기화합니다. 각 직원에게 [최초 등록]으로 다시 비밀번호를 설정하도록 안내해 주세요.</p>' + pwTargetHtml(list), list.length + '명 초기화', function(){ return runPwReset(list); });
+});
+$('#pwEmpBtn').addEventListener('click', async function(){
+  var id = normEmp($('#pwEmp').value); if (!EMP_RE.test(id)) return toast('사번을 정확히 입력해주세요', true);
+  try {
+    var r = await api.lookup(id);
+    if (!r.exists) return toast('등록되지 않은 사번입니다', true);
+    if (r.role === 'hq') return toast('본사 계정은 이 화면에서 초기화하지 않습니다', true);
+    if (r.self) return toast('본인 계정은 초기화할 수 없습니다', true);
+    if (!r.registered) return toast('아직 가입하지 않은 사번입니다 (초기화 불필요)', true);
+    var emp = { emp_hash:r.empHash, emp_code:r.empCode, role:r.role, team:r.team, site:r.site, dept:r.dept, part:r.part };
+    deskConfirm('비밀번호 초기화', '<p>입력한 사번의 비밀번호를 초기화합니다. 본인이 <b>[최초 등록]</b>에서 새 비밀번호를 설정해야 합니다.</p>' + pwTargetHtml([emp]), '초기화',
+      function(){ $('#pwEmp').value = ''; return runPwReset([emp]); });
+  } catch(e){ fail(e); }
+});
 /* =====================================================================
    15. 시작
    ===================================================================== */
