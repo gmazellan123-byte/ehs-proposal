@@ -2440,6 +2440,10 @@ $('#installBtn').addEventListener('click', async function(){
   } else {
     body = stepHtml(['Chrome 오른쪽 위 '+DOTS_ICO+' 메뉴를 누릅니다', '<b>앱 설치</b> 또는 <b>홈 화면에 추가</b>를 누릅니다', '<b>설치/추가</b>를 누른 뒤 홈 화면의 <b>안전제안</b> 아이콘으로 실행합니다']);
   }
+  if (IS_ANDROID && !IN_APP){
+    body += '<p class="inst-lead" style="margin-top:14px">또는 <b>설치 파일(APK)</b>로 앱을 설치할 수 있습니다.</p>' +
+      '<a class="btn btn-ghost btn-block" href="install.html">갤럭시용 설치 파일 받기</a>';
+  }
   openSheet('<div class="sheet-head"><div class="h"><span class="kicker">INSTALL</span><h3>'+title+'</h3></div><button class="icon-btn" data-close>✕</button></div>' + body +
     '<p class="note" style="margin-top:14px">설치한 아이콘으로 열면 주소창 없이 앱처럼 전체화면으로 실행됩니다. 로그인 정보·데이터는 같은 계정으로 그대로 이어집니다.</p>' +
     '<button class="btn btn-ghost btn-block" data-close style="margin-top:6px">확인</button>');

@@ -288,6 +288,25 @@ PC 또는 휴대폰으로 주소 접속 → **[최초 등록]** → 본인 사�
 - **아이폰(Safari)**: 공유 버튼 → **홈 화면에 추가**
 - **안드로이드(Chrome)**: **⋮** → **홈 화면에 추가** (또는 앱 설치)
 
+### 직원에게 보낼 링크 하나: 설치 안내 페이지
+`https://gmazellan123-byte.github.io/ehs-proposal/install.html`
+- 휴대폰 종류를 자동으로 알아보고 **갤럭시 → APK 다운로드**, **아이폰 → 홈 화면 추가** 안내를 보여줍니다.
+- 기존 주소(`.../ehs-proposal/`)도 그대로 쓸 수 있습니다.
+
+### 갤럭시용 APK (설치 파일)
+- 다운로드 주소(항상 최신): `https://github.com/gmazellan123-byte/ehs-proposal/releases/latest/download/ehs-proposal.apk`
+- APK는 GitHub Pages의 화면을 여는 **껍데기 앱(TWA)** 입니다. 화면을 고치면 APK를 다시 만들지 않아도 바로 반영됩니다.
+- 빌드는 GitHub Actions(`.github/workflows/android-apk.yml`)가 자동으로 합니다. `android/` 폴더가 바뀌면 다시 빌드되고, **Actions → Android APK → Run workflow**로 직접 돌릴 수도 있습니다.
+- 앱 이름·아이콘을 바꿔 새 APK를 내려면 `android/app/build.gradle`의 `versionCode`(정수 +1)와 `versionName`을 올리고 커밋합니다.
+- **서명키**: 저장소 **Settings → Secrets and variables → Actions**에 `ANDROID_KEYSTORE_B64`, `ANDROID_KEYSTORE_PASSWORD`가 등록되어 있어야 빌드됩니다. 서명키 원본(`ehs-proposal.keystore`)과 비밀번호는 사내에 백업하세요. **잃어버리면 기존 설치 앱을 업데이트할 수 없어** 전원이 지우고 다시 설치해야 합니다. 저장소에는 절대 올리지 마세요.
+- **주소줄 없애기(선택)**: 지금은 앱 위쪽에 얇은 주소줄이 보일 수 있습니다. `gmazellan123-byte.github.io` 이름의 공개 저장소를 만들고 `.well-known/assetlinks.json`(아래 내용)과 빈 `.nojekyll` 파일을 올린 뒤 Pages를 켜면, APK를 다시 만들지 않아도 주소줄이 사라집니다.
+  ```json
+  [{"relation":["delegate_permission/common.handle_all_urls"],
+    "target":{"namespace":"android_app","package_name":"io.github.gmazellan123byte.ehsproposal",
+      "sha256_cert_fingerprints":["7F:65:42:0F:86:2A:3F:EC:58:D0:18:91:78:83:50:DC:A1:EF:4B:66:6A:65:56:BD:12:14:56:DE:0B:58:82:DB"]}}]
+  ```
+- 업무폰 보안 정책(MDM)으로 외부 APK 설치가 막힌 현장은 웹 주소나 홈 화면 추가 방식을 쓰세요.
+
 ---
 
 ## 운영 방법

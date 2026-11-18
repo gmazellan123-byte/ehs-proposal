@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FFFFFF">
+<title>안전제안 앱 설치 안내</title>
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root{ --brand:#0B5FA8; --ink:#142039; --ink-soft:#4A5878; --ink-faint:#8693AB; --line:#E2E8F1; --raise:#EEF3F9; --amber:#C97A06; --amber-soft:#FEF4DF; --green:#159A4C; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:'Pretendard',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo',sans-serif; color:var(--ink); background:#fff; line-height:1.55; -webkit-text-size-adjust:100%; }
+  .wrap{ max-width:480px; margin:0 auto; padding:28px 20px 40px; }
+  .head{ display:flex; align-items:center; gap:14px; margin-bottom:22px; }
+  .head img{ width:56px; height:56px; border-radius:14px; border:1px solid var(--line); }
+  .head h1{ font-size:20px; margin:0; }
+  .head p{ margin:2px 0 0; color:var(--ink-soft); font-size:14px; }
+  .tabs{ display:flex; gap:6px; background:var(--raise); padding:4px; border-radius:12px; margin-bottom:16px; }
+  .tabs button{ flex:1; border:0; background:transparent; padding:10px 0; border-radius:9px; font:inherit; font-weight:600; font-size:15px; color:var(--ink-soft); cursor:pointer; }
+  .tabs button.on{ background:#fff; color:var(--ink); box-shadow:0 1px 3px rgba(20,32,57,.12); }
+  .card{ border:1px solid var(--line); border-radius:16px; padding:20px; }
+  .hidden{ display:none !important; }
+  .btn{ display:block; width:100%; text-align:center; text-decoration:none; border:0; border-radius:12px; padding:15px 0; font:inherit; font-weight:700; font-size:16px; cursor:pointer; }
+  .btn-primary{ background:var(--brand); color:#fff; }
+  .btn-ghost{ background:var(--raise); color:var(--ink); margin-top:10px; }
+  ol{ list-style:none; padding:0; margin:18px 0 0; counter-reset:s; }
+  ol li{ display:flex; gap:12px; padding:10px 0; border-top:1px solid var(--line); font-size:15px; }
+  ol li:first-child{ border-top:0; }
+  ol li::before{ counter-increment:s; content:counter(s); flex:0 0 26px; height:26px; border-radius:50%; background:var(--raise); color:var(--brand); font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; margin-top:1px; }
+  .lead{ margin:0 0 14px; font-size:15px; color:var(--ink-soft); }
+  .warn{ background:var(--amber-soft); color:#7A4A03; border-radius:12px; padding:12px 14px; font-size:14px; margin-top:16px; }
+  .url{ display:flex; gap:8px; align-items:center; background:var(--raise); border-radius:10px; padding:10px 12px; margin-top:14px; font-size:13px; word-break:break-all; }
+  .url span{ flex:1; font-family:ui-monospace,Menlo,monospace; }
+  .url button{ border:0; background:#fff; border-radius:8px; padding:7px 10px; font:inherit; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; }
+  .foot{ margin-top:22px; font-size:13px; color:var(--ink-faint); text-align:center; }
+  .foot a{ color:var(--brand); }
+  b.k{ color:var(--ink); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <img src="icon-192.png" alt="">
+    <div>
+      <h1>안전제안 앱 설치</h1>
+      <p>안전 개선제안 · 아차사고 신고</p>
+    </div>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button type="button" data-tab="android">갤럭시 (안드로이드)</button>
+    <button type="button" data-tab="ios">아이폰</button>
+  </div>
+
+  <!-- 갤럭시 -->
+  <section class="card" id="tab-android">
+    <div class="warn hidden" id="inappA" style="margin:0 0 14px">카카오톡·네이버 앱 안에서는 다운로드가 안 될 수 있습니다. 오른쪽 위 <b>⋮</b> → <b>다른 브라우저로 열기</b>를 누른 뒤 진행하세요.</div>
+    <p class="lead">설치 파일(APK)을 받아 설치합니다. 설치 후에는 앱 서랍과 홈 화면의 <b class="k">안전제안</b> 아이콘으로 실행합니다.</p>
+    <a class="btn btn-primary" id="apkLink" href="https://github.com/gmazellan123-byte/ehs-proposal/releases/latest/download/ehs-proposal.apk">갤럭시용 앱 다운로드</a>
+    <ol>
+      <li><div>위 버튼을 눌러 <b class="k">ehs-proposal.apk</b>를 받습니다. "유해할 수 있는 파일" 안내가 나오면 <b class="k">무시하고 다운로드</b>를 누릅니다.</div></li>
+      <li><div>다운로드 완료 알림(또는 <b class="k">내 파일 → 다운로드</b>)에서 파일을 누릅니다.</div></li>
+      <li><div>"출처를 알 수 없는 앱" 안내가 나오면 <b class="k">설정</b> → <b class="k">이 출처 허용</b>을 켜고 뒤로 돌아옵니다.</div></li>
+      <li><div><b class="k">설치</b>를 누릅니다. Play 프로텍트 안내가 나오면 <b class="k">무시하고 설치</b>(또는 세부정보 → 설치)를 누릅니다.</div></li>
+      <li><div>설치된 <b class="k">안전제안</b> 아이콘으로 실행해 사번과 비밀번호로 로그인합니다.</div></li>
+    </ol>
+    <div class="warn">회사·고객사 보안 정책으로 업무폰에 설치가 막혀 있으면 아래 <b>웹으로 바로 사용하기</b>를 이용하세요. 기능은 같습니다.</div>
+    <a class="btn btn-ghost" href="./index.html">웹으로 바로 사용하기</a>
+  </section>
+
+  <!-- 아이폰 -->
+  <section class="card hidden" id="tab-ios">
+    <div class="warn hidden" id="notSafari" style="margin:0 0 14px">아이폰은 <b>Safari</b>에서만 홈 화면에 추가할 수 있습니다. 아래 주소를 복사해 Safari에서 열어 주세요.</div>
+    <p class="lead">아이폰은 설치 파일 없이 <b class="k">홈 화면에 추가</b>하면 앱처럼 전체화면으로 실행됩니다.</p>
+    <a class="btn btn-primary" href="./index.html">안전제안 열기</a>
+    <ol>
+      <li><div>위 버튼으로 안전제안 화면을 Safari에서 엽니다.</div></li>
+      <li><div>화면 아래의 <b class="k">공유 버튼</b>(네모에 위쪽 화살표)을 누릅니다.</div></li>
+      <li><div>메뉴를 아래로 내려 <b class="k">홈 화면에 추가</b>를 누르고, 오른쪽 위 <b class="k">추가</b>를 누릅니다.</div></li>
+      <li><div>홈 화면에 생긴 <b class="k">안전제안</b> 아이콘으로 실행합니다. 주소창 없이 열립니다.</div></li>
+    </ol>
+  </section>
+
+  <div class="url">
+    <span id="appUrl"></span>
+    <button type="button" id="copyBtn">주소 복사</button>
+  </div>
+
+  <p class="foot">로그인은 사번과 본인이 정한 비밀번호로 합니다.<br>처음이면 화면의 <b>[최초 등록]</b>에서 비밀번호를 설정하세요.</p>
+</div>
+<script>
+(function(){
+  var UA = navigator.userAgent || '';
+  var IS_IOS = /iPhone|iPad|iPod/i.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var IN_APP = /KAKAOTALK|NAVER\(inapp|Instagram|FBAN|FBAV|Line\/|DaumApps|everytimeApp/i.test(UA);
+  var NOT_SAFARI = IS_IOS && (IN_APP || /CriOS|FxiOS|EdgiOS|Whale|NAVER/i.test(UA));
+  var appUrl = location.href.replace(/install\.html.*$/, 'index.html');
+  document.getElementById('appUrl').textContent = appUrl;
+
+  function show(t){
+    document.querySelectorAll('[data-tab]').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-tab') === t); });
+    document.getElementById('tab-android').classList.toggle('hidden', t !== 'android');
+    document.getElementById('tab-ios').classList.toggle('hidden', t !== 'ios');
+  }
+  document.querySelectorAll('[data-tab]').forEach(function(b){ b.addEventListener('click', function(){ show(b.getAttribute('data-tab')); }); });
+  show(IS_IOS ? 'ios' : 'android');
+  if (NOT_SAFARI) document.getElementById('notSafari').classList.remove('hidden');
+  if (IN_APP && !IS_IOS) document.getElementById('inappA').classList.remove('hidden');
+
+  document.getElementById('copyBtn').addEventListener('click', function(){
+    var done = function(){ var b = document.getElementById('copyBtn'); b.textContent = '복사됨'; setTimeout(function(){ b.textContent = '주소 복사'; }, 1500); };
+    if (navigator.clipboard) navigator.clipboard.writeText(appUrl).then(done, function(){ prompt('주소를 복사하세요', appUrl); });
+    else prompt('주소를 복사하세요', appUrl);
+  });
+})();
+</script>
+</body>
+</html>
