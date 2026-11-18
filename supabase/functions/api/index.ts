@@ -1,0 +1,351 @@
+// =====================================================================
+//  안전보건 제안 시스템 v3 · Edge Function "api"
+//  역할: 사번을 서버 비밀키로 HMAC-SHA256 처리(단방향 암호화)하고,
+//        가입·로그인 보조·인원관리(소속·권한 범위 검사 포함)를 제공합니다.
+//  사번 원문은 저장하거나 로그로 남기지 않습니다.
+//
+//  권한 범위
+//    본사(hq)        : 모든 인원·모든 권한 관리
+//    사업팀(team)    : 소속 팀의 근로자·관리자 관리
+//    관리자(manager) : 소속 그룹의 근로자 관리
+//    조직 백데이터(사번별 그룹·팀·파트) 일괄 업로드는 본사만 가능
+//    근로자(worker)  : 인원관리 불가
+//
+//  필요한 Secrets (대시보드 > Edge Functions > Secrets)
+//    EMP_PEPPER            : 사번 암호화용 비밀키 (40자 이상, 절대 변경·유출 금지)
+//    INITIAL_ADMIN_EMP_ID  : 최초 본사 관리자 사번 (본사 계정이 하나도 없을 때만 사용)
+//    ALLOWED_ORIGIN        : (선택) 접속 허용 주소. 예) https://아이디.github.io
+// =====================================================================
+import { createClient } from "npm:@supabase/supabase-js@2";
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
+const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const PEPPER = Deno.env.get("EMP_PEPPER") ?? "";
+const INITIAL_ADMIN = normEmp(Deno.env.get("INITIAL_ADMIN_EMP_ID") ?? "");
+const ALLOWED_ORIGIN = (Deno.env.get("ALLOWED_ORIGIN") ?? "*").trim() || "*";
+
+const LOGIN_DOMAIN = "emp.ehs.local"; // 메일이 발송되지 않는 내부용 가상 주소
+const EMP_RE = /^[A-Z0-9]{4,20}$/;
+const HASH_RE = /^[0-9a-f]{64}$/;
+const PW_MIN = 8;
+const ROLES = ["worker", "manager", "team", "hq"] as const;
+type Role = typeof ROLES[number];
+type Unit = { role: Role; team: string | null; site: string | null; dept?: string | null; part?: string | null };
+type Actor = Unit & { userId: string; empHash: string };
+
+const db = createClient(SUPABASE_URL, SERVICE_KEY, {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
+
+class HttpError extends Error {
+  constructor(public status: number, message: string) { super(message); }
+}
+
+function cors(origin: string | null) {
+  const allow = ALLOWED_ORIGIN === "*" ? "*" : (origin === ALLOWED_ORIGIN ? origin : ALLOWED_ORIGIN);
+  return {
+    "Access-Control-Allow-Origin": allow,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  };
+}
+
+function cleanText(v: unknown, max = 50): string | null {
+  const t = String(v ?? "").trim().replace(/\s+/g, " ");
+  return t ? t.slice(0, max) : null;
+}
+
+function normEmp(v: unknown): string {
+  return String(v ?? "").trim().toUpperCase().replace(/\s+/g, "");
+}
+
+async function hmacHex(text: string): Promise<string> {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey("raw", enc.encode(PEPPER), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(text));
+  return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function hashEmp(raw: unknown) {
+  const emp = normEmp(raw);
+  if (!EMP_RE.test(emp)) throw new HttpError(400, "사번 형식이 올바르지 않습니다 (영문·숫자 4~20자)");
+  return await hmacHex(emp);
+}
+
+function loginIdOf(hash: string) {
+  return `u${hash.slice(0, 40)}@${LOGIN_DOMAIN}`;
+}
+
+// ---------------------------------------------------------------------
+// 권한·소속
+// ---------------------------------------------------------------------
+async function getActor(req: Request): Promise<Actor> {
+  const token = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+  if (!token) throw new HttpError(401, "로그인이 필요합니다");
+  const { data, error } = await db.auth.getUser(token);
+  if (error || !data?.user) throw new HttpError(401, "로그인이 만료되었습니다. 다시 로그인해주세요");
+  const { data: me } = await db.from("employees")
+    .select("emp_hash, role, team, site, active").eq("user_id", data.user.id).maybeSingle();
+  if (!me || !me.active) throw new HttpError(403, "사용이 중지되었거나 등록되지 않은 계정입니다");
+  if (me.role === "worker") throw new HttpError(403, "인원관리 권한이 없습니다");
+  return { userId: data.user.id, empHash: me.emp_hash, role: me.role, team: me.team, site: me.site };
+}
+
+function canManage(a: Actor, t: Unit) {
+  if (a.role === "hq") return true;
+  if (a.role === "team") return (t.role === "worker" || t.role === "manager") && !!t.team && t.team === a.team;
+  if (a.role === "manager") return t.role === "worker" && !!t.site && t.site === a.site;
+  return false;
+}
+
+// 권한에 맞는 소속으로 정리하고 조직표(org_sites)로 검증
+async function resolveUnit(roleRaw: unknown, teamRaw: unknown, siteRaw: unknown, deptRaw?: unknown, partRaw?: unknown): Promise<Unit> {
+  const role = String(roleRaw ?? "") as Role;
+  if (!ROLES.includes(role)) throw new HttpError(400, "권한 값이 올바르지 않습니다");
+  if (role === "worker" || role === "manager") {
+    const site = String(siteRaw ?? "").trim();
+    const { data } = await db.from("org_sites").select("team").eq("site", site).maybeSingle();
+    if (!data) throw new HttpError(400, "그룹을 선택해주세요");
+    return { role, team: data.team, site, dept: cleanText(deptRaw), part: cleanText(partRaw) };
+  }
+  if (role === "team") {
+    const team = String(teamRaw ?? "").trim();
+    const { count } = await db.from("org_sites").select("site", { count: "exact", head: true }).eq("team", team);
+    if (!count) throw new HttpError(400, "사업팀을 선택해주세요");
+    return { role, team, site: null };
+  }
+  return { role: "hq", team: null, site: null };
+}
+
+async function findEmployee(hash: string) {
+  const { data } = await db.from("employees")
+    .select("emp_hash, emp_code, role, team, site, dept, part, active, user_id, registered_at, created_at")
+    .eq("emp_hash", hash).maybeSingle();
+  return data;
+}
+
+async function targetHash(body: any) {
+  if (body.empHash) {
+    const h = String(body.empHash);
+    if (!HASH_RE.test(h)) throw new HttpError(400, "잘못된 요청입니다");
+    return h;
+  }
+  return await hashEmp(body.empId);
+}
+
+// ---------------------------------------------------------------------
+// 로그인·가입
+// ---------------------------------------------------------------------
+async function actResolve(body: any) {
+  const hash = await hashEmp(body.empId);
+  return { loginId: loginIdOf(hash) };   // DB 조회 없음 → 사번 존재 여부 비노출
+}
+
+async function createLoginUser(loginId: string, password: string) {
+  const attempt = () => db.auth.admin.createUser({
+    email: loginId, password, email_confirm: true, app_metadata: { app: "ehs-proposal" },
+  });
+  let { data, error } = await attempt();
+  if (error && /already|registered|exists/i.test(String(error.message))) {
+    // 인원 연결이 끊긴 잔여 계정이면 정리 후 다시 생성
+    const { data: oldId } = await db.rpc("auth_user_id_by_email", { p_email: loginId });
+    if (oldId) {
+      const { data: linked } = await db.from("employees").select("emp_hash").eq("user_id", oldId).maybeSingle();
+      if (!linked) {
+        await db.auth.admin.deleteUser(oldId as string);
+        ({ data, error } = await attempt());
+      }
+    }
+  }
+  if (error || !data?.user) {
+    const msg = String(error?.message ?? "");
+    if (/password/i.test(msg)) throw new HttpError(400, "비밀번호가 보안 기준에 맞지 않습니다. 더 길고 복잡하게 설정해주세요");
+    if (/already|registered|exists/i.test(msg)) throw new HttpError(409, "이미 가입된 사번입니다. 관리자에게 초기화를 요청하세요");
+    throw new HttpError(500, "계정 생성 중 오류가 발생했습니다");
+  }
+  return data.user.id;
+}
+
+async function actSignup(body: any) {
+  const emp = normEmp(body.empId);
+  const password = String(body.password ?? "");
+  if (password.length < PW_MIN) throw new HttpError(400, `비밀번호는 ${PW_MIN}자 이상이어야 합니다`);
+  const hash = await hashEmp(emp);
+
+  let row = await findEmployee(hash);
+  // 최초 본사 관리자 자동 등록 (본사 계정이 없고, Secrets 에 지정한 사번일 때만)
+  if (!row && INITIAL_ADMIN && emp === INITIAL_ADMIN) {
+    const { count } = await db.from("employees").select("emp_hash", { count: "exact", head: true }).eq("role", "hq");
+    if (!count) {
+      const { error } = await db.from("employees").insert({ emp_hash: hash, role: "hq" });
+      if (error) throw new HttpError(500, "본사 관리자 등록 중 오류가 발생했습니다");
+      row = await findEmployee(hash);
+    }
+  }
+  if (!row) throw new HttpError(403, "등록되지 않은 사번입니다. 소속 관리자에게 사번 등록을 요청하세요");
+  if (!row.active) throw new HttpError(403, "사용이 중지된 사번입니다. 관리자에게 문의하세요");
+  if (row.user_id) throw new HttpError(409, "이미 가입된 사번입니다. 비밀번호를 잊었다면 관리자에게 초기화를 요청하세요");
+
+  const loginId = loginIdOf(hash);
+  const uid = await createLoginUser(loginId, password);
+  const { data: upd, error: uErr } = await db.from("employees")
+    .update({ user_id: uid, registered_at: new Date().toISOString() })
+    .eq("emp_hash", hash).is("user_id", null).select("emp_hash");
+  if (uErr || !upd?.length) {
+    await db.auth.admin.deleteUser(uid);
+    throw new HttpError(409, "가입 처리 중 충돌이 발생했습니다. 다시 시도해주세요");
+  }
+  return { ok: true, loginId };
+}
+
+// ---------------------------------------------------------------------
+// 인원관리 (관리자·사업팀·본사)
+// ---------------------------------------------------------------------
+async function actRegister(req: Request, body: any) {
+  const actor = await getActor(req);
+  const unit = await resolveUnit(body.role, body.team, body.site, body.dept, body.part);
+  if (!canManage(actor, unit)) throw new HttpError(403, "해당 권한·소속으로 등록할 수 없습니다 (관리 범위 밖)");
+
+  const list: string[] = Array.isArray(body.empIds) ? body.empIds : [];
+  if (!list.length) throw new HttpError(400, "등록할 사번을 입력하세요");
+  if (list.length > 500) throw new HttpError(400, "한 번에 최대 500건까지 등록할 수 있습니다");
+
+  const invalid: string[] = [];
+  const hashes = new Set<string>();
+  for (const raw of list) {
+    const emp = normEmp(raw);
+    if (!emp) continue;
+    if (!EMP_RE.test(emp)) { invalid.push(emp); continue; }
+    hashes.add(await hmacHex(emp));
+  }
+  const rows = [...hashes].map((h) => ({ emp_hash: h, role: unit.role, team: unit.team, site: unit.site, dept: unit.dept ?? null, part: unit.part ?? null }));
+  let added = 0;
+  if (rows.length) {
+    const { data, error } = await db.from("employees")
+      .upsert(rows, { onConflict: "emp_hash", ignoreDuplicates: true }).select("emp_hash");
+    if (error) throw new HttpError(500, "사번 등록 중 오류가 발생했습니다");
+    added = data?.length ?? 0;
+  }
+  return { added, skipped: rows.length - added, invalid };
+}
+
+async function actLookup(req: Request, body: any) {
+  const actor = await getActor(req);
+  const hash = await hashEmp(body.empId);
+  const row = await findEmployee(hash);
+  const base = { empHash: hash, empCode: hash.slice(0, 8).toUpperCase(), exists: !!row };
+  if (!row) return base;
+  if (!canManage(actor, row) && row.emp_hash !== actor.empHash) return { ...base, outOfScope: true };
+  const { count } = await db.from("reports").select("id", { count: "exact", head: true }).eq("emp_hash", hash);
+  return {
+    ...base, role: row.role, team: row.team, site: row.site, dept: row.dept, part: row.part, active: row.active,
+    registered: !!row.registered_at, reportCount: count ?? 0, self: row.emp_hash === actor.empHash,
+  };
+}
+
+async function actUpdate(req: Request, body: any) {
+  const actor = await getActor(req);
+  const hash = await targetHash(body);
+  if (hash === actor.empHash) throw new HttpError(400, "본인 계정의 권한·소속은 직접 변경할 수 없습니다");
+  const row = await findEmployee(hash);
+  if (!row) throw new HttpError(404, "등록되지 않은 사번입니다");
+  if (!canManage(actor, row)) throw new HttpError(403, "관리 범위 밖의 인원입니다");
+
+  const patch: Record<string, unknown> = {};
+  if (body.role !== undefined || body.site !== undefined || body.team !== undefined || body.dept !== undefined || body.part !== undefined) {
+    const unit = await resolveUnit(body.role ?? row.role, body.team ?? row.team, body.site ?? row.site,
+      body.dept !== undefined ? body.dept : row.dept, body.part !== undefined ? body.part : row.part);
+    if (!canManage(actor, unit)) throw new HttpError(403, "해당 권한·소속으로 변경할 수 없습니다 (관리 범위 밖)");
+    Object.assign(patch, unit);
+  }
+  if (typeof body.active === "boolean") patch.active = body.active;
+  if (!Object.keys(patch).length) return { ok: true };
+  const { error } = await db.from("employees").update(patch).eq("emp_hash", hash);
+  if (error) throw new HttpError(500, "변경 중 오류가 발생했습니다");
+  return { ok: true };
+}
+
+async function actReset(req: Request, body: any) {
+  const actor = await getActor(req);
+  const hash = await targetHash(body);
+  if (hash === actor.empHash) throw new HttpError(400, "본인 계정은 초기화할 수 없습니다");
+  const row = await findEmployee(hash);
+  if (!row) throw new HttpError(404, "등록되지 않은 사번입니다");
+  if (!canManage(actor, row)) throw new HttpError(403, "관리 범위 밖의 인원입니다");
+  if (!row.user_id) return { ok: true, message: "아직 가입하지 않은 사번입니다" };
+  await db.from("employees").update({ user_id: null, registered_at: null }).eq("emp_hash", hash);
+  await db.auth.admin.deleteUser(row.user_id);
+  return { ok: true, message: "초기화되었습니다. 해당 직원이 [최초 등록]으로 다시 가입하면 됩니다" };
+}
+
+async function actRemove(req: Request, body: any) {
+  const actor = await getActor(req);
+  const hash = await targetHash(body);
+  if (hash === actor.empHash) throw new HttpError(400, "본인 계정은 삭제할 수 없습니다");
+  const row = await findEmployee(hash);
+  if (!row) throw new HttpError(404, "등록되지 않은 사번입니다");
+  if (!canManage(actor, row)) throw new HttpError(403, "관리 범위 밖의 인원입니다");
+  if (row.user_id) await db.auth.admin.deleteUser(row.user_id);
+  await db.from("employees").delete().eq("emp_hash", hash);
+  return { ok: true };
+}
+
+// [본사] 조직 백데이터 일괄 반영: rows = [{ empId, site(그룹), dept(팀), part(파트), role(worker|manager|'') }]
+async function actImport(req: Request, body: any) {
+  const actor = await getActor(req);
+  if (actor.role !== "hq") throw new HttpError(403, "조직 백데이터 업로드는 본사만 가능합니다");
+  const list: any[] = Array.isArray(body.rows) ? body.rows : [];
+  if (!list.length) throw new HttpError(400, "업로드할 데이터가 없습니다");
+  if (list.length > 1000) throw new HttpError(400, "한 번에 최대 1,000건까지 처리할 수 있습니다");
+  const { data: org } = await db.from("org_sites").select("site");
+  const sites = new Set((org ?? []).map((o: any) => o.site));
+  const invalid: { row: number; reason: string }[] = [];
+  const byHash = new Map<string, unknown>();
+  for (let i = 0; i < list.length; i++) {
+    const r = list[i] ?? {};
+    const emp = normEmp(r.empId);
+    if (!EMP_RE.test(emp)) { invalid.push({ row: Number(r.row ?? i + 1), reason: "사번 형식 오류" }); continue; }
+    const site = String(r.site ?? "").trim();
+    if (!sites.has(site)) { invalid.push({ row: Number(r.row ?? i + 1), reason: `알 수 없는 그룹: ${site || "(빈칸)"}` }); continue; }
+    const role = r.role === "manager" ? "manager" : r.role === "worker" ? "worker" : "";
+    byHash.set(await hmacHex(emp), { emp_hash: "", site, dept: cleanText(r.dept) ?? "", part: cleanText(r.part) ?? "", role });
+  }
+  const rows = [...byHash.entries()].map(([h, v]: [string, any]) => ({ ...v, emp_hash: h }));
+  let result = { inserted: 0, updated: 0, skipped: 0 };
+  if (rows.length) {
+    const { data, error } = await db.rpc("import_employees", { p_rows: rows });
+    if (error) throw new HttpError(500, "백데이터 반영 중 오류가 발생했습니다");
+    result = data as typeof result;
+  }
+  return { ...result, invalid };
+}
+
+// ---------------------------------------------------------------------
+Deno.serve(async (req) => {
+  const headers = { ...cors(req.headers.get("Origin")), "Content-Type": "application/json; charset=utf-8" };
+  if (req.method === "OPTIONS") return new Response("ok", { headers });
+  if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST only" }), { status: 405, headers });
+  try {
+    if (!PEPPER || PEPPER.length < 32) throw new HttpError(500, "서버 설정 오류: EMP_PEPPER 가 없거나 너무 짧습니다");
+    const body = await req.json().catch(() => ({}));
+    let result: unknown;
+    switch (body.action) {
+      case "resolve":        result = await actResolve(body); break;
+      case "signup":         result = await actSignup(body); break;
+      case "admin_register": result = await actRegister(req, body); break;
+      case "admin_lookup":   result = await actLookup(req, body); break;
+      case "admin_update":   result = await actUpdate(req, body); break;
+      case "admin_reset":    result = await actReset(req, body); break;
+      case "admin_remove":   result = await actRemove(req, body); break;
+      case "admin_import":   result = await actImport(req, body); break;
+      default: throw new HttpError(400, "알 수 없는 요청입니다");
+    }
+    return new Response(JSON.stringify(result), { status: 200, headers });
+  } catch (e) {
+    const status = e instanceof HttpError ? e.status : 500;
+    const message = e instanceof HttpError ? e.message : "서버 오류가 발생했습니다";
+    if (!(e instanceof HttpError)) console.error("unexpected", (e as Error)?.message);
+    return new Response(JSON.stringify({ error: message }), { status, headers });
+  }
+});
