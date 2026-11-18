@@ -5,7 +5,7 @@
 // =====================================================================
 window.APP_CONFIG = {
   // ① Supabase > Project Settings > API (또는 Connect 버튼) 에서 복사
-  SUPABASE_URL: "",   // https://txwnxndkgdfietzyjtij.supabase.co
+  SUPABASE_URL: "https://txwnxndkgdfietzyjtij.supabase.co",
 
   // ② Publishable key (sb_publishable_...) 또는 legacy anon key
   //    ※ 공개되어도 되는 키입니다. service_role / secret 키는 절대 넣지 마세요.
