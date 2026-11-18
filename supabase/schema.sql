@@ -314,6 +314,11 @@ alter table public.report_logs enable row level security;
 
 revoke all on public.org_sites, public.employees, public.reports, public.report_logs from anon, authenticated;
 
+-- 서버 함수(service_role)용 권한 — 최근 Supabase 프로젝트는 새 표에 자동으로 권한을 주지 않으므로 명시
+grant usage on schema public to service_role, authenticated;
+grant all on public.org_sites, public.employees, public.reports, public.report_logs to service_role;
+grant usage, select on all sequences in schema public to service_role;
+
 grant select on public.org_sites, public.employees, public.reports, public.report_logs to authenticated;
 grant insert (type, proposed_grade, location, category, occurred_at, detail, request, prevention, photo_path)
   on public.reports to authenticated;
