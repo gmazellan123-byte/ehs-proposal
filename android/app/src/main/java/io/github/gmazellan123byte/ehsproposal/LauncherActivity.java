@@ -31,15 +31,8 @@ public class LauncherActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // Setting an orientation crashes the app due to the transparent background on Android 8.0
-        // Oreo and below. We only set the orientation on Oreo and above. This only affects the
-        // splash screen and Chrome will still respect the orientation.
-        // See https://github.com/GoogleChromeLabs/bubblewrap/issues/496 for details.
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT);
-        } else {
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
-        }
+        // 1.0.1: 투명 시작 화면에서 화면 방향을 강제로 고정하면 일부 기기에서 앱이 강제 종료될 수 있어 제거.
+        // 세로 방향은 매니페스트의 SCREEN_ORIENTATION 설정으로 브라우저(Chrome)가 적용함.
     }
 
     @Override

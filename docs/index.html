@@ -867,6 +867,18 @@ span.rt-hi{background:#DC2626;} span.rt-md{background:#EA7A0C;} span.rt-lo{backg
 .tl-del.armed{color:#fff;background:var(--red);border-color:transparent;}
 .timeline li.k-edit .tx{color:var(--ink-soft);}
 .tl-hint{display:block;margin-top:3px;font-family:inherit;letter-spacing:0;text-transform:none;font-size:11.5px;font-weight:600;color:var(--ink-faint);}
+
+/* ===== v4.9: 설치 카드 설명 — 한 줄 ===== */
+.install-card .ic-text{container-type:inline-size;}
+.install-card .ic-text span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:clamp(8.5px,2.9vw,11.5px);letter-spacing:-.02em;}
+@supports (container-type:inline-size){ .install-card .ic-text span{font-size:clamp(8px,6.1cqw,12px);} }
+@media (max-width:370px){
+  .install-card{gap:8px;padding:10px 30px 10px 10px;}
+  .install-card .ic-icon{width:36px;height:36px;border-radius:10px;}
+  .install-card .ic-icon img{height:24px;}
+  .install-card .ic-btn{padding:8px 11px;font-size:13px;}
+  .install-card .ic-close{top:3px;right:3px;}
+}
 </style>
 </head>
 <body>
@@ -941,7 +953,7 @@ span.rt-hi{background:#DC2626;} span.rt-md{background:#EA7A0C;} span.rt-lo{backg
 
     <div class="install-card hidden" id="installCard">
       <div class="ic-icon"><img alt="" data-logo></div>
-      <div class="ic-text"><b>앱으로 설치하기</b><span id="installSub">홈 화면 아이콘으로 주소창 없이 전체화면 실행</span></div>
+      <div class="ic-text"><b>앱으로 설치하기</b><span id="installSub">주소창 없이 앱처럼 전체화면 실행</span></div>
       <button type="button" class="btn btn-primary ic-btn" id="installBtn">설치</button>
       <button type="button" class="ic-close" id="installClose" aria-label="닫기">✕</button>
     </div>
@@ -3185,9 +3197,9 @@ function refreshInstallCard(){
   var show = mobile && !isStandalone() && !installDismissed();
   card.classList.toggle('hidden', !show);
   if (!show) return;
-  $('#installSub').textContent = IN_APP ? '카카오톡 등 앱 안에서는 설치가 안 됩니다. 눌러서 방법 보기'
-    : INSTALL.evt ? '버튼을 누르면 바로 설치됩니다 (주소창 없는 전체화면)'
-    : '홈 화면 아이콘으로 주소창 없이 전체화면 실행';
+  $('#installSub').textContent = IN_APP ? '앱 안에서는 설치 불가 · 눌러서 방법 보기'
+    : INSTALL.evt ? '누르면 바로 설치 · 주소창 없는 전체화면'
+    : '주소창 없이 앱처럼 전체화면 실행';
 }
 window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); INSTALL.evt = e; refreshInstallCard(); });
 window.addEventListener('appinstalled', function(){ INSTALL.evt = null; refreshInstallCard(); toast('홈 화면에 설치되었습니다. 이제 아이콘으로 실행하세요'); });
