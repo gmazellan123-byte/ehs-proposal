@@ -172,7 +172,7 @@ var TYPES = ['개선제안','위험성평가','아차사고'];
 function ub64(s){ var b = atob(s), u = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
 /* KEY 원본: 파일 선택 · 끌어다 놓기 · 1번 칸에 잘못 넣은 파일 · 붙여넣은 내용 중 하나 */
 var KEYSRC = null;   // { name, text }
-function isKeyText(t){ try { var o = JSON.parse(t); return !!o && (o.format === 'ehs-key' || o.format === 'ehs-matchkey'); } catch(e){ return false; } }
+function isKeyText(t){ try { var o = JSON.parse(t); return !!o && (o.format === 'ehs-key' || o.format === 'ehs-matchkey' || o.format === 'ehs-key-shared'); } catch(e){ return false; } }
 async function setKeySource(file){
   var t = ''; try { t = await file.text(); } catch(e){}
   if (!isKeyText(t)){ toast('"' + file.name + '"은(는) KEY 파일이 아닙니다. 본사에서 받은 KEY_….ehskey 파일을 넣어 주세요', true); return false; }
@@ -190,6 +190,7 @@ async function openKey(){
   var btn = $('#keyBtn'); btn.disabled = true; btn.textContent = '여는 중…';
   try {
     var pack = JSON.parse(KEYSRC.text);
+    if (pack.format === 'ehs-key-shared'){ await openShared(pack, pw); return; }
     if (pack.format !== 'ehs-key' && pack.format !== 'ehs-matchkey') throw new Error('KEY 파일이 아닙니다');
     var enc = new TextEncoder();
     var base = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveKey']);
@@ -208,6 +209,46 @@ async function openKey(){
   finally { btn.disabled = false; btn.textContent = 'KEY 열기'; }
 }
 
+/* ---------- 전사 공통 KEY (v3): 비밀번호 + 데이터 파일의 대조코드가 있어야 그 사람 항목만 풀림 ---------- */
+var SHARED = null;   // { M, entries, aad, iter, tried:{} }
+async function openShared(pack, pw){
+  var enc = new TextEncoder(), meta = pack.meta || {};
+  if (meta.expires && new Date(meta.expires + 'T23:59:59') < new Date()) throw new Error('유효기간(' + meta.expires + ')이 지난 KEY입니다. 본사에 새 KEY를 요청하세요');
+  var base = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveBits']);
+  var M = new Uint8Array(await crypto.subtle.deriveBits({ name:'PBKDF2', hash:pack.kdf.hash, salt:ub64(pack.kdf.salt), iterations:pack.kdf.iter }, base, 256));
+  var aad = enc.encode('ehs-key-shared|' + (meta.expires || ''));
+  try { var ck = await crypto.subtle.importKey('raw', M, 'AES-GCM', false, ['decrypt']), cp = String(pack.chk).split('.');
+    await crypto.subtle.decrypt({ name:'AES-GCM', iv:ub64(cp[0]), additionalData:aad }, ck, ub64(cp[1])); }
+  catch(e){ throw new Error('비밀번호가 올바르지 않거나 KEY 파일이 손상·변조되었습니다'); }
+  SHARED = { M:M, entries:pack.entries || {}, aad:aad, iter:(pack.per && pack.per.iter) || 20000, tried:{} };
+  S.key = {}; S.keyMeta = { scope:meta.scope || '전사 공통', created:meta.created, count:meta.count, expires:meta.expires };
+  $('#keyPw').value = ''; KEYSRC = null; if ($('#keyText')) $('#keyText').value = '';
+  await resolveShared();
+}
+async function resolveShared(){
+  if (!SHARED) return;
+  var enc = new TextEncoder(), dec = new TextDecoder(), todo = [], seen = {}, noCode = 0;
+  S.rows.forEach(function(r){ if (!r.lcode){ if (r.code) noCode++; return; } if (SHARED.tried[r.lcode] || seen[r.lcode]) return; seen[r.lcode] = 1; todo.push(r); });
+  for (var i = 0; i < todo.length; i += 20){
+    if (todo.length > 40) $('#c-key .st').innerHTML = '데이터 파일의 인원 확인 중… ' + Math.round(i / todo.length * 100) + '%';
+    await Promise.all(todo.slice(i, i + 20).map(async function(r){
+      SHARED.tried[r.lcode] = 1;
+      var base = await crypto.subtle.importKey('raw', enc.encode(r.lcode), 'PBKDF2', false, ['deriveBits']);
+      var bits = new Uint8Array(await crypto.subtle.deriveBits({ name:'PBKDF2', hash:'SHA-256', salt:SHARED.M, iterations:SHARED.iter }, base, 512));
+      var id = Array.prototype.map.call(bits.slice(0, 12), function(x){ return ('0' + x.toString(16)).slice(-2); }).join('');
+      var e = SHARED.entries[id]; if (!e) return;
+      try { var k = await crypto.subtle.importKey('raw', bits.slice(32, 64), 'AES-GCM', false, ['decrypt']), p = e.split('.');
+        var v = JSON.parse(dec.decode(await crypto.subtle.decrypt({ name:'AES-GCM', iv:ub64(p[0]), additionalData:SHARED.aad }, k, ub64(p[1]))));
+        S.key[r.code] = { id:v[0], name:v[1] || '' }; } catch(_){}
+    }));
+  }
+  var n = Object.keys(S.key).length;
+  setDone('key', '<b>' + esc(S.keyMeta.scope) + '</b> KEY · 이 데이터의 <b>' + n.toLocaleString() + '명</b> 확인 · ' + esc(S.keyMeta.created || '') + ' 발급' + (S.keyMeta.expires ? ' · <b>' + esc(S.keyMeta.expires) + '</b>까지 사용' : '') +
+    (S.rows.length ? '' : ' <span class="dim">(데이터 파일을 넣으면 그 안의 인원만 바뀝니다)</span>'));
+  if (noCode) toast('예전에 내보낸 데이터 파일에는 대조코드가 없어 공통 KEY로 바꿀 수 없습니다. 휴대폰에서 다시 [내보내기] 해 주세요', true);
+  rematch();
+}
+
 /* ---------- 엑셀 읽기 공통 ---------- */
 async function readSheet(file){
   var wb = XLSX.read(await file.arrayBuffer(), { type:'array' });
@@ -219,7 +260,7 @@ function colOf(head, names){ return head.findIndex(function(h){ return names.ind
 /* ---------- 1. 받은 데이터 (모바일·PC에서 내보낸 접수목록 엑셀/CSV, 여러 개 가능) ---------- */
 var D_COLS = { no:['접수번호'], type:['유형'], status:['상태'], team:['사업팀'], site:['그룹'], dept:['팀'], part:['파트'], loc:['장소'], pg:['제안등급'], fg:['결정등급'],
   rl:['위험정도(제출)'], fr:['위험정도(반영)'], cat:['사고유형/위험요인','사고유형'], occ:['발생일시'], detail:['상세내용/상황설명','상세내용'], req:['조치요청사항'], prev:['재발방지의견'],
-  cmt:['처리의견'], code:['제출자식별코드','식별코드'], mask:['제출자성명(마스킹)','성명(마스킹)'], at:['제출일시'], closed:['종료일시'], empId:['사번'], realName:['성명(실명)'] };
+  cmt:['처리의견'], code:['제출자식별코드','식별코드'], lcode:['대조코드'], mask:['제출자성명(마스킹)','성명(마스킹)'], at:['제출일시'], closed:['종료일시'], empId:['사번'], realName:['성명(실명)'] };
 async function openData(list){
   var files = Array.prototype.slice.call(list && list.length ? list : $('#dataFile').files); if (!files.length) return;
   var keys = files.filter(function(f){ return /\.(ehskey|json|txt)$/i.test(f.name); });
@@ -238,7 +279,7 @@ async function openData(list){
         var no = g('no'); if (!no) return; if (seen[no]){ dup++; return; } seen[no] = 1;
         S.rows.push({ no:no, type:g('type'), status:g('status'), team:g('team'), site:g('site'), dept:g('dept'), part:g('part'), loc:g('loc'),
           pg:g('pg'), fg:g('fg'), rl:g('rl'), fr:g('fr'), cat:g('cat'), occ:g('occ'), detail:g('detail'), req:g('req'), prev:g('prev'), cmt:g('cmt'),
-          code:g('code').toUpperCase(), mask:g('mask'), at:g('at'), closed:g('closed'), fileId:g('empId'), fileName:g('realName') });
+          code:g('code').toUpperCase(), lcode:g('lcode').toUpperCase(), mask:g('mask'), at:g('at'), closed:g('closed'), fileId:g('empId'), fileName:g('realName') });
         added++;
       });
       S.files.push(file.name);
@@ -248,7 +289,7 @@ async function openData(list){
   if (bad.length) toast('접수목록 형식이 아닌 파일은 건너뛰었습니다: ' + bad.join(', '), true);
   S.rows.sort(function(a, b){ return a.at < b.at ? 1 : a.at > b.at ? -1 : 0; });
   setDone('data', '<b>' + S.rows.length.toLocaleString() + '건</b> · 파일 ' + S.files.length + '개' + (dup ? ' <span class="dim">(중복 ' + dup + '건 제외)</span>' : ''));
-  rematch();
+  if (SHARED) await resolveShared(); else rematch();
 }
 
 /* ---------- 치환: 식별코드 → (KEY) 사번 · 성명 ---------- */
@@ -354,7 +395,7 @@ function saveXlsx(){
   XLSX.writeFile(wb, '안전보건제안_정리(실명)_' + today() + '.xlsx');
   toast('정리 엑셀을 저장했습니다');
 }
-function clearAll(){ S.key = null; S.keyMeta = null; KEYSRC = null; $('#keyPick').innerHTML = ''; S.rows = []; S.files = []; S.page = 1;
+function clearAll(){ S.key = null; S.keyMeta = null; KEYSRC = null; SHARED = null; $('#keyPick').innerHTML = ''; S.rows = []; S.files = []; S.page = 1;
   $$('.step').forEach(function(c){ c.classList.remove('done'); $('.st', c).innerHTML = c.dataset.ph; }); render(); toast('불러온 내용을 모두 지웠습니다'); }
 
 /* ---------- 이벤트 ---------- */

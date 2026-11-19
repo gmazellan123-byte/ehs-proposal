@@ -600,6 +600,9 @@ body.desk #app{display:none;}
 .imp-top .dt{font-size:20px;font-weight:900;letter-spacing:-.3px;}
 .imp-top .sub{font-size:13px;opacity:.92;}
 .imp-top .sub b{font-weight:800;}
+.key-common{display:flex;align-items:center;gap:14px;padding:14px 16px;margin:4px 0 14px;border-radius:var(--r-sm);background:linear-gradient(160deg,#F4F8FF,#E0EAFF);border:1px solid #C6D7FA;font-size:13px;line-height:1.6;color:var(--ink-soft);word-break:keep-all;}
+.key-common b{color:var(--ink);}
+.key-common .btn{flex:none;width:auto;}
 .key-table td .btn{padding:6px 12px;font-size:12.5px;}
 .key-bar{display:flex;align-items:center;gap:10px;margin:8px 0 10px;}
 .key-bar label{display:flex;align-items:center;gap:6px;margin:0;font-size:13px;font-weight:700;color:var(--ink-soft);cursor:pointer;}
@@ -1376,6 +1379,8 @@ function normEmp(s){ return String(s||'').trim().toUpperCase().replace(/\s+/g,''
 function pad(n){ return String(n).padStart(2,'0'); }
 function fmt(d){ if(!d) return '-'; d = new Date(d); if(isNaN(d)) return '-';
   return d.getFullYear()+'.'+pad(d.getMonth()+1)+'.'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes()); }
+/* 대조코드: 공통 KEY에서 그 사람 항목만 여는 열쇠(사번 해시 앞 16자리). 데이터 파일에만 들어가며 화면에는 쓰지 않음 */
+function longCodeOf(hash){ return hash ? String(hash).slice(0, 16).toUpperCase() : ''; }
 function codeOf(hash){ return hash ? String(hash).slice(0,8).toUpperCase() : '삭제됨'; }
 function noOf(n){ return '#' + String(n||0).padStart(6,'0'); }
 function uuid(){ return (crypto.randomUUID ? crypto.randomUUID() : 'x'+Date.now().toString(16)+Math.random().toString(16).slice(2)); }
@@ -1847,7 +1852,7 @@ async function enterApp(user){
   go(isStaff() ? 'dash' : 'write');
 }
 function leaveApp(){
-  state.user = null; state.all = []; state.employees = []; state.filter.emp = null; DESK.impLast = undefined; KEYS.groups = null;
+  state.user = null; state.all = []; state.employees = []; state.filter.emp = null; DESK.impLast = undefined; KEYS.groups = null; KEYS.all = null;
   closeSheet(); leaveDesk(); document.body.classList.add('login-mode');
   $('#view-main').classList.add('hidden'); $('#view-login').classList.remove('hidden');
   setAuthMode('login'); $('#empId').value = saveIdEl.checked ? (lsGet(PREF.savedId) || '') : '';
@@ -2534,10 +2539,10 @@ async function downloadXlsx(filename, sheets){
   } catch(e){ fail(e); }
 }
 function reportRows(L){
-  return [['접수번호','유형','상태','사업팀','그룹','팀','파트','장소','제안등급','결정등급','위험정도(제출)','위험정도(반영)','사고유형/위험요인','발생일시','상세내용/상황설명','조치요청사항','재발방지의견','처리의견','제출자식별코드','제출자성명(마스킹)','제출일시','종료일시']]
+  return [['접수번호','유형','상태','사업팀','그룹','팀','파트','장소','제안등급','결정등급','위험정도(제출)','위험정도(반영)','사고유형/위험요인','발생일시','상세내용/상황설명','조치요청사항','재발방지의견','처리의견','제출자식별코드','제출자성명(마스킹)','제출일시','종료일시','대조코드']]
     .concat(L.map(function(r){ return [noOf(r.report_no), TYPE[r.type] ? TYPE[r.type].short : r.type, stLabel(r.status, r.type), r.team || '본사', r.site || '', r.dept || '', r.part || '',
       r.location || '', r.proposed_grade || '', r.final_grade || '', r.risk_level || '', r.final_risk || '', r.category || '', r.occurred_at ? fmt(r.occurred_at) : '', r.detail || '', r.request || '', r.prevention || '',
-      r.admin_comment || '', codeOf(r.emp_hash), authorName(r), fmt(r.created_at), r.closed_at ? fmt(r.closed_at) : '']; }));
+      r.admin_comment || '', codeOf(r.emp_hash), authorName(r), fmt(r.created_at), r.closed_at ? fmt(r.closed_at) : '', longCodeOf(r.emp_hash)]; }));
 }
 function employeeRows(E){
   var cnt = {}; state.all.forEach(function(r){ if (r.emp_hash) cnt[r.emp_hash] = (cnt[r.emp_hash] || 0) + 1; });
@@ -2619,7 +2624,7 @@ function saveCsv(filename, rows){
   a.href = url; a.download = filename; a.style.display = 'none'; document.body.appendChild(a); a.click();
   setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 4000); toast('CSV 파일을 저장했습니다');
 }
-var APP_VER = '2026.11.19-j';
+var APP_VER = '2026.11.19-k';
 $$('[data-ver]').forEach(function(el){ el.textContent = APP_VER; });
 function wideScreen(){ return window.matchMedia('(min-width: 900px)').matches; }
 async function openExportSheet(){
@@ -3028,7 +3033,7 @@ function downloadTemplate(){
    인사 명단(사원번호·성명)을 브라우저에서 읽음 → 서버에는 사번만 보내 식별코드·소속 경로를 받음
    → 사업장(그룹)별로 '식별코드 → [사번, 성명]' 표를 만들어 비밀번호로 암호화한 .ehskey 로 저장
    한 사람이 여러 사업장에서 제출했으면(부서 이동) 각 사업장 KEY에 모두 포함 */
-var KEYS = { people:null, groups:null, fileName:'' };
+var KEYS = { people:null, groups:null, all:null, fileName:'' };
 function keyGroupOf(path){
   var seg = String(path || '').split('/').filter(Boolean); if (!seg.length) return null;
   var byCode = {}; (state.org || []).forEach(function(u){ byCode[u.code] = u; });
@@ -3049,7 +3054,8 @@ function renderKeyList(){
   if (!keys.length){ box.innerHTML = KEYS.matched
       ? '<div class="notice warn">명단 인원 '+KEYS.matched.toLocaleString()+'명은 확인했지만 소속 정보를 받지 못했습니다. Supabase에서 <b>api 함수를 최신으로 다시 배포</b>한 뒤 명단을 다시 선택해 주세요.</div>'
       : '<div class="notice warn">명단의 사번이 시스템에 등록된 인원과 하나도 일치하지 않습니다. [백데이터 업로드]에 넣은 것과 같은 인사 명단인지, 사번 열이 "사원번호"인지 확인해 주세요.</div>'; return; }
-  box.innerHTML = '<div class="key-bar"><label class="note"><input type="checkbox" id="keyAll"> 전체 선택</label><button class="btn btn-primary btn-sm" id="keySel" type="button">선택한 사업장 KEY 받기</button></div>' +
+  box.innerHTML = '<div class="key-common"><div><b>전사 공통 KEY 1개</b> · 모든 사업장에 같은 KEY · 같은 비밀번호를 보내도, 각 사업장은 <b>자기 데이터 파일에 있는 사람만</b> 사번 · 성명으로 바뀝니다.</div><button class="btn btn-primary" id="keyCommon" type="button">전사 공통 KEY 받기 ('+Object.keys(KEYS.all || {}).length.toLocaleString()+'명)</button></div>' +
+    '<div class="key-bar"><span class="note" style="margin-right:4px">또는 사업장별로 따로 받기</span><label class="note"><input type="checkbox" id="keyAll"> 전체 선택</label><button class="btn btn-ghost btn-sm" id="keySel" type="button">선택한 사업장 KEY 받기</button></div>' +
     '<div class="dtable-wrap" style="max-height:420px"><table class="dtable key-table"><thead><tr><th></th><th>사업팀</th><th>그룹(사업장)</th><th class="num">KEY 인원</th><th></th></tr></thead><tbody>' +
     keys.map(function(k){ var g = G[k]; return '<tr><td><input type="checkbox" data-kchk="'+esc(k)+'"></td><td>'+esc(g.team)+'</td><td><b>'+esc(g.site || '-')+'</b></td><td class="num">'+Object.keys(g.map).length.toLocaleString()+'</td><td><button class="btn btn-ghost" data-kget="'+esc(k)+'">KEY 받기</button> <button class="btn btn-ghost" data-kcopy="'+esc(k)+'" title="첨부가 막힌 경우 메일 본문에 붙여넣기">내용 복사</button></td></tr>'; }).join('') +
     '</tbody></table></div><p class="note">여러 개를 한 번에 받으면 브라우저가 "여러 파일 다운로드"를 물을 수 있습니다. [허용]을 눌러 주세요. 회사 메일이 .ehskey 첨부를 막으면 [내용 복사] 후 메일 본문에 붙여넣어 보내세요.</p><div id="keyDone"></div>';
@@ -3070,11 +3076,56 @@ async function makeKeyFile(k, copyOnly){
   setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 4000);
   return info;
 }
+/* ---- 전사 공통 KEY (v3) ----
+   비밀번호 하나로 마스터값(M)을 만들고, 사람마다 '대조코드(16자리)'로 따로 잠금.
+   항목을 열려면 비밀번호 + 그 사람의 대조코드가 모두 필요 → 사업장은 자기 데이터 파일에 있는 사람만 풀 수 있음.
+   대조코드를 모르는 사람을 찾으려면 2^64 경우를 각각 2만 회 계산해야 하므로 사실상 불가능. 사용 기한은 위조 방지를 위해 암호화에 묶음 */
+var KEY_PER_ITER = 20000;
+async function sharedEntryKey(M, lcode){
+  var enc = new TextEncoder(), base = await crypto.subtle.importKey('raw', enc.encode(lcode), 'PBKDF2', false, ['deriveBits']);
+  var bits = new Uint8Array(await crypto.subtle.deriveBits({ name:'PBKDF2', hash:'SHA-256', salt:M, iterations:KEY_PER_ITER }, base, 512));
+  var id = Array.prototype.map.call(bits.slice(0, 12), function(x){ return ('0' + x.toString(16)).slice(-2); }).join('');
+  return { id:id, key: await crypto.subtle.importKey('raw', bits.slice(32, 64), 'AES-GCM', false, ['encrypt', 'decrypt']) };
+}
+async function makeCommonKey(){
+  var all = KEYS.all || {}, codes = Object.keys(all);
+  if (!codes.length) throw new Error('먼저 1단계에서 인사 명단을 선택해 주세요');
+  var pw = $('#keyPwd').value.trim();
+  if (pw.length < 8) throw new Error('KEY 비밀번호를 8자 이상 입력하거나 [자동 생성]을 눌러 주세요');
+  var days = +$('#keyDays').value || 30, now = new Date(), exp = new Date(now.getTime() + days * 86400000);
+  var expires = exp.getFullYear() + '-' + pad(exp.getMonth() + 1) + '-' + pad(exp.getDate()), created = fmt(now);
+  var enc = new TextEncoder(), salt = crypto.getRandomValues(new Uint8Array(16)), iter = 250000;
+  var base = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveBits']);
+  var M = new Uint8Array(await crypto.subtle.deriveBits({ name:'PBKDF2', hash:'SHA-256', salt:salt, iterations:iter }, base, 256));
+  var aad = enc.encode('ehs-key-shared|' + expires);
+  var chkKey = await crypto.subtle.importKey('raw', M, 'AES-GCM', false, ['encrypt']), chkIv = crypto.getRandomValues(new Uint8Array(12));
+  var chk = b64(chkIv) + '.' + b64(await crypto.subtle.encrypt({ name:'AES-GCM', iv:chkIv, additionalData:aad }, chkKey, enc.encode('ok')));
+  var entries = {}, done = 0, prog = $('#keyCommon');
+  for (var i = 0; i < codes.length; i += 40){
+    await Promise.all(codes.slice(i, i + 40).map(async function(c){
+      var k = await sharedEntryKey(M, c), iv = crypto.getRandomValues(new Uint8Array(12));
+      var ct = await crypto.subtle.encrypt({ name:'AES-GCM', iv:iv, additionalData:aad }, k.key, enc.encode(JSON.stringify(all[c])));
+      entries[k.id] = b64(iv) + '.' + b64(ct); done++;
+    }));
+    if (prog) prog.textContent = '만드는 중… ' + Math.round(done / codes.length * 100) + '%';
+  }
+  /* 항목 순서로 사람을 짐작하지 못하게 섞어서 저장 */
+  var ids = Object.keys(entries); for (var j = ids.length - 1; j > 0; j--){ var r = crypto.getRandomValues(new Uint32Array(1))[0] % (j + 1), t = ids[j]; ids[j] = ids[r]; ids[r] = t; }
+  var shuffled = {}; ids.forEach(function(id){ shuffled[id] = entries[id]; });
+  var pack = { format:'ehs-key-shared', v:3, kdf:{ name:'PBKDF2', hash:'SHA-256', iter:iter, salt:b64(salt) }, per:{ iter:KEY_PER_ITER }, chk:chk,
+    meta:{ scope:'전사 공통', created:created, expires:expires, count:codes.length }, entries:shuffled };
+  var fname = 'KEY_전사공통_' + stamp() + '.ehskey';
+  var blob = new Blob([JSON.stringify(pack)], { type:'application/octet-stream' }), url = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href = url; a.download = fname; document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 4000);
+  return { scope:'전사 공통', file:fname, expires:expires, count:codes.length, pw:pw };
+}
+
 /* 발급 직후: 사업장에 보낼 안내문 2개 (파일용 · 비밀번호용 — 반드시 다른 경로로) */
-function keyDoneHtml(list, copied){
+function keyDoneHtml(list, copied, common){
   var mail = '[안전보건 제안] ' + list.map(function(x){ return x.scope; }).join(', ') + ' KEY 전달\n\n' +
     (copied ? '아래 KEY 내용을 오프라인 정리 도구 2번 칸의 "KEY 내용 붙여넣기"에 그대로 붙여넣어 사용하세요.\n' : '첨부한 KEY 파일(' + list.map(function(x){ return x.file; }).join(', ') + ')을 사용하세요.\n') +
-    '사용 기한: ' + list[0].expires + '까지\n\n' +
+    '사용 기한: ' + list[0].expires + '까지\n' + (common ? '※ 전사 공통 KEY입니다. 각 사업장의 데이터 파일에 있는 인원만 사번·성명으로 바뀝니다.\n' : '') + '\n' +
     '사용 방법\n1. 오프라인 정리 도구(안전보건제안_오프라인정리도구.html)를 PC의 Chrome 또는 Edge로 엽니다.\n' +
     '2. 1번 칸: 휴대폰 접수목록 [내보내기]로 받은 데이터 파일을 넣습니다.\n3. 2번 칸: 이 KEY ' + (copied ? '내용을 붙여넣고' : '파일을 넣고') + ', 따로 받은 비밀번호를 입력한 뒤 [KEY 열기]를 누릅니다.\n' +
     '4. 식별코드가 사번·성명으로 바뀌면 필요한 경우 [정리 엑셀 저장]을 누릅니다.\n\n※ 비밀번호는 별도로 전달합니다. 이 메일에 비밀번호를 적어 회신하지 마세요.';
@@ -3104,7 +3155,7 @@ $('#keyRoster').addEventListener('change', async function(){
     aoa.slice(hi + 1).forEach(function(r){ var id = normEmp(r[ci]); if (EMP_RE.test(id) && !seen[id]){ seen[id] = 1; people.push({ id:id, name:String(r[ni] || '').trim() }); } });
     aoa = null;   /* 원본 행(다른 개인정보 열 포함)은 바로 버림 */
     if (!people.length) throw new Error('사번이 있는 행이 없습니다');
-    var groups = {}, matched = 0, noPath = 0, empPath = null;
+    var groups = {}, matched = 0, noPath = 0, empPath = null, all = {};
     for (var i = 0; i < people.length; i += 1000){
       out.innerHTML = '<div class="loading"><span class="spin"></span>서버 확인 중 '+i.toLocaleString()+' / '+people.length.toLocaleString()+'</div>';
       var part = people.slice(i, i + 1000), res = await api.matchNames(part.map(function(p){ return p.id; }), 'keylist', true);
@@ -3116,12 +3167,12 @@ $('#keyRoster').addEventListener('change', async function(){
         M.forEach(function(m){ m.p = empPath[m.h] ? [empPath[m.h]] : []; noPath++; });
       }
       M.forEach(function(m){ var p = part[m.i]; if (!p) return; matched++;
-        var code = codeOf(m.h), done = {};
+        var code = codeOf(m.h), done = {}; all[longCodeOf(m.h)] = [p.id, p.name];
         (m.p || []).forEach(function(path){ var g = keyGroupOf(path); if (!g || done[g.key]) return; done[g.key] = 1;
           var G = groups[g.key] = groups[g.key] || { team:g.team, site:g.site, map:{} }; G.map[code] = [p.id, p.name]; }); });
     }
     var total = people.length; people = null;
-    KEYS.groups = groups; KEYS.fileName = file.name; KEYS.matched = matched; KEYS.oldServer = noPath > 0;
+    KEYS.groups = groups; KEYS.all = all; KEYS.fileName = file.name; KEYS.matched = matched; KEYS.oldServer = noPath > 0;
     out.innerHTML = '<div class="imp-sum"><div><b>'+total.toLocaleString()+'</b><span>명단 인원</span></div><div><b>'+matched.toLocaleString()+'</b><span>시스템 등록 인원</span></div><div><b>'+Object.keys(groups).length+'</b><span>사업장</span></div></div>' +
       '<p class="note" style="margin:0">사원번호 · 성명 외의 열은 읽지 않고 버렸습니다. 시스템에 없는 사번은 KEY에 넣지 않습니다.</p>' +
       (noPath ? '<div class="notice warn" style="margin-top:8px"><b>서버 함수(api)가 최신 버전이 아닙니다.</b> 지금은 현재 소속 기준으로만 KEY를 만들어, <b>부서를 옮기거나 퇴직한 인원의 지난 제출건</b>은 실명으로 바뀌지 않을 수 있습니다. Supabase에서 api 함수를 다시 배포해 주세요.</div>' : '');
@@ -3133,6 +3184,10 @@ $('#keyList').addEventListener('click', async function(e){
   if (t.id === 'keyAll'){ $$('[data-kchk]', this).forEach(function(c){ c.checked = t.checked; }); return; }
   var cp = t.closest('[data-kcp]');
   if (cp){ try { await navigator.clipboard.writeText($('#' + cp.dataset.kcp).value); toast('복사했습니다'); } catch(_){ $('#' + cp.dataset.kcp).select(); toast('내용을 선택했습니다. Ctrl+C로 복사하세요'); } return; }
+  if (t.closest('#keyCommon')){ var bt = t.closest('#keyCommon'), lbl = bt.textContent; bt.disabled = true;
+    try { var info = await makeCommonKey(); $('#keyDone').innerHTML = keyDoneHtml([info], false, true); $('#keyDone').scrollIntoView({ behavior:'smooth', block:'start' });
+      toast('전사 공통 KEY를 저장했습니다. 아래 안내문으로 모든 사업장에 보내세요'); }
+    catch(err){ fail(err); } finally { bt.disabled = false; bt.textContent = lbl; } return; }
   var one = t.closest('[data-kget]'), sel = t.closest('#keySel'), cpy = t.closest('[data-kcopy]'); if (!one && !sel && !cpy) return;
   var list = one ? [one.dataset.kget] : cpy ? [cpy.dataset.kcopy] : $$('[data-kchk]', this).filter(function(c){ return c.checked; }).map(function(c){ return c.dataset.kchk; });
   if (!list.length) return toast('KEY를 받을 사업장을 선택해 주세요', true);
