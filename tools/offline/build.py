@@ -93,44 +93,105 @@ td.num{text-align:right;font-family:Consolas,monospace}
 .blk{margin-top:12px}
 .blk div{font-size:12px;font-weight:800;color:var(--brand);margin-bottom:5px}
 .blk p{white-space:pre-wrap;line-height:1.65;padding:10px 12px;border-radius:10px;background:#F6F9FC;border:1px solid var(--line)}
+.apptabs{display:flex;gap:6px;margin-left:24px;padding:4px;border-radius:12px;background:#E3EAF3}
+.apptab{display:flex;align-items:center;gap:7px;border:0;background:none;padding:9px 16px;border-radius:9px;font-weight:800;font-size:14px;color:var(--soft)}
+.apptab .n{width:20px;height:20px;border-radius:6px;background:#B9C6D8;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center}
+.apptab.on{background:#fff;color:var(--brand);box-shadow:0 1px 4px rgba(0,0,0,.14)}.apptab.on .n{background:#1E8BD8}
+.apptab .lk{font-style:normal;font-size:12px;display:none}.apptab.locked .lk{display:inline}.apptab.locked{opacity:.75}
+.top .badge{margin-left:auto}
+.kpis.k3{grid-template-columns:repeat(3,1fr)}
+.cta{margin-top:12px;padding:12px 16px;border-radius:12px;background:#F3F6FA;border:1px solid var(--line);font-size:13.5px;color:var(--soft);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.cta b{color:var(--ink)}.cta.ok{background:#EEF9F2;border-color:#BFE6CD;color:#245B3A}.cta .btn{margin-left:auto}
+.pt{font-size:14px;font-weight:800;color:var(--ink);margin-right:6px}
+.bar input[type=search]{flex:1;min-width:160px}
+.pagerx{display:flex;justify-content:center;align-items:center;gap:4px;padding:8px;border-top:1px solid var(--line)}
+.pagerx:empty{display:none}.pagerx span{margin-right:auto;font-size:12px;color:var(--faint)}
+.pagerx button{min-width:32px;height:30px;border-radius:8px;border:1px solid #C9D6E5;background:#fff;font-weight:700}
+.pagerx button.on{background:#0B5FA8;color:#fff;border-color:transparent}
+th.srt{cursor:pointer;user-select:none}th.srt:hover{color:var(--brand)}
+th.srt.asc::after{content:" ▲";font-size:9px;color:var(--brand)}th.srt.desc::after{content:" ▼";font-size:9px;color:var(--brand)}
+th.num{text-align:right}
+tr.tot td{font-weight:800;background:#EEF6FD;color:var(--brand);position:sticky;bottom:0}
+.lock{margin-top:30px;padding:50px;text-align:center;background:#fff;border:1px dashed #C9D6E5;border-radius:var(--r)}
+.lock b{font-size:18px}.lock p{color:var(--soft);margin:10px 0 18px}
+.filt .bar{border-bottom:0}.filt .b2{padding-top:0}.filt .lb{font-size:12.5px;font-weight:800;color:var(--soft)}
+.qbtns{display:flex;gap:4px}.btn.sm{padding:6px 10px;font-size:12px}
+.cond{padding:8px 14px 12px;font-size:12.5px;color:var(--soft);border-top:1px dashed var(--line)}
+.grid2{display:grid;grid-template-columns:1.25fr 1fr;gap:12px}
+.tw.s{max-height:380px;min-height:0}
+.barc{width:34%}.sbar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:#EEF2F7}
+.sbar i{display:block;height:100%}.sbar .b,.lg .b{background:#3B82F6}.sbar .t,.lg .t{background:#14B8A6}.sbar .o,.lg .o{background:#F97316}
+.lg{font-size:12px;color:var(--soft);display:flex;align-items:center;gap:4px;margin-left:auto}.lg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-left:6px}
+ol.how{margin:8px 0 6px 18px;font-size:12.5px;line-height:1.7;color:var(--soft)}
+details.paste .btn{margin-top:6px}
 .toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);opacity:0;transition:all .2s;background:#13233F;color:#fff;padding:11px 18px;border-radius:12px;font-weight:700;font-size:13.5px;z-index:60;pointer-events:none;max-width:80vw}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .toast.err{background:#C62828}
 @media print{.top .badge,.steps,.bar,.notice,#pager,.foot{display:none!important}.tw{max-height:none}body{min-width:0;background:#fff}}
 </style></head><body>
-<div class="top"><img src="__LOGO__" alt="로고"><div><h1>안전보건 제안 · 오프라인 정리 도구</h1><p>현장에서 받은 데이터 파일과 본사에서 받은 KEY로 식별코드를 실제 사번 · 성명으로 바꿔 봅니다</p></div>
-<div class="badge"><i></i>인터넷 연결 없이 동작 · 불러온 파일은 이 PC 밖으로 나가지 않음</div></div>
+<div class="top"><img src="__LOGO__" alt="로고"><div><h1>안전보건 제안 · 오프라인 정리 도구</h1><p>현장 데이터의 식별코드를 본사 KEY로 사번 · 성명으로 바꿔 조회 · 정리합니다</p></div>
+<nav class="apptabs"><button class="apptab on" data-view="dec"><span class="n">1</span>복호화</button><button class="apptab locked" id="tabStat" data-view="stat"><span class="n">2</span>데이터 현황 · 저장<i class="lk">🔒</i></button></nav>
+<div class="badge"><i></i>인터넷 연결 없이 동작</div><button class="btn" id="clearBtn" title="불러온 내용을 모두 지움">모두 지우기</button></div>
 <div class="wrap">
+<section id="vDec">
  <div class="steps">
-  <div class="step" id="c-data"><h3><span class="n">1</span>데이터 파일 넣기</h3>
-   <input type="file" id="dataFile" accept=".xlsx,.xls,.csv" multiple>
-   <div class="st">휴대폰·PC에서 <b>[내보내기]</b>로 받은 접수목록 엑셀 · CSV (여러 개 선택 가능, 접수번호 기준 중복 제거)</div></div>
+  <div class="step" id="c-data"><h3><span class="n">1</span>데이터 넣기</h3>
+   <input type="file" id="dataFile" accept=".xlsx,.xls,.csv,.txt,.tsv" multiple>
+   <details class="paste"><summary>파일을 올릴 수 없나요? → 엑셀/메모장에서 복사해 붙여넣기</summary>
+    <ol class="how"><li>받은 파일을 <b>엑셀</b>로 엽니다 (엑셀이 없으면 <b>메모장</b>으로 열어도 됩니다)</li><li><b>Ctrl+A</b>(전체 선택) → <b>Ctrl+C</b>(복사)</li><li>아래 칸에 <b>Ctrl+V</b>(붙여넣기) → [붙여넣은 내용 넣기]</li></ol>
+    <textarea id="dataText" placeholder="접수번호 · 유형 · 상태 … 머리글부터 끝까지 붙여넣기" spellcheck="false"></textarea>
+    <button class="btn pri" id="dataPasteBtn" type="button">붙여넣은 내용 넣기</button></details>
+   <div class="st">휴대폰·PC <b>[내보내기]</b>로 받은 접수목록 (엑셀 · CSV · 여러 개 가능) · 파일을 이 창에 <b>끌어다 놓아도</b> 됩니다</div></div>
   <div class="step" id="c-key"><h3><span class="n">2</span>KEY 넣기</h3>
    <input type="file" id="keyFile">
    <div class="pick" id="keyPick"></div>
    <div class="row" style="margin-top:7px"><input type="password" id="keyPw" placeholder="KEY 비밀번호 (본사에서 따로 안내)" autocomplete="off"><button class="btn pri" id="keyBtn">KEY 열기</button></div>
-   <details class="paste"><summary>KEY 파일 대신 KEY 내용을 받았나요? (메일 본문 등)</summary><textarea id="keyText" placeholder='{"format":"ehs-key", … 로 시작하는 내용을 처음부터 끝까지 붙여넣기' spellcheck="false"></textarea></details>
-   <div class="st">본사에서 받은 <b>KEY_….ehskey 파일</b> + 따로 받은 비밀번호 → 식별코드를 사번 · 성명으로 바꿉니다</div></div>
+   <details class="paste"><summary>파일을 올릴 수 없나요? → KEY를 메모장으로 열어 붙여넣기</summary>
+    <ol class="how"><li>KEY 파일(.ehskey)을 <b>메모장</b>으로 엽니다 (마우스 오른쪽 → 연결 프로그램 → 메모장). 메일 본문으로 받았으면 그 내용을 씁니다</li><li><b>Ctrl+A</b> → <b>Ctrl+C</b> → 아래 칸에 <b>Ctrl+V</b></li><li>비밀번호 입력 → [KEY 열기]</li></ol>
+    <textarea id="keyText" placeholder='{"format":"ehs-key … 로 시작하는 내용을 처음부터 끝까지 붙여넣기' spellcheck="false"></textarea></details>
+   <div class="st">본사에서 받은 <b>KEY 파일</b> + 따로 받은 비밀번호 → 식별코드를 사번 · 성명으로 바꿉니다</div></div>
  </div>
- <div class="notice"><b>개인정보 안내</b> · 이 화면에는 사번과 실명이 표시됩니다. 불러온 내용은 <b>이 창의 메모리에만</b> 있고, 창을 닫으면 사라집니다. 정리 엑셀은 업무 목적으로만 쓰고 사내 PC에만 보관하세요. <b>KEY 파일과 비밀번호는 같은 곳에 적어 두거나 함께 보내지 마세요.</b></div>
- <div id="empty"><b>1 · 2 단계의 파일을 넣으면</b> 여기에 전체 내용이 표시됩니다. 파일을 이 창에 <b>끌어다 놓아도</b> 데이터/KEY를 알아서 구분합니다.<br>순서는 상관없으며, KEY 없이 데이터만 넣어도 내용을 볼 수 있습니다(이 경우 제출자는 식별코드·가린 성명으로 표시).</div>
- <div id="main" class="hidden">
-  <div class="kpis" id="kpis"></div>
+ <div class="notice"><b>개인정보 안내</b> · 이 화면에는 사번과 실명이 표시됩니다. 불러온 내용은 <b>이 창의 메모리에만</b> 있고, 창을 닫으면 사라집니다. 저장한 엑셀은 업무 목적으로만 쓰고 사내 PC에만 보관하세요. <b>KEY 파일과 비밀번호는 함께 보관하거나 함께 보내지 마세요.</b></div>
+ <div id="empty"><b>1 · 2 단계를 넣으면</b> 여기에 내용이 표시됩니다. 순서는 상관없습니다.<br>KEY로 복호화한 뒤 <b>② 데이터 현황</b>에서 유형 · 소속 · 기간별 조회와 엑셀 저장을 할 수 있습니다.</div>
+ <div id="decMain" class="hidden">
+  <div class="kpis k3" id="decKpis"></div>
+  <div id="decCta"></div>
   <div class="panel">
-   <div class="bar">
-    <div class="tabs"><button data-tab="list" class="on">접수 내역</button><button data-tab="people">제출자별 집계</button></div>
-    <select id="fType"><option value="all">유형 전체</option><option>개선제안</option><option>위험성평가</option><option>아차사고</option></select>
-    <select id="fStatus"></select><select id="fTeam"></select><select id="fSite"></select>
-    <input type="date" id="fFrom" title="제출일 시작"><span class="dim">~</span><input type="date" id="fTo" title="제출일 종료">
-    <select id="fOnly"><option value="all">실명 확인 전체</option><option value="yes">실명 확인된 건</option><option value="no">미확인 건</option></select>
-    <input type="search" id="fQ" placeholder="접수번호 · 장소 · 내용 · 사번 · 성명 검색">
-    <div class="r"><button class="btn pri" id="saveBtn">정리 엑셀 저장</button><button class="btn" id="clearBtn">모두 지우기</button></div>
-   </div>
-   <div id="vList"><div class="tw" id="tbl"></div><div id="pager"></div></div>
-   <div id="vPeople" class="hidden"><div class="tw" id="ptbl"></div></div>
+   <div class="bar"><b class="pt">넣은 데이터 확인</b><span class="dim">머리글을 누르면 정렬 · 행을 누르면 상세</span><input type="search" id="dQ" placeholder="접수번호 · 장소 · 내용 · 사번 · 성명 검색"></div>
+   <div class="tw" id="decTbl"></div><div id="decPager" class="pagerx"></div>
   </div>
-  <p class="foot">행을 누르면 상세 내용을 볼 수 있습니다. 소속은 제출 당시(최초 등록 부서) 기준입니다. 미확인: KEY 범위 밖 인원(다른 사업장 소속, KEY 발급 이후 신규 인원 등).</p>
  </div>
+</section>
+<section id="vStat" class="hidden">
+ <div id="statLock" class="lock"><b>🔒 아직 복호화 전입니다</b><p>① 복호화 탭에서 데이터와 KEY를 넣어 사번 · 성명으로 바꾼 뒤에 조회 · 저장할 수 있습니다.</p><button class="btn pri" data-go="dec">① 복호화로 가기</button></div>
+ <div id="statMain" class="hidden">
+  <div class="panel filt">
+   <div class="bar">
+    <select id="sType"><option value="all">유형 전체</option><option>개선제안</option><option>위험성평가</option><option>아차사고</option></select>
+    <select id="sTeam"></select><select id="sSite"></select><select id="sDept"></select><select id="sPart"></select>
+    <select id="sStatus"></select>
+    <select id="sOnly"><option value="all">실명 확인 전체</option><option value="yes">실명 확인 건</option><option value="no">미확인 건</option></select>
+   </div>
+   <div class="bar b2">
+    <span class="lb">기간(제출월)</span><input type="month" id="sFrom"><span class="dim">~</span><input type="month" id="sTo">
+    <span class="qbtns"><button class="btn sm" data-period="year">올해</button><button class="btn sm" data-period="last">작년</button><button class="btn sm" data-period="12m">최근 12개월</button><button class="btn sm" data-period="all">전체</button></span>
+    <input type="search" id="sQ" placeholder="장소 · 내용 · 사번 · 성명 검색">
+    <div class="r"><button class="btn" id="sReset">조건 초기화</button><button class="btn pri" id="saveBtn">엑셀 저장</button></div>
+   </div>
+   <div class="cond" id="sCond"></div>
+  </div>
+  <div class="kpis" id="statKpis"></div>
+  <div class="grid2">
+   <div class="panel"><div class="bar"><b class="pt" id="orgTitle">소속별 현황</b><span class="dim">단위</span><select id="sLv"><option value="auto">자동</option><option value="team">사업팀</option><option value="site">그룹</option><option value="dept">팀</option><option value="part">파트</option></select></div><div class="tw s" id="orgTbl"></div></div>
+   <div class="panel"><div class="bar"><b class="pt">월별 현황</b><span class="lg"><i class="b"></i>개선제안 <i class="t"></i>위험성평가 <i class="o"></i>아차사고</span></div><div class="tw s" id="monTbl"></div></div>
+  </div>
+  <div class="panel">
+   <div class="bar"><div class="tabs"><button class="subtab on" data-sub="list">접수 내역</button><button class="subtab" data-sub="people">제출자별 집계</button></div><span class="dim">머리글을 누르면 정렬 · 저장 엑셀에도 같은 순서로 들어갑니다</span></div>
+   <div class="tw" id="stTbl"></div><div id="stPager" class="pagerx"></div>
+  </div>
+  <p class="foot">소속은 제출 당시(최초 등록 부서) 기준입니다. 완료 = 조치완료 · 반영 완료 · 위원회 의결. 미확인 = KEY 범위 밖 인원(KEY 발급 이후 신규 인원 등).</p>
+ </div>
+</section>
 </div>
 <div id="modal"><div class="mbox"><div class="mh"><span id="mTitle"></span><button data-close>✕</button></div><div id="mBody"></div></div></div>
 <div class="toast" id="toast"></div>
