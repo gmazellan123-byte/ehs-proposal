@@ -183,7 +183,8 @@ revoke all on function public.import_org(jsonb) from public, anon, authenticated
 grant execute on function public.import_org(jsonb) to service_role;
 
 -- (서버 함수 전용) 인원 일괄 반영 — 사번해시별 부서코드·성명(마스킹)·권한
---   신규 사번은 등록, 기존 인원은 소속(부서코드) 갱신. 사업팀·본사 계정의 권한은 바꾸지 않음
+--   신규 사번은 등록, 기존 인원은 소속(부서코드)·권한 갱신 (권한은 직책 기준으로 화면에서 계산해 전달)
+--   본사(hq) 계정의 권한은 바꾸지 않고, 업로드로 본사 권한을 줄 수도 없음
 drop function if exists public.import_employees(jsonb);
 create or replace function public.import_employees(p_rows jsonb)
 returns jsonb language plpgsql security definer set search_path = public as $$
@@ -192,6 +193,7 @@ begin
   for r in select value from jsonb_array_elements(p_rows) loop
     select role into v_cur from public.employees where emp_hash = r->>'emp_hash';
     v_role := nullif(r->>'role', '');
+    if v_role not in ('worker', 'manager', 'team') then v_role := null; end if;
     if v_cur is null then
       insert into public.employees (emp_hash, role, org_code, name_mask)
       values (r->>'emp_hash', coalesce(v_role, 'worker'), r->>'org_code', nullif(r->>'name_mask', ''));
@@ -199,7 +201,7 @@ begin
     else
       update public.employees
          set org_code  = r->>'org_code',
-             role      = case when v_cur in ('team', 'hq') then role else coalesce(v_role, role) end,
+             role      = case when v_cur = 'hq' then role else coalesce(v_role, role) end,
              name_mask = coalesce(nullif(r->>'name_mask', ''), name_mask)
        where emp_hash = r->>'emp_hash';
       upd := upd + 1;

@@ -735,6 +735,9 @@ body.desk .dtree{position:static;max-height:none;padding:8px;}
 .gp-empty{padding:16px;font-size:13px;color:var(--ink-soft);text-align:center;}
 .op-sel{font-size:14px;}
 #regRole,#mvRole{margin-top:0;}
+.imp-roles{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:0 0 8px;padding:8px 10px;border-radius:var(--r-sm);background:var(--bg2);border:1px solid var(--line);font-size:13px;}
+.imp-roles .role-chip{color:#fff;}
+.imp-roles span{color:var(--ink-faint);font-size:12px;}
 .dmodal .gp-pop{position:static;margin-top:6px;max-height:330px;box-shadow:none;}
 .dmodal .opick{margin-top:10px;}
 </style>
@@ -1058,7 +1061,7 @@ body.desk .dtree{position:static;max-height:none;padding:8px;}
               <div class="dgrid g-2-1" style="margin-top:0">
                 <div class="panel box">
                   <h3>1. 파일 준비 <span class="mono">STEP 1</span></h3>
-                  <p class="note" style="margin-top:0">인사 시스템에서 내려받은 <b>사원 명단 엑셀을 그대로</b> 올리거나, 상단 [업로드 양식 다운로드]의 양식에 <b>사원번호 · 성명 · 부서코드 · 부서 · 상위부서</b>를 채워 올립니다.</p>
+                  <p class="note" style="margin-top:0">인사 시스템에서 내려받은 <b>사원 명단 엑셀을 그대로</b> 올리거나, 상단 [업로드 양식 다운로드]의 양식에 <b>사원번호 · 성명 · 부서코드 · 부서 · 상위부서 · 직책</b>을 채워 올립니다.</p>
                   <h3 style="margin-top:18px">2. 파일 선택 <span class="mono">STEP 2</span></h3>
                   <label class="drop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
                     <b>엑셀 파일 선택 (.xlsx · .xls · .csv)</b><span id="impFileName">선택된 파일 없음</span><input type="file" id="impFile" accept=".xlsx,.xls,.csv"></label>
@@ -1070,12 +1073,14 @@ body.desk .dtree{position:static;max-height:none;padding:8px;}
                 <div class="panel box guide">
                   <h3>반영 규칙 <span class="mono">RULES</span></h3>
                   <ul>
-                    <li><b>필요한 열만 읽습니다.</b> 사원번호 · 성명 · 부서코드 · 부서 · 상위부서(· 권한) 외의 열(주민번호·연락처·주소 등)은 브라우저에서도 읽지 않고 버리며 서버로 보내지 않습니다.</li>
+                    <li><b>필요한 열만 읽습니다.</b> 사원번호 · 성명 · 부서코드 · 부서 · 상위부서 · 직책 외의 열(주민번호·연락처·주소 등)은 브라우저에서도 읽지 않고 버리며 서버로 보내지 않습니다.</li>
                     <li><b>사번</b>은 HTTPS로 전송되어 서버 비밀키로 암호화(HMAC)된 값만 저장됩니다.</li>
                     <li><b>성명</b>은 브라우저에서 가운데를 가린 뒤(홍길동 → 홍*동) 전송되며, 원래 성명은 어디에도 저장되지 않습니다.</li>
                     <li><b>소속</b>은 부서코드로 저장되고, 부서·상위부서로 <b>본사 › 사업팀 › 그룹 › 팀 › 파트</b> 조직도가 자동으로 만들어집니다.</li>
                     <li>모든 조회·등록·결재 권한은 이 조직도의 상하 관계를 따릅니다. 관리자는 <b>본인 소속 조직과 그 하위</b>만 볼 수 있습니다.</li>
-                    <li>새 사번은 근로자로 <b>등록</b>되고, 이미 있는 인원은 <b>소속이 갱신</b>됩니다 (권한은 유지, 권한 열이 있으면 근로자/관리자로 반영).</li>
+                    <li><b>권한은 직책으로 자동 설정</b>됩니다 · 사업팀장, 사업팀 소속 <b>1~4지원그룹 인원 전부</b> → <b>사업팀</b> / 그룹장 · SE팀장 · SE파트장 → <b>관리자</b>(본인 소속 범위) / 그 외 → <b>근로자</b>. 직책 원문은 서버로 보내지 않습니다.</li>
+                    <li><b>본사 권한</b>은 업로드로 부여·변경되지 않습니다. [조직 · 인원]에서 별도로 지정하세요.</li>
+                    <li>새 사번은 <b>등록</b>되고, 이미 있는 인원은 <b>소속과 권한이 갱신</b>됩니다.</li>
                     <li>재직여부 열이 있으면 <b>재직</b> 인원만 반영합니다. 업로드 파일 자체는 서버에 저장되지 않습니다.</li>
                   </ul>
                 </div>
@@ -1412,7 +1417,7 @@ function makeDemoApi(){
         if (!unitOfCode(r.orgCode)) return invalid.push({ row:r.row, reason:'알 수 없는 부서코드: ' + (r.orgCode || '(빈칸)') });
         var h = h64(id), e = emps[h];
         if (!e){ addEmp(id, r.role || 'worker', r.orgCode, false, r.nameMask || null); ins++; }
-        else { applyOrg(e, (e.role === 'team' || e.role === 'hq') ? e.role : (r.role || e.role), r.orgCode); if (r.nameMask) e.name_mask = maskName(r.nameMask); upd++; } });
+        else { applyOrg(e, e.role === 'hq' ? 'hq' : (r.role || e.role), r.orgCode); if (r.nameMask) e.name_mask = maskName(r.nameMask); upd++; } });
       return { inserted:ins, updated:upd, skipped:0, units:nu, invalid:invalid }; }
   };
 }
@@ -2471,20 +2476,30 @@ $('#dEmpRole').addEventListener('change', function(){ DESK.empRole = this.value;
    읽는 열: 사원번호 · 성명 · 부서코드 · 부서 · 상위부서 · (권한) · (재직여부: 필터용, 전송 안 함)
    그 밖의 열은 읽지 않음. 사번은 서버에서 암호화, 성명은 여기서 마스킹 후 전송 */
 var IMP_COLS = { empId:['사원번호','사번','empid','emp_id'], name:['성명','이름','name'], code:['부서코드','조직코드','소속코드'], dname:['부서','부서명','소속'],
-  parent:['상위부서','상위부서명','상위조직'], role:['권한','권한(선택)','role'], status:['재직여부','재직구분'] };
+  parent:['상위부서','상위부서명','상위조직'], title:['직책'], role:['권한','권한(선택)','role'], status:['재직여부','재직구분'] };
+/* 직책 → 권한 (본사 권한은 업로드로 부여·변경하지 않고 화면에서 별도 지정)
+   사업팀 : 직책 '사업팀장' + 사업팀 소속 'N지원그룹' 인원 전부 → 소속 사업팀 전체 범위
+   관리자 : 직책 '그룹장' · 'SE팀장' · 'SE파트장' → 본인 소속(그룹·팀·파트)과 그 하위
+   근로자 : 그 외 전부 */
+var TITLE_TEAM = ['사업팀장'], TITLE_MANAGER = ['그룹장','SE팀장','SE파트장'];
+function isSupportGroup(u, bc){ for (var x = u, g = 0; x && g < 12; x = bc[x.parent_code], g++){ if (x.team !== '본사' && /지원그룹$/.test(x.name)) return true; } return false; }
+function roleByTitle(title, u, bc){ var t = String(title || '').replace(/\s+/g, '');
+  if (TITLE_TEAM.indexOf(t) > -1 || (u && isSupportGroup(u, bc))) return 'team';
+  if (TITLE_MANAGER.indexOf(t) > -1) return 'manager';
+  return 'worker'; }
 function downloadTemplate(){
   var U = state.org.slice().sort(function(a,b){ return a.sort - b.sort; });
   var ex = U.filter(function(u){ return u.depth >= 3 && u.team !== '본사'; }).slice(0, 3);
   var parentName = function(u){ var p = u.parent_code ? unitByCode(u.parent_code) : null; return p ? p.name : ''; };
-  var sample = ex.length ? ex.map(function(u, i){ return ['2024010' + (i + 1), ['홍길동','김철수','남궁민수'][i], u.code, u.name, parentName(u), i === 2 ? '관리자' : '']; })
-    : [['20240101','홍길동','ABC010-A1','예시1_A1','예시1팀',''], ['20240102','김철수','ABC010','예시1팀','예시그룹',''], ['20240103','남궁민수','ABC000','예시그룹','예시사업팀','관리자']];
+  var sample = ex.length ? ex.map(function(u, i){ return ['2024010' + (i + 1), ['홍길동','김철수','남궁민수'][i], u.code, u.name, parentName(u), ['사원','선임','SE파트장'][i]]; })
+    : [['20240101','홍길동','ABC010-A1','예시1_A1','예시1팀','사원'], ['20240102','김철수','ABC010','예시1팀','예시그룹','SE팀장'], ['20240103','남궁민수','ABC000','예시그룹','예시사업팀','그룹장']];
   downloadXlsx('조직인원_업로드양식.xlsx', [
-    { name:'인원명단', rows:[['사원번호','성명','부서코드','부서','상위부서','권한(선택)']].concat(sample) },
+    { name:'인원명단', rows:[['사원번호','성명','부서코드','부서','상위부서','직책']].concat(sample) },
     { name:'부서코드(참고)', rows:[['부서코드','부서','상위부서코드','상위부서','사업팀','그룹','팀','파트']].concat(U.map(function(u){ return [u.code, u.name, u.parent_code || '', parentName(u), u.team || '', u.site || '', u.dept || '', u.part || '']; })) },
     { name:'작성방법', rows:[['항목','설명'], ['사원번호','필수. 영문·숫자 4~20자. 서버에서 암호화된 값만 저장'], ['성명','선택. 브라우저에서 가운데를 가린 뒤(홍길동→홍*동) 전송, 원래 성명은 저장하지 않음'],
       ['부서코드','필수. 인사 시스템의 부서코드. [부서코드(참고)] 시트 참고'], ['부서','새 부서코드일 때 필수. 부서 이름'], ['상위부서','새 부서코드일 때 필수. 상위 부서 이름 (조직도 연결용)'],
-      ['권한(선택)','근로자 / 관리자. 비워두면 신규는 근로자, 기존 인원은 현재 권한 유지 (사업팀·본사 권한은 화면에서 지정)'],
-      ['참고','인사 시스템에서 내려받은 사원 명단을 그대로 올려도 됩니다. 위 열 외의 정보(주민번호·연락처·주소 등)는 읽지 않습니다.']] } ]);
+      ['직책','권한 자동 설정용 (직책 원문은 서버로 보내지 않음). 사업팀장 → 사업팀 권한 / 그룹장·SE팀장·SE파트장 → 관리자 권한(본인 소속 범위) / 그 외 → 근로자. 사업팀 소속 지원그룹(1~4지원그룹) 인원은 직책과 관계없이 사업팀 권한. 본사 권한은 화면에서 별도 지정'],
+      ['참고','인사 시스템에서 내려받은 사원 명단을 그대로 올려도 됩니다. 위 열 외의 정보(주민번호·연락처·주소 등)는 읽지 않습니다.'], ['참고','다시 올리면 직책 기준으로 권한이 다시 맞춰집니다 (화면에서 바꾼 사업팀·관리자 권한도 직책 기준으로 돌아감, 본사 권한은 유지)']] } ]);
 }
 function deskRenderImport(){ if (!DESK.imp) $('#impPreview').innerHTML = ''; $('#impRun').disabled = !DESK.imp || !DESK.imp.valid.length; }
 function roleCode(v){ v = String(v || '').trim(); if (!v) return ''; if (/^(근로자|worker|직원)$/i.test(v)) return 'worker'; if (/^(관리자|manager)$/i.test(v)) return 'manager'; return null; }
@@ -2537,7 +2552,7 @@ $('#impFile').addEventListener('change', async function(){
     var usedCols = Object.keys(col).filter(function(k){ return col[k] > -1; }).length, ignored = head.filter(Boolean).length - usedCols;
     /* 필요한 열만 꺼내고 원본 행은 바로 버림 */
     var picked = aoa.slice(hi + 1).map(function(r, i){ var g = function(k){ return col[k] > -1 ? String(r[col[k]] == null ? '' : r[col[k]]).trim() : ''; };
-      return { row:hi + i + 2, id:normEmp(g('empId')), name:g('name'), code:g('code'), dname:g('dname'), parent:g('parent'), role:g('role'), status:g('status') }; });
+      return { row:hi + i + 2, id:normEmp(g('empId')), name:g('name'), code:g('code'), dname:g('dname'), parent:g('parent'), title:g('title'), role:g('role'), status:g('status') }; });
     aoa = null;
     var known = {}; state.org.forEach(function(u){ known[u.code] = true; });
     var fileUnits = {}, byId = {}, invalid = [], retired = 0;
@@ -2547,20 +2562,27 @@ $('#impFile').addEventListener('change', async function(){
       var reason = !EMP_RE.test(p.id) ? '사번 형식 오류' : !CODE_RE.test(p.code) ? '부서코드 오류: ' + (p.code || '(빈칸)') : (!p.dname && !known[p.code]) ? '새 부서코드인데 부서명이 없음: ' + p.code : roleCode(p.role) === null ? '권한 값 오류: ' + p.role : '';
       if (reason) return invalid.push({ row:p.row, reason:reason });
       if (p.dname) fileUnits[p.code] = { name:p.dname, parentName:p.parent || (fileUnits[p.code] && fileUnits[p.code].parentName) || '' };
-      byId[p.id] = { row:p.row, empId:p.id, nameMask:maskName(p.name), orgCode:p.code, role:roleCode(p.role) };   /* 성명은 여기서 마스킹 — 원문은 전송하지 않음 */
+      byId[p.id] = { row:p.row, empId:p.id, nameMask:maskName(p.name), orgCode:p.code, role:roleCode(p.role), title:p.title };   /* 성명은 여기서 마스킹 — 원문은 전송하지 않음 */
     });
     picked = null;
     var units = resolveUnits(fileUnits), built = buildOrg(units), bc = {}; built.forEach(function(u){ bc[u.code] = u; });
-    var valid = Object.keys(byId).map(function(k){ return byId[k]; });
+    var hasTitle = col.title > -1;
+    var valid = Object.keys(byId).map(function(k){ var v = byId[k];
+      if (hasTitle) v.role = roleByTitle(v.title, bc[v.orgCode], bc);   /* 직책 열이 있으면 직책 기준 권한 */
+      v.titleShown = v.title; delete v.title; return v; });   /* 직책 원문은 서버로 보내지 않음 */
+    var rc = { team:0, manager:0, worker:0 }; valid.forEach(function(v){ if (rc[v.role] !== undefined) rc[v.role]++; });
     var lv = { 1:0, 2:0, 3:0, 4:0 }; built.forEach(function(u){ if (u.depth <= 4) lv[u.depth]++; });
     var newUnits = units.filter(function(u){ return u.isNew; });
+    valid.forEach(function(v){ delete v.titleShown; });
     DESK.imp = { valid:valid, invalid:invalid, units:newUnits.map(function(u){ return { code:u.code, name:u.name, parent:u.parent }; }), name:file.name };
     var bySite = {}; valid.forEach(function(v){ var u = bc[v.orgCode]; var k = u ? (u.team + ' › ' + (u.site || '(사업팀 직속)')) : '?'; bySite[k] = (bySite[k] || 0) + 1; });
     $('#impPreview').innerHTML =
       '<div class="imp-sum"><div><b>'+valid.length.toLocaleString()+'</b><span>반영 대상 인원</span></div><div><b>'+built.length.toLocaleString()+'</b><span>조직 단위 (신규·변경 '+newUnits.length+')</span></div><div class="'+(invalid.length ? 'bad' : '')+'"><b>'+invalid.length+'</b><span>오류 행 (제외)</span></div>'+(retired ? '<div><b>'+retired+'</b><span>재직 외 (제외)</span></div>' : '')+'</div>' +
       '<p class="note" style="margin:0 0 8px">사업팀 '+lv[1]+' · 그룹 '+lv[2]+' · 팀 '+lv[3]+' · 파트 '+lv[4]+' 단위로 정리됩니다. 읽은 열 '+usedCols+'개 · <b>나머지 '+ignored+'개 열은 읽지 않고 버렸습니다.</b></p>' +
-      '<div class="dtable-wrap" style="max-height:260px"><table class="dtable"><thead><tr><th>행</th><th>사번</th><th>성명(마스킹)</th><th>부서코드</th><th>소속 (사업팀 › 그룹 › 팀 › 파트)</th><th>권한</th></tr></thead><tbody>' +
-        valid.slice(0, 15).map(function(v){ var u = bc[v.orgCode]; return '<tr><td class="num">'+v.row+'</td><td class="mono">'+esc(v.empId.replace(/.(?=.{2})/g, '•'))+'</td><td>'+esc(v.nameMask || '-')+'</td><td class="mono">'+esc(v.orgCode)+'</td><td>'+(u ? '<i class="tdot" style="background:'+teamColor(u.team)+'"></i>'+esc(pathLabel(u)) : '-')+'</td><td>'+(v.role ? ROLE[v.role].ko : '<span style="color:var(--ink-faint)">유지/근로자</span>')+'</td></tr>'; }).join('') +
+      (hasTitle ? '<div class="imp-roles">직책 기준 권한 · '+roleChip('team')+' <b>'+rc.team+'</b>명 '+roleChip('manager')+' <b>'+rc.manager+'</b>명 '+roleChip('worker')+' <b>'+rc.worker+'</b>명 <span>(본사 권한 계정은 변경하지 않음)</span></div>'
+        : '<div class="notice warn" style="margin:0 0 8px">"직책" 열이 없어 권한은 바꾸지 않습니다 (신규는 근로자). 직책 열을 포함해서 올리면 직책 기준으로 권한이 자동 설정됩니다.</div>') +
+      '<div class="dtable-wrap" style="max-height:260px"><table class="dtable"><thead><tr><th>행</th><th>사번</th><th>성명(마스킹)</th><th>부서코드</th><th>소속 (사업팀 › 그룹 › 팀 › 파트)</th><th>직책</th><th>권한</th></tr></thead><tbody>' +
+        valid.slice().sort(function(a,b){ return (ROLE_RANK[a.role] || 3) - (ROLE_RANK[b.role] || 3); }).slice(0, 15).map(function(v){ var u = bc[v.orgCode]; return '<tr><td class="num">'+v.row+'</td><td class="mono">'+esc(v.empId.replace(/.(?=.{2})/g, '•'))+'</td><td>'+esc(v.nameMask || '-')+'</td><td class="mono">'+esc(v.orgCode)+'</td><td>'+(u ? '<i class="tdot" style="background:'+teamColor(u.team)+'"></i>'+esc(pathLabel(u)) : '-')+'</td><td>'+esc(v.titleShown || '-')+'</td><td>'+(v.role ? roleChip(v.role) : '<span style="color:var(--ink-faint)">유지/근로자</span>')+'</td></tr>'; }).join('') +
       '</tbody></table></div>' + (valid.length > 15 ? '<p class="note">미리보기는 15행까지 표시합니다. 사번은 화면에서 가려 표시됩니다.</p>' : '') +
       (invalid.length ? '<div class="notice warn" style="margin-top:10px"><b>오류 행</b> · ' + invalid.slice(0, 30).map(function(x){ return x.row + '행(' + esc(x.reason) + ')'; }).join(', ') + (invalid.length > 30 ? ' 외 ' + (invalid.length - 30) + '건' : '') + '</div>' : '');
     $('#impRun').disabled = !valid.length && !newUnits.length; $('#impResult').innerHTML = '';

@@ -332,7 +332,9 @@ function buildOrg(list: any[]) {
 
 // [본사] 조직·인원 백데이터 일괄 반영
 //   units = [{ code, name, parent }]  (부서코드 트리, 첫 묶음에만 포함)
-//   rows  = [{ empId, nameMask, orgCode, role(worker|manager|'') }]  (성명은 브라우저에서 마스킹된 값)
+//   rows  = [{ empId, nameMask, orgCode, role(worker|manager|team|'') }]
+//           성명은 브라우저에서 마스킹된 값, 권한은 브라우저가 직책으로 정한 값(직책 원문은 받지 않음)
+//           본사(hq) 권한은 업로드로 부여·변경하지 않음
 async function actImport(req: Request, body: any) {
   const actor = await getActor(req);
   if (actor.role !== "hq") throw new HttpError(403, "조직 백데이터 업로드는 본사만 가능합니다");
@@ -364,7 +366,7 @@ async function actImport(req: Request, body: any) {
     if (!EMP_RE.test(emp)) { invalid.push({ row: rowNo, reason: "사번 형식 오류" }); continue; }
     const code = String(r.orgCode ?? "").trim();
     if (!codes.has(code)) { invalid.push({ row: rowNo, reason: `알 수 없는 부서코드: ${code || "(빈칸)"}` }); continue; }
-    const role = r.role === "manager" ? "manager" : r.role === "worker" ? "worker" : "";
+    const role = ["worker", "manager", "team"].includes(r.role) ? r.role : "";
     byHash.set(await hmacHex(emp), { org_code: code, role, name_mask: maskName(r.nameMask) ?? "" });
   }
   const rows = [...byHash.entries()].map(([h, v]: [string, any]) => ({ ...v, emp_hash: h }));
