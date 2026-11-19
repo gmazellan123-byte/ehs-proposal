@@ -144,6 +144,14 @@
             
         </activity>
 
+        <!-- 1.0.2: 실행 시 브라우저 도우미가 이 화면을 찾다가 없어서 앱이 즉시 종료되던 문제 수정 -->
+        <activity android:name="com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity"
+            android:exported="false">
+            <meta-data
+                android:name="android.support.customtabs.trusted.MANAGE_SPACE_URL"
+                android:value="@string/launchUrl" />
+        </activity>
+
         <activity android:name="com.google.androidbrowserhelper.trusted.FocusActivity" />
 
         <activity android:name="com.google.androidbrowserhelper.trusted.WebViewFallbackActivity"
