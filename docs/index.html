@@ -2288,13 +2288,23 @@ function stamp(){ var d = new Date(); return d.getFullYear() + pad(d.getMonth()+
 function autoCols(rows){ var w = []; rows.slice(0, 300).forEach(function(r){ r.forEach(function(c, i){
   var s = String(c == null ? '' : c), len = 0; for (var k = 0; k < s.length; k++) len += s.charCodeAt(k) > 255 ? 2 : 1;
   w[i] = Math.max(w[i] || 6, Math.min(60, len + 2)); }); }); return w.map(function(x){ return { wch:x }; }); }
+/* 엑셀 형식(MIME)을 정확히 지정해 저장 — 기본 저장 방식은 '형식 미지정'이라 안드로이드에서 "지원하지 않는 파일 형식"으로 열림 */
+var XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+function saveWorkbook(X, wb, filename){
+  var blob = new Blob([X.write(wb, { bookType:'xlsx', type:'array' })], { type:XLSX_MIME });
+  if (window.navigator.msSaveOrOpenBlob) return window.navigator.msSaveOrOpenBlob(blob, filename);
+  var url = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href = url; a.download = filename; a.rel = 'noopener'; a.style.display = 'none';
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 4000);
+}
 async function downloadXlsx(filename, sheets){
   try {
     var X = await loadXLSX(), wb = X.utils.book_new();
     sheets.forEach(function(s){ var ws = X.utils.aoa_to_sheet(s.rows); ws['!cols'] = autoCols(s.rows);
       if (s.rows.length > 1) ws['!autofilter'] = { ref: X.utils.encode_range({ s:{ r:0, c:0 }, e:{ r:s.rows.length-1, c:s.rows[0].length-1 } }) };
       X.utils.book_append_sheet(wb, ws, s.name.slice(0, 31)); });
-    X.writeFile(wb, filename); toast('엑셀 파일을 내려받았습니다');
+    saveWorkbook(X, wb, filename); toast('엑셀 파일을 내려받았습니다');
   } catch(e){ fail(e); }
 }
 function reportRows(L){
@@ -2373,9 +2383,9 @@ async function shareFile(filename, sheets){
   var cf = new File(['﻿' + sheets[0].rows.map(function(r){ return r.map(csvCell).join(','); }).join('\r\n')], title + '.csv', { type:'text/csv' });
   var can = function(f){ try { return !!(navigator.canShare && navigator.canShare({ files:[f] })); } catch(e){ return false; } };
   var f = can(xf) ? xf : can(cf) ? cf : null;
-  if (!f){ X.writeFile(workbookFrom(X, sheets), filename); toast('이 브라우저는 파일 공유를 지원하지 않아 휴대폰에 저장했습니다'); return; }
+  if (!f){ saveWorkbook(X, workbookFrom(X, sheets), filename); toast('이 브라우저는 파일 공유를 지원하지 않아 휴대폰에 저장했습니다'); return; }
   try { await navigator.share({ files:[f], title:title, text:text }); toast(f === cf ? 'CSV 파일(엑셀에서 열림)로 공유했습니다' : '공유했습니다'); }
-  catch(e){ if (e && e.name === 'AbortError') return; X.writeFile(workbookFrom(X, sheets), filename); toast('공유하지 못해 휴대폰에 저장했습니다', true); }
+  catch(e){ if (e && e.name === 'AbortError') return; saveWorkbook(X, workbookFrom(X, sheets), filename); toast('공유하지 못해 휴대폰에 저장했습니다', true); }
 }
 function wideScreen(){ return window.matchMedia('(min-width: 900px)').matches; }
 async function openExportSheet(){
