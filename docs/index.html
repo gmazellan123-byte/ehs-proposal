@@ -772,6 +772,27 @@ body.desk .dtree{position:static;max-height:none;padding:8px;}
 .side-brand b{color:#0B2E5C;}
 .side-brand span{color:#4A6A8F;}
 .side-nav{margin-top:4px;}
+
+/* ===== v4.3: 상단 타이틀 바 (좌측 로고 영역 + 화면 제목을 한 줄로 연결) ===== */
+:root{--topbar-h:84px;}
+.side{padding:0 14px 20px;gap:16px;background:
+    linear-gradient(180deg,#FFFFFF 0,#EDF5FD var(--topbar-h),#1C6BBE var(--topbar-h),#0E4C92 280px,#0B3770 62%,#081F45 100%);}
+.side-brand{position:relative;height:var(--topbar-h);margin:0 -14px;padding:0 18px;align-items:center;}
+.side-brand::after,body.desk .desk-head::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,#0B4F96,#1E8BD8 45%,#38BDF8);}
+.side-brand::after{background:linear-gradient(90deg,#0B4F96,#1677C9);}
+body.desk .desk-head::after{background:linear-gradient(90deg,#1677C9,#1E8BD8 30%,#38BDF8 75%,#7DD3FC);}
+.side-nav{margin-top:2px;}
+body.desk .desk-main{padding:0 24px 18px;}
+body.desk .desk-head{position:relative;height:var(--topbar-h);margin:0 -24px 16px;padding:0 24px 3px;
+  background:linear-gradient(180deg,#FFFFFF 0,#EDF5FD 100%);box-shadow:0 6px 16px rgba(14,60,120,.08);z-index:2;}
+body.desk .desk-head h1{font-size:23px;color:#0B2E5C;display:flex;align-items:center;gap:10px;}
+body.desk .desk-head h1::before{content:"";width:5px;height:22px;border-radius:3px;background:linear-gradient(180deg,#38BDF8,#0B4F96);}
+body.desk .desk-head p{margin-left:15px;color:#4A6A8F;}
+.side{box-shadow:none;}
+.desk-shell{background:linear-gradient(180deg,#FFFFFF 0,#EDF5FD var(--topbar-h),transparent var(--topbar-h));}
+.side-nav,.side-foot{position:relative;}
+.side::after{content:"";position:absolute;top:var(--topbar-h);right:0;bottom:0;width:1px;background:rgba(255,255,255,.08);}
+.side{position:relative;}
 </style>
 </head>
 <body>
