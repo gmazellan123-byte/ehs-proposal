@@ -793,6 +793,39 @@ body.desk .desk-head p{margin-left:15px;color:#4A6A8F;}
 .side-nav,.side-foot{position:relative;}
 .side::after{content:"";position:absolute;top:var(--topbar-h);right:0;bottom:0;width:1px;background:rgba(255,255,255,.08);}
 .side{position:relative;}
+
+/* ===== v4.4: 위험성평가 참여 (3번째 유형) ===== */
+:root{--teal:#0D9488;--teal-soft:#E3F6F3;--teal-glow:rgba(13,148,136,.32);}
+.type-select{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+.type-card{padding:11px 9px 10px;}
+.type-card .ti{width:32px;height:32px;border-radius:10px;margin-bottom:8px;}
+.type-card .ti svg{width:17px;height:17px;}
+.type-card .tl{font-size:13.5px;letter-spacing:-.4px;white-space:nowrap;}
+.type-card .ts{font-size:10.5px;letter-spacing:-.3px;line-height:1.35;}
+.type-card .code{top:9px;right:8px;font-size:8px;}
+.type-card.t-risk .ti{background:var(--teal-soft);color:var(--teal);}
+.type-card.t-risk.on{background:linear-gradient(160deg,#2DD4BF 0%,#0F766E 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),inset 0 -3px 0 rgba(0,60,55,.25),0 10px 22px var(--teal-glow);}
+#form-risk::before{background:linear-gradient(90deg,#5EEAD4,#0F766E);}
+.form-panel[data-type=risk] .label .no{background:linear-gradient(180deg,#2DD4BF,#0F766E);box-shadow:0 2px 4px rgba(13,148,136,.3);}
+.btn-submit.m-risk{background:linear-gradient(180deg,#2DD4BF,#0F766E);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),inset 0 -3px 0 rgba(0,60,55,.25),0 8px 20px var(--teal-glow);}
+.item.k-risk::before{background:linear-gradient(180deg,#5EEAD4,#0F766E);}
+.t-type-risk{background:var(--teal-soft);color:var(--teal);}
+.mstack i.r{background:linear-gradient(180deg,#5EEAD4,#0F766E);}
+.rl-pick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.rl-pick button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 6px;border-radius:var(--r-sm);cursor:pointer;border:1px solid var(--line2);
+  background:linear-gradient(180deg,#fff,#F3F6FA);box-shadow:inset 0 -2px 0 rgba(20,32,57,.06),0 2px 5px rgba(20,32,57,.07);transition:all .12s;}
+.rl-pick button b{font-size:20px;font-weight:800;line-height:1.1;}
+.rl-pick button span{font-size:11.5px;color:var(--ink-faint);font-weight:700;}
+.rl-pick .rt-hi b{color:#DC2626;} .rl-pick .rt-md b{color:#EA7A0C;} .rl-pick .rt-lo b{color:#16A34A;}
+.rl-pick button.on{color:#fff;border-color:transparent;transform:translateY(-1px);}
+.rl-pick button.on b,.rl-pick button.on span{color:#fff;}
+.rl-pick button.rt-hi.on{background:linear-gradient(180deg,#F87171,#DC2626);box-shadow:0 6px 14px rgba(220,38,38,.3);}
+.rl-pick button.rt-md.on{background:linear-gradient(180deg,#FDBA74,#EA7A0C);box-shadow:0 6px 14px rgba(234,122,12,.3);}
+.rl-pick button.rt-lo.on{background:linear-gradient(180deg,#4ADE80,#16A34A);box-shadow:0 6px 14px rgba(22,163,74,.3);}
+.rl-pick.sm button{padding:8px 4px;} .rl-pick.sm button b{font-size:16px;}
+.rt{display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:6px;font-size:11.5px;font-weight:800;color:#fff;white-space:nowrap;}
+.rt small{font-size:9.5px;font-weight:700;opacity:.9;}
+span.rt-hi{background:#DC2626;} span.rt-md{background:#EA7A0C;} span.rt-lo{background:#16A34A;}
 </style>
 </head>
 <body>
@@ -902,11 +935,17 @@ body.desk .desk-head p{margin-left:15px;color:#4A6A8F;}
           <span class="tl">안전 개선제안</span>
           <span class="ts">위험요인 개선 제안</span>
         </button>
+        <button class="type-card t-risk" data-type="risk" type="button">
+          <span class="code">TYPE·R</span>
+          <span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg></span>
+          <span class="tl">위험성평가 참여</span>
+          <span class="ts">근무지 위험요인 평가</span>
+        </button>
         <button class="type-card t-nearmiss" data-type="nearmiss" type="button">
           <span class="code">TYPE·N</span>
           <span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
           <span class="tl">아차사고 신고</span>
-          <span class="ts">사고로 이어질 뻔한 상황</span>
+          <span class="ts">사고 날 뻔한 상황</span>
         </button>
       </div>
 
@@ -927,6 +966,17 @@ body.desk .desk-head p{margin-left:15px;color:#4A6A8F;}
           <textarea data-f="request" maxlength="2000" placeholder="어떻게 개선되었으면 하는지 작성해주세요"></textarea></div>
         <div class="field"><label class="label"><span class="no">05</span>사진 첨부 <span class="opt">선택</span></label><div data-photo></div>
           <p class="note">보안정책상 촬영이 제한된 사업장에서는 사진 없이 작성해주세요. 사람 얼굴·보안시설이 찍히지 않게 해주세요. 사진의 위치정보(GPS)는 업로드 전에 자동으로 제거됩니다.</p></div>
+      </form>
+
+      <!-- 위험성평가 참여 -->
+      <form class="panel form-card form-panel" id="form-risk" data-type="risk" novalidate>
+        <div class="field"><label class="label"><span class="no">01</span>장소 (근무지) <span class="req">*</span></label>
+          <input type="text" data-f="location" maxlength="100" placeholder="예: 정문 초소, B동 지하 전기실, 물류 하역장"></div>
+        <div class="field"><label class="label"><span class="no">02</span>위험요인 <span class="opt" id="riskCatHint">선택</span></label><select data-f="category"></select></div>
+        <div class="field"><label class="label"><span class="no">03</span>내용 <span class="req">*</span></label>
+          <textarea data-f="detail" maxlength="2000" placeholder="어떤 작업·장소에서 어떤 위험이 있는지, 다칠 수 있는 상황을 작성해주세요"></textarea><div class="counter" data-count="detail">0 / 2000</div></div>
+        <div class="field"><label class="label"><span class="no">04</span>위험정도 <span class="req">*</span><span class="opt">다칠 가능성·심각성 기준</span></label>
+          <div class="rl-pick" id="riskPick"></div></div>
       </form>
 
       <!-- 아차사고 -->
@@ -968,6 +1018,7 @@ body.desk .desk-head p{margin-left:15px;color:#4A6A8F;}
         <div class="chips" id="typeChips">
           <button class="chip on" data-v="all">전체</button>
           <button class="chip" data-v="proposal">개선제안</button>
+          <button class="chip" data-v="risk">위험성평가</button>
           <button class="chip" data-v="nearmiss">아차사고</button>
           <button class="chip" data-v="open">미처리</button>
           <button class="chip" data-v="committee">위원회 상정</button>
@@ -1061,7 +1112,7 @@ body.desk .desk-head p{margin-left:15px;color:#4A6A8F;}
         <section data-dscreen="dlist" class="hidden">
           <div class="dpanel">
             <div class="dpanel-h dfilters">
-              <select id="dfType"><option value="all">유형 전체</option><option value="proposal">개선제안</option><option value="nearmiss">아차사고</option></select>
+              <select id="dfType"><option value="all">유형 전체</option><option value="proposal">개선제안</option><option value="risk">위험성평가</option><option value="nearmiss">아차사고</option></select>
               <select id="dfStatus"></select>
               <div class="dorg" id="dfOrg"></div>
               <select id="dfGrade"></select>
@@ -1170,14 +1221,16 @@ var LIB_MISSING = !DEMO && !window.supabase;
 var LOGO = 'data:image/png;base64,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';   /* 회사 로고 (파일 내장) */
 var NM_CATS = (C.NEARMISS_CATEGORIES || []).filter(Boolean);
 
-var TYPE = { proposal:{label:'안전 개선제안', short:'개선제안'}, nearmiss:{label:'아차사고 신고', short:'아차사고'} };
+var TYPE = { proposal:{label:'안전 개선제안', short:'개선제안'}, risk:{label:'위험성평가 참여', short:'위험성평가'}, nearmiss:{label:'아차사고 신고', short:'아차사고'} };
+var RISKS = ['상','중','하'], RISK = { '상':{cls:'hi', desc:'높음'}, '중':{cls:'md', desc:'보통'}, '하':{cls:'lo', desc:'낮음'} };
 var ROLE = { worker:{ko:'근로자', cls:'role-worker'}, manager:{ko:'관리자', cls:'role-manager'}, team:{ko:'사업팀', cls:'role-team'}, hq:{ko:'본사', cls:'role-hq'} };
 var GRADES = ['가','나','다','라'];
 var GRADE = { '가':{cls:'ga', desc:'전사 적용'}, '나':{cls:'na', desc:'사업팀 적용'}, '다':{cls:'da', desc:'그룹 적용'}, '라':{cls:'ra', desc:'단순 조치'} };
 var COMMITTEE = ['가','나','다'];
 var STATUS = { received:'접수', reviewing:'검토중', rejected:'반려', done:'조치완료', committee:'위원회 의결예정' };
 var STATUS_ORDER = ['received','reviewing','rejected','done','committee'];
-var PICK = { proposal:['received','reviewing','rejected','done'], nearmiss:['received','reviewing','done'] };
+var PICK = { proposal:['received','reviewing','rejected','done'], nearmiss:['received','reviewing','done'], risk:['reviewing','done'] };
+function stLabel(s, type){ return type === 'risk' && s === 'done' ? '반영 완료' : (STATUS[s] || s); }
 var OPEN = ['received','reviewing'];
 var CLOSED = ['rejected','done','committee'];
 var EMP_RE = /^[A-Z0-9]{4,20}$/;
@@ -1370,13 +1423,13 @@ function makeDemoApi(){
   var NDET = ['야간 순찰 중 지게차 후진 경보음이 작동하지 않아 충돌할 뻔했습니다.','우천 후 출입구 경사로에서 미끄러져 넘어질 뻔했습니다.','에어샤워 자동문에 손가락이 끼일 뻔했습니다.','주차장 진입 차량과 보행자가 부딪힐 뻔했습니다.'];
   var ST = ['received','received','reviewing','reviewing','done','done','committee','rejected'];
   for (var k = 0; k < 120; k++){
-    var author = k < 4 ? h64('1001') : pickOne(workers), e = emps[author], isP = rnd() < 0.7;
+    var author = k < 4 ? h64('1001') : pickOne(workers), e = emps[author], x = rnd(), isP = x < 0.55, isR = !isP && x < 0.78;
     var t = new Date(Date.now() - Math.floor(rnd() * 400) * 864e5 - Math.floor(rnd()*864e5)).toISOString();
-    var st = pickOne(isP ? ST : ['received','reviewing','done','done']), pg = pickOne(GRADES);
+    var st = pickOne(isP ? ST : ['received','reviewing','done','done']), pg = pickOne(GRADES), rl = pickOne(RISKS);
     var fg = isP && st === 'committee' ? pickOne(['가','나','다']) : isP && st === 'done' ? '라' : null;
-    var r = { id:uuid(), report_no:++seq, type: isP ? 'proposal' : 'nearmiss', author_id:author, emp_hash:author, team:e.team, site:e.site, dept:e.dept, part:e.part, org_code:e.org_code, org_path:e.org_path,
-      proposed_grade: isP ? pg : null, final_grade:fg, location: pickOne(LOCS), category:null, occurred_at: isP ? null : t,
-      detail: isP ? pickOne(PDET) : pickOne(NDET), request: isP ? '개선 조치 요청드립니다.' : null, prevention: isP ? null : '작업 전 점검 강화 및 안내 표지 설치',
+    var r = { id:uuid(), report_no:++seq, type: isP ? 'proposal' : isR ? 'risk' : 'nearmiss', risk_level: isR ? rl : null, final_risk: isR && st === 'done' ? pickOne(RISKS) : null, author_id:author, emp_hash:author, team:e.team, site:e.site, dept:e.dept, part:e.part, org_code:e.org_code, org_path:e.org_path,
+      proposed_grade: isP ? pg : null, final_grade:fg, location: pickOne(LOCS), category:null, occurred_at: isP || isR ? null : t,
+      detail: isP || isR ? pickOne(PDET) : pickOne(NDET), request: isP ? '개선 조치 요청드립니다.' : null, prevention: isP || isR ? null : '작업 전 점검 강화 및 안내 표지 설치',
       photo_path:null, status:st, admin_comment: st === 'committee' ? '산업안전보건위원회 상정 예정입니다.' : st === 'done' ? '조치 완료했습니다. 감사합니다.' : st === 'rejected' ? '이미 개선 일정이 잡혀 있어 반려합니다.' : null,
       created_at:t, updated_at:t, reviewed_at: st !== 'received' ? t : null, closed_at: CLOSED.indexOf(st) > -1 ? t : null };
     reports.push(r);
@@ -1408,7 +1461,7 @@ function makeDemoApi(){
     signOut: async function(){ me = null; authStorage.removeItem('ehs-demo-me'); },
     org: async function(){ var a = actor(); return a && a.role !== 'worker' ? clone(UNITS) : []; },
     submit: async function(type, data, photo){ await wait(400); var e = actor(), now = new Date().toISOString();
-      var r = Object.assign({ proposed_grade:null, location:null, category:null, occurred_at:null, request:null, prevention:null }, data,
+      var r = Object.assign({ proposed_grade:null, location:null, category:null, occurred_at:null, request:null, prevention:null, risk_level:null, final_risk:null }, data,
         { id:uuid(), report_no:++seq, type:type, author_id:me, emp_hash:me, team:e.team, site:e.site, dept:e.dept, part:e.part, org_code:e.org_code, org_path:e.org_path, final_grade:null,
           photo_path: photo ? URL.createObjectURL(photo) : null, status:'received', admin_comment:null, created_at:now, updated_at:now, reviewed_at:null, closed_at:null });
       reports.unshift(r); logs.push({ report_id:r.id, from_status:null, to_status:'received', comment:'접수', changed_by_code:e.emp_code, changed_by_role:e.role, created_at:now });
@@ -1421,11 +1474,13 @@ function makeDemoApi(){
       if (!inScope(a, r.org_path)) throw new Error('권한이 없습니다.');
       var n = Object.assign({}, r, patch);
       if (n.type === 'nearmiss'){ if (['received','reviewing','done'].indexOf(n.status) < 0) throw new Error('아차사고는 접수/검토중/조치완료 상태만 사용할 수 있습니다'); n.final_grade = null; }
+      else if (n.type === 'risk'){ if (['received','reviewing','done'].indexOf(n.status) < 0) throw new Error('위험성평가는 검토중/반영 완료 상태만 사용할 수 있습니다'); n.final_grade = null;
+        if (n.status === 'done'){ if (!n.final_risk) throw new Error('반영 완료 시 위험정도(상·중·하)를 선택해야 합니다'); } else n.final_risk = null; }
       else if (n.status === 'done' || n.status === 'committee'){ if (!n.final_grade) throw new Error('조치완료 처리 시 결정 등급을 선택해야 합니다'); n.status = COMMITTEE.indexOf(n.final_grade) > -1 ? 'committee' : 'done'; }
       else n.final_grade = null;
       var now = new Date().toISOString();
-      if (n.status !== r.status || n.final_grade !== r.final_grade || (n.admin_comment||null) !== (r.admin_comment||null)){
-        n.reviewed_at = now; logs.push({ report_id:id, from_status:r.status, to_status:n.status, final_grade:n.final_grade, comment:n.admin_comment, changed_by_code:a.emp_code, changed_by_role:a.role, created_at:now }); }
+      if (n.status !== r.status || n.final_grade !== r.final_grade || n.final_risk !== r.final_risk || (n.admin_comment||null) !== (r.admin_comment||null)){
+        n.reviewed_at = now; logs.push({ report_id:id, from_status:r.status, to_status:n.status, final_grade:n.final_grade || n.final_risk || null, comment:n.admin_comment, changed_by_code:a.emp_code, changed_by_role:a.role, created_at:now }); }
       n.closed_at = CLOSED.indexOf(n.status) > -1 ? (r.closed_at && CLOSED.indexOf(r.status) > -1 ? r.closed_at : now) : null;
       n.updated_at = now; Object.assign(r, n); return clone(r); },
     remove: async function(rep){ if (actor().role !== 'hq') throw new Error('권한이 없습니다.'); reports = reports.filter(function(x){ return x.id !== rep.id; }); },
@@ -1500,7 +1555,9 @@ function openSheet(html){ sheet.innerHTML = '<div class="grab"></div>' + html; s
 function closeSheet(){ sheetWrap.classList.remove('open'); document.body.style.overflow=''; }
 sheetWrap.addEventListener('click', function(e){ if (e.target === sheetWrap) closeSheet(); });
 
-function statusTag(s){ return STATUS[s] ? '<span class="st st-'+s+'">'+STATUS[s]+'</span>' : ''; }
+function statusTag(s, type){ return STATUS[s] ? '<span class="st st-'+s+'">'+stLabel(s, type)+'</span>' : ''; }
+function riskTag(v, label){ return RISK[v] ? '<span class="rt rt-'+RISK[v].cls+'">'+(label ? '<small>'+label+'</small>' : '')+v+'</span>' : ''; }
+function riskPickHtml(sel){ return RISKS.map(function(v){ return '<button type="button" class="rt-'+RISK[v].cls+(v === sel ? ' on' : '')+'" data-r="'+v+'"><b>'+v+'</b><span>'+RISK[v].desc+'</span></button>'; }).join(''); }
 function typeTag(t){ return TYPE[t] ? '<span class="tag t-type-'+t+'">'+TYPE[t].short+'</span>' : ''; }
 function gradeTag(g, label){ return GRADE[g] ? '<span class="gt '+GRADE[g].cls+'">'+(label?'<small>'+label+'</small>':'')+g+'</span>' : ''; }
 function roleChip(role){ return ROLE[role] ? '<span class="role-chip '+ROLE[role].cls+'">'+ROLE[role].ko+'</span>' : ''; }
@@ -1513,10 +1570,11 @@ function bindGradePick(box, onPick){ box.addEventListener('click', function(e){ 
 
 function itemHtml(r, staffView){
   var isP = r.type === 'proposal';
-  var title = isP ? esc(r.location || '장소 미기재') : (r.location ? esc(r.location) + ' · ' : '') + esc(r.category ? r.category + ' · ' : '') + '발생 ' + fmt(r.occurred_at);
-  var grades = isP ? gradeTag(r.proposed_grade, '제안') + (r.final_grade ? ' ' + gradeTag(r.final_grade, '결정') : '') : '';
+  var isR = r.type === 'risk';
+  var title = isP ? esc(r.location || '장소 미기재') : isR ? esc(r.location || '장소 미기재') + (r.category ? ' · ' + esc(r.category) : '') : (r.location ? esc(r.location) + ' · ' : '') + esc(r.category ? r.category + ' · ' : '') + '발생 ' + fmt(r.occurred_at);
+  var grades = isP ? gradeTag(r.proposed_grade, '제안') + (r.final_grade ? ' ' + gradeTag(r.final_grade, '결정') : '') : isR ? riskTag(r.risk_level, '제출') + (r.final_risk ? ' ' + riskTag(r.final_risk, '반영') : '') : '';
   return '<button class="item k-'+(TYPE[r.type]?r.type:'x')+'" data-id="'+esc(r.id)+'">' +
-    '<div class="r1"><span>'+noOf(r.report_no)+'</span>'+typeTag(r.type)+grades+'<span class="sp"></span>'+statusTag(r.status)+'</div>' +
+    '<div class="r1"><span>'+noOf(r.report_no)+'</span>'+typeTag(r.type)+grades+'<span class="sp"></span>'+statusTag(r.status, r.type)+'</div>' +
     '<div class="r2">'+title+'</div><div class="r3">'+esc(r.detail)+'</div>' +
     '<div class="r4"><span class="mono">'+fmt(r.created_at)+'</span>' +
       (staffView ? '<span class="unit">'+esc(r.site ? fullUnit(r) : unitOf(r))+'</span><span class="mono" style="margin-left:auto">ID '+esc(codeOf(r.emp_hash))+'</span>' : (r.photo_path ? '<span style="margin-left:auto">📎 사진</span>' : '')) +
@@ -1574,7 +1632,7 @@ $('#authForm').addEventListener('submit', async function(e){
 /* =====================================================================
    5. 메인 화면 전환
    ===================================================================== */
-var state = { user:null, org:[], screen:null, type:'proposal', grade:null, photos:{proposal:null, nearmiss:null}, all:[], employees:[],
+var state = { user:null, org:[], screen:null, type:'proposal', grade:null, photos:{proposal:null, nearmiss:null, risk:null}, riskLevel:null, all:[], employees:[],
   filter:{ chip:'all', status:'all', org:null, q:'', emp:null }, empSel:null };
 if (DEMO) window.__ehs = { state:state };   /* 데모 모드 점검용 */
 function isStaff(){ return state.user && state.user.role !== 'worker'; }
@@ -1641,6 +1699,12 @@ var gradeBox = $('#propGrade');
 gradeBox.innerHTML = gradePickHtml(null);
 bindGradePick(gradeBox, function(g){ state.grade = g; });
 
+var riskCat = $('#form-risk [data-f=category]');
+if (NM_CATS.length){ riskCat.innerHTML = '<option value="">선택 안 함</option>' + NM_CATS.map(function(c){ return '<option>'+esc(c)+'</option>'; }).join(''); }
+else { riskCat.innerHTML = '<option value="">위험요인 목록 등록 예정</option>'; riskCat.disabled = true; $('#riskCatHint').textContent = '차후 등록 예정'; }
+var riskBox = $('#riskPick'); riskBox.innerHTML = riskPickHtml(null);
+riskBox.addEventListener('click', function(e){ var b = e.target.closest('[data-r]'); if (!b) return; state.riskLevel = b.dataset.r;
+  $$('button', riskBox).forEach(function(x){ x.classList.toggle('on', x === b); }); });
 var catSel = $('#form-nearmiss [data-f=category]');
 if (NM_CATS.length){ catSel.innerHTML = '<option value="">선택 안 함</option>' + NM_CATS.map(function(c){ return '<option>'+esc(c)+'</option>'; }).join(''); }
 else { catSel.innerHTML = '<option value="">사고 유형 목록 등록 예정</option>'; catSel.disabled = true; $('#catHint').textContent = '차후 등록 예정'; }
@@ -1652,6 +1716,7 @@ $$('.form-panel').forEach(function(form){
 });
 function renderPhoto(form){
   var t = form.dataset.type, box = $('[data-photo]', form), f = state.photos[t];
+  if (!box) return;
   if (!f){
     box.innerHTML = '<div class="photo-btns">' +
       '<label class="photo-btn cam">'+ICON.camera+'카메라 촬영<input type="file" accept="image/*" capture="environment"></label>' +
@@ -1674,13 +1739,14 @@ $$('.type-card').forEach(function(card){ card.addEventListener('click', function
   state.type = card.dataset.type;
   $$('.type-card').forEach(function(c){ c.classList.toggle('on', c === card); });
   $$('.form-panel').forEach(function(p){ p.classList.toggle('on', p.dataset.type === state.type); });
-  var btn = $('#submitBtn'); btn.textContent = state.type === 'proposal' ? '개선제안 제출하기' : '아차사고 신고하기'; btn.className = 'btn-submit m-' + state.type;
+  var btn = $('#submitBtn'); btn.textContent = { proposal:'개선제안 제출하기', risk:'위험성평가 제출하기', nearmiss:'아차사고 신고하기' }[state.type]; btn.className = 'btn-submit m-' + state.type;
 }); });
 
 function resetForm(t){
   var form = $('#form-' + t); form.reset(); state.photos[t] = null; renderPhoto(form);
   $('[data-count=detail]', form).textContent = '0 / 2000';
   if (t === 'proposal'){ state.grade = null; $$('button', gradeBox).forEach(function(b){ b.classList.remove('on'); }); }
+  if (t === 'risk'){ state.riskLevel = null; $$('button', riskBox).forEach(function(b){ b.classList.remove('on'); }); }
 }
 $('#submitBtn').addEventListener('click', async function(){
   var t = state.type, form = $('#form-' + t), btn = this;
@@ -1692,6 +1758,12 @@ $('#submitBtn').addEventListener('click', async function(){
     if (!data.location) return toast('장소를 입력해주세요', true);
     if (data.detail.length < 5) return toast('상세 내용을 5자 이상 작성해주세요', true);
     data.request = v('request') || null;
+  } else if (t === 'risk'){
+    data.location = v('location'); if (!data.location) return toast('장소(근무지)를 입력해주세요', true);
+    data.category = v('category') || null;
+    if (data.detail.length < 5) return toast('내용을 5자 이상 작성해주세요', true);
+    if (!state.riskLevel) return toast('위험정도(상·중·하)를 선택해주세요', true);
+    data.risk_level = state.riskLevel;
   } else {
     var oc = v('occurred_at'); if (!oc) return toast('발생 일시를 입력해주세요', true);
     var od = new Date(oc); if (isNaN(od) || od > new Date(Date.now()+6e4)) return toast('발생 일시를 다시 확인해주세요', true);
@@ -1742,29 +1814,34 @@ function committeeNote(r){
   return r.status === 'committee' ? '<div class="notice">⚖ 결정 등급 <b>'+esc(r.final_grade)+'등급('+GRADE[r.final_grade].desc+')</b>으로 <b>산업안전보건위원회 의결 예정</b>으로 종료 처리되었습니다.</div>' : '';
 }
 async function openDetail(r, staffView){
-  var isP = r.type === 'proposal', u = state.user;
+  var isP = r.type === 'proposal', isR = r.type === 'risk', u = state.user;
   var canProc = staffView && inScope(u, r.org_path);
   var meta = staffView ? [['소속', esc((r.team || '본사') + (r.site ? ' › ' + fullUnit(r) : ''))]] : [];   /* 근로자에게는 소속 비표시 */
   if (isP){ meta.push(['장소', esc(r.location||'-')], ['제안 등급', r.proposed_grade ? gradeTag(r.proposed_grade)+' '+GRADE[r.proposed_grade].desc : '-'],
     ['결정 등급', r.final_grade ? gradeTag(r.final_grade)+' '+GRADE[r.final_grade].desc : '<span style="color:var(--ink-faint)">미결정</span>']); }
+  else if (isR) meta.push(['장소 (근무지)', esc(r.location || '-')], ['위험요인', esc(r.category || '미분류')], ['위험정도 (제출)', riskTag(r.risk_level) + ' ' + (RISK[r.risk_level] ? RISK[r.risk_level].desc : '')],
+    ['위험정도 (반영)', r.final_risk ? riskTag(r.final_risk) + ' ' + RISK[r.final_risk].desc : '<span style="color:var(--ink-faint)">미결정</span>']);
   else meta.push(['발생 일시', fmt(r.occurred_at)], ['장소', esc(r.location || '-')], ['사고 유형', esc(r.category || '미분류')]);
   meta.push(['제출 일시', fmt(r.created_at)]);
   if (staffView) meta.push(['제출자 식별코드', '<span class="mono" style="color:var(--brand)">'+esc(codeOf(r.emp_hash))+'</span>'], ['종료 일시', fmt(r.closed_at)]);
   var blocks = isP ? [['DETAIL · 상세 내용', r.detail], ['REQUEST · 조치 요청사항', r.request]]
+             : isR ? [['CONTENT · 내용', r.detail]]
                    : [['SITUATION · 상황 설명', r.detail], ['PREVENTION · 재발 방지 의견', r.prevention]];
   var html =
-    '<div class="sheet-head"><div class="h"><div class="r1"><span class="mono" style="font-size:12px;color:var(--ink-faint)">'+noOf(r.report_no)+'</span>'+typeTag(r.type)+statusTag(r.status)+'</div>' +
-    '<h3>'+(isP ? esc(r.location||'개선제안') : '아차사고 · '+fmt(r.occurred_at))+'</h3></div><button class="icon-btn" data-close aria-label="닫기">✕</button></div>' +
+    '<div class="sheet-head"><div class="h"><div class="r1"><span class="mono" style="font-size:12px;color:var(--ink-faint)">'+noOf(r.report_no)+'</span>'+typeTag(r.type)+statusTag(r.status, r.type)+'</div>' +
+    '<h3>'+(isP ? esc(r.location||'개선제안') : isR ? '위험성평가 · '+esc(r.location||'') : '아차사고 · '+fmt(r.occurred_at))+'</h3></div><button class="icon-btn" data-close aria-label="닫기">✕</button></div>' +
     '<div class="meta">'+meta.map(function(m){ return '<div><span>'+m[0]+'</span><b>'+(m[1]||'-')+'</b></div>'; }).join('') + (meta.length%2?'<div></div>':'') + '</div>' +
     committeeNote(r) +
     blocks.filter(function(b){ return b[1]; }).map(function(b){ return '<div class="blk"><div class="bt">'+b[0]+'</div><div class="bd">'+esc(b[1])+'</div></div>'; }).join('') +
     (r.photo_path ? '<div class="photo-box" id="dPhoto">사진 불러오는 중…</div>' : '') +
     (!canProc && r.admin_comment ? '<div class="blk"><div class="bt" style="color:var(--violet)">REPLY · 처리 의견</div><div class="bd admin">'+esc(r.admin_comment)+'</div></div>' : '');
 
-  var pick = r.status === 'committee' ? 'done' : r.status, fg = r.final_grade || r.proposed_grade || null;
+  var pick = r.status === 'committee' ? 'done' : r.status, fg = r.final_grade || r.proposed_grade || null, fr = r.final_risk || r.risk_level || null;
+  if (isR && pick === 'received') pick = 'reviewing';   /* 위험성평가: 검토중 · 반영 완료 */
   if (canProc){
     html += '<div class="proc"><div class="ptitle">처리 <span class="kicker">PROCESS</span></div>' +
-      '<div class="st-pick" id="stPick">'+PICK[r.type].map(function(s){ return '<button type="button" class="'+s+(s===pick?' on':'')+'" data-s="'+s+'">'+STATUS[s]+'</button>'; }).join('')+'</div>' +
+      '<div class="st-pick" id="stPick">'+PICK[r.type].map(function(s){ return '<button type="button" class="'+s+(s===pick?' on':'')+'" data-s="'+s+'">'+stLabel(s, r.type)+'</button>'; }).join('')+'</div>' +
+      (isR ? '<div id="frWrap"><label class="label" style="margin-top:4px">반영 위험정도 <span class="req">*</span><span class="opt">반영 완료 시 필수</span></label><div class="rl-pick sm" id="frPick">'+riskPickHtml(fr)+'</div></div>' : '') +
       (isP ? '<div id="fgWrap"><label class="label" style="margin-top:4px">결정 등급 <span class="req">*</span><span class="opt">조치완료 시 필수</span></label><div class="grade-pick sm" id="fgPick">'+gradePickHtml(fg, true)+'</div><div id="fgNote"></div></div>' : '') +
       '<label class="label" style="margin-top:12px">처리 의견 <span class="opt">제출자에게 공개</span></label>' +
       '<textarea id="cmt" maxlength="2000" placeholder="처리 내용·조치 결과를 입력하세요">'+esc(r.admin_comment||'')+'</textarea>' +
@@ -1781,7 +1858,7 @@ async function openDetail(r, staffView){
     var tl = $('#tl'); if (!tl) return;
     tl.innerHTML = ls.length ? ls.map(function(l){
       return '<li><div class="tm">'+fmt(l.created_at)+(staffView && l.changed_by_code ? ' · '+(ROLE[l.changed_by_role]?ROLE[l.changed_by_role].ko+' ':'')+'ID '+esc(l.changed_by_code) : '')+'</div><div class="tx">' +
-        (l.from_status ? esc(STATUS[l.from_status]||'')+' → ' : '')+'<b>'+esc(STATUS[l.to_status]||l.to_status)+'</b>' + (l.final_grade ? ' · 결정 '+esc(l.final_grade)+'등급' : '') +
+        (l.from_status ? esc(stLabel(l.from_status, r.type))+' → ' : '')+'<b>'+esc(stLabel(l.to_status, r.type))+'</b>' + (l.final_grade ? (isR ? ' · 위험정도 '+esc(l.final_grade) : ' · 결정 '+esc(l.final_grade)+'등급') : '') +
         (l.comment && l.comment !== '접수' ? '<br>'+esc(l.comment) : '') + '</div></li>'; }).join('') : '<li><div class="tx">이력이 없습니다</div></li>';
   }).catch(function(){});
 
@@ -1795,17 +1872,21 @@ async function openDetail(r, staffView){
         : '<div class="notice info">'+fg+'등급('+GRADE[fg].desc+') · 저장 시 <b>조치완료</b>로 종료 처리됩니다.</div>';
     }
     $('#stPick').addEventListener('click', function(e){ var b = e.target.closest('button'); if(!b) return; pick = b.dataset.s;
-      $$('#stPick button').forEach(function(x){ x.classList.toggle('on', x === b); }); syncFg(); });
+      $$('#stPick button').forEach(function(x){ x.classList.toggle('on', x === b); }); syncFg(); syncFr(); });
+    function syncFr(){ var w = $('#frWrap'); if (w) w.classList.toggle('hidden', pick !== 'done'); }
+    if (isR){ syncFr(); $('#frPick').addEventListener('click', function(e){ var b = e.target.closest('[data-r]'); if (!b) return; fr = b.dataset.r;
+      $$('#frPick button').forEach(function(x){ x.classList.toggle('on', x === b); }); }); }
     if (isP){ bindGradePick($('#fgPick'), function(g){ fg = g; syncFg(); }); syncFg(); }
     $('#saveProc').onclick = async function(){
       var btn = this, patch = { status:pick, admin_comment: $('#cmt').value.trim() || null };
       if (isP){ if (pick === 'done'){ if (!fg) return toast('결정 등급을 선택해주세요', true); patch.final_grade = fg; } else patch.final_grade = null; }
+      if (isR){ if (pick === 'done'){ if (!fr) return toast('반영 위험정도(상·중·하)를 선택해주세요', true); patch.final_risk = fr; } else patch.final_risk = null; }
       btn.disabled = true;
       try {
         var upd = await api.update(r.id, patch);
         var i = state.all.findIndex(function(x){ return x.id === r.id; }); if (i > -1) state.all[i] = upd;
         refreshViews();
-        toast(upd.status === 'committee' ? '위원회 의결 예정으로 종료 처리되었습니다' : '처리 내용이 저장되었습니다');
+        toast(upd.status === 'committee' ? '위원회 의결 예정으로 종료 처리되었습니다' : isR && upd.status === 'done' ? '반영 완료로 처리되었습니다' : '처리 내용이 저장되었습니다');
         openDetail(upd, true);
       } catch(e){ fail(e); btn.disabled = false; }
     };
@@ -1983,7 +2064,7 @@ async function loadDash(){
   var comm = cnt(function(r){ return r.status === 'committee'; });
   var month = cnt(function(r){ return new Date(r.created_at) >= mStart; });
   var closed = cnt(function(r){ return CLOSED.indexOf(r.status) > -1; });
-  var nP = cnt(function(r){ return r.type === 'proposal'; }), nN = A.length - nP;
+  var nP = cnt(function(r){ return r.type === 'proposal'; }), nR = cnt(function(r){ return r.type === 'risk'; }), nN = A.length - nP - nR;
   var key = levelsFor(u)[0] || 'part';
   var by = {}; A.forEach(function(r){ var k = r[key] || (key === 'team' ? '본사' : '미지정'); by[k] = (by[k] || 0) + 1; });
   var keys = Object.keys(by).sort(function(a,b){ return by[b] - by[a]; });
@@ -1998,8 +2079,8 @@ async function loadDash(){
       '<div class="panel kpi c-green"><div class="k">처리 완료율 <span class="mono">RATE</span></div><div class="v">'+(A.length ? Math.round(closed/A.length*100) : 0)+'<span style="font-size:16px">%</span></div><div class="s">종료 '+closed+'건 / '+A.length+'건</div></div>' +
     '</div>' +
     '<div class="panel box"><h3>유형 구성 <span class="mono">TYPE MIX</span></h3>' +
-      '<div class="split"><i style="width:'+(A.length ? nP/A.length*100 : 0)+'%;background:linear-gradient(180deg,#60A5FA,#1D4ED8)"></i><i style="width:'+(A.length ? nN/A.length*100 : 0)+'%;background:linear-gradient(180deg,#FDBA74,#E25E07)"></i></div>' +
-      '<div class="legend"><span><i style="background:var(--blue)"></i>개선제안 <b>'+nP+'</b></span><span><i style="background:var(--orange)"></i>아차사고 <b>'+nN+'</b></span></div></div>' +
+      '<div class="split"><i style="width:'+(A.length ? nP/A.length*100 : 0)+'%;background:linear-gradient(180deg,#60A5FA,#1D4ED8)"></i><i style="width:'+(A.length ? nR/A.length*100 : 0)+'%;background:linear-gradient(180deg,#2DD4BF,#0F766E)"></i><i style="width:'+(A.length ? nN/A.length*100 : 0)+'%;background:linear-gradient(180deg,#FDBA74,#E25E07)"></i></div>' +
+      '<div class="legend"><span><i style="background:var(--blue)"></i>개선제안 <b>'+nP+'</b></span><span><i style="background:#0D9488"></i>위험성평가 <b>'+nR+'</b></span><span><i style="background:var(--orange)"></i>아차사고 <b>'+nN+'</b></span></div></div>' +
     '<div class="panel box"><h3>처리 단계 <span class="mono">PIPELINE</span></h3>'+pipelineHtml(A)+'</div>' +
     '<div class="panel box"><h3>개선제안 등급 <span class="mono">GRADE</span></h3>'+gradeDistHtml(A.filter(function(r){ return r.type === 'proposal'; }))+'</div>' +
     '<div class="panel box"><h3>'+LV_LABEL[key]+'별 접수 <span class="mono">BY UNIT</span></h3><div class="bars-h">' +
@@ -2017,7 +2098,7 @@ $('#dashBody').addEventListener('click', function(e){ var b = e.target.closest('
 function filtered(){
   var f = state.filter, q = f.q.trim().toLowerCase();
   return scoped().filter(function(r){
-    if ((f.chip === 'proposal' || f.chip === 'nearmiss') && r.type !== f.chip) return false;
+    if (TYPE[f.chip] && r.type !== f.chip) return false;
     if (f.chip === 'open' && OPEN.indexOf(r.status) < 0) return false;
     if (f.chip === 'committee' && r.status !== 'committee') return false;
     if (f.status !== 'all' && r.status !== f.status) return false;
@@ -2195,9 +2276,9 @@ async function downloadXlsx(filename, sheets){
   } catch(e){ fail(e); }
 }
 function reportRows(L){
-  return [['접수번호','유형','상태','사업팀','그룹','팀','파트','장소','제안등급','결정등급','사고유형','발생일시','상세내용/상황설명','조치요청사항','재발방지의견','처리의견','제출자식별코드','제출자성명(마스킹)','제출일시','종료일시']]
-    .concat(L.map(function(r){ return [noOf(r.report_no), TYPE[r.type] ? TYPE[r.type].short : r.type, STATUS[r.status] || r.status, r.team || '본사', r.site || '', r.dept || '', r.part || '',
-      r.location || '', r.proposed_grade || '', r.final_grade || '', r.category || '', r.occurred_at ? fmt(r.occurred_at) : '', r.detail || '', r.request || '', r.prevention || '',
+  return [['접수번호','유형','상태','사업팀','그룹','팀','파트','장소','제안등급','결정등급','위험정도(제출)','위험정도(반영)','사고유형/위험요인','발생일시','상세내용/상황설명','조치요청사항','재발방지의견','처리의견','제출자식별코드','제출자성명(마스킹)','제출일시','종료일시']]
+    .concat(L.map(function(r){ return [noOf(r.report_no), TYPE[r.type] ? TYPE[r.type].short : r.type, stLabel(r.status, r.type), r.team || '본사', r.site || '', r.dept || '', r.part || '',
+      r.location || '', r.proposed_grade || '', r.final_grade || '', r.risk_level || '', r.final_risk || '', r.category || '', r.occurred_at ? fmt(r.occurred_at) : '', r.detail || '', r.request || '', r.prevention || '',
       r.admin_comment || '', codeOf(r.emp_hash), nameOf(r.emp_hash), fmt(r.created_at), r.closed_at ? fmt(r.closed_at) : '']; }));
 }
 function employeeRows(E){
@@ -2207,8 +2288,8 @@ function employeeRows(E){
       e.registered_at ? fmt(e.registered_at) : '', e.active ? '사용중' : '사용중지', cnt[e.emp_hash] || 0, fmt(e.created_at)]; }));
 }
 function metrics(rows){
-  var m = { total:rows.length, p:0, n:0, open:0, committee:0, done:0, rejected:0 };
-  rows.forEach(function(r){ if (r.type === 'proposal') m.p++; else m.n++; if (OPEN.indexOf(r.status) > -1) m.open++;
+  var m = { total:rows.length, p:0, n:0, r:0, open:0, committee:0, done:0, rejected:0 };
+  rows.forEach(function(r){ if (r.type === 'proposal') m.p++; else if (r.type === 'risk') m.r++; else m.n++; if (OPEN.indexOf(r.status) > -1) m.open++;
     if (r.status === 'committee') m.committee++; if (r.status === 'done') m.done++; if (r.status === 'rejected') m.rejected++; });
   m.rate = m.total ? Math.round((m.committee + m.done + m.rejected) / m.total * 100) : 0; return m;
 }
@@ -2241,8 +2322,8 @@ function orgSummary(A, D){
 function orgSummaryRows(A, D){
   D = D || { team:'all', site:'all' };
   var sub = D.site !== 'all' ? '팀' : '그룹';
-  return [['구분','조직','전체','개선제안','아차사고','처리대기','위원회의결예정','조치완료','반려','완료율(%)']]
-    .concat(orgSummary(A, D).map(function(o){ var m = o.m; return [o.level === 'team' ? (D.site !== 'all' ? '그룹' : '사업팀') : o.level === 'child' ? sub : '합계', o.name, m.total, m.p, m.n, m.open, m.committee, m.done, m.rejected, m.rate]; }));
+  return [['구분','조직','전체','개선제안','위험성평가','아차사고','처리대기','위원회의결예정','조치완료','반려','완료율(%)']]
+    .concat(orgSummary(A, D).map(function(o){ var m = o.m; return [o.level === 'team' ? (D.site !== 'all' ? '그룹' : '사업팀') : o.level === 'child' ? sub : '합계', o.name, m.total, m.p, m.r, m.n, m.open, m.committee, m.done, m.rejected, m.rate]; }));
 }
 function gradeRows(A){
   var P = A.filter(function(r){ return r.type === 'proposal'; });
@@ -2312,7 +2393,7 @@ $('#dActions').addEventListener('click', async function(e){
     downloadXlsx('안전보건제안_' + dashScopeName().replace(/ › /g, '_') + '_' + D.from.replace('-', '') + '-' + D.to.replace('-', '') + '.xlsx', [
       { name:'조회조건', rows:[['항목','값'], ['사업장', dashScopeName()], ['기간', D.from + ' ~ ' + D.to], ['접수 건수', A.length], ['내려받은 시각', fmt(new Date())]] },
       { name:'조직별현황', rows:orgSummaryRows(A, D) }, { name:'접수목록', rows:reportRows(A) },
-      { name:'등급현황', rows:gradeRows(A) }, { name:'월별추이', rows:[['월','개선제안','아차사고','합계']].concat(monthlyRange(A, D.from, D.to).map(function(m){ return [m.k, m.p, m.n, m.p + m.n]; })) } ]); }
+      { name:'등급현황', rows:gradeRows(A) }, { name:'월별추이', rows:[['월','개선제안','위험성평가','아차사고','합계']].concat(monthlyRange(A, D.from, D.to).map(function(m){ return [m.k, m.p, m.r, m.n, m.p + m.r + m.n]; })) } ]); }
   if (k === 'xlsList'){ var L = deskFiltered(); if (!L.length) return toast('내보낼 데이터가 없습니다', true);
     downloadXlsx('안전보건제안_접수목록_' + stamp() + '.xlsx', [{ name:'접수목록', rows:reportRows(L) }]); }
   if (k === 'xlsEmp'){ var E = deskEmpFiltered(); if (!E.length) return toast('내보낼 데이터가 없습니다', true);
@@ -2323,9 +2404,9 @@ $('#dActions').addEventListener('click', async function(e){
 /* ---- 대시보드 (사업장 · 기간 조회) ---- */
 function monthRangeKeys(from, to){ var out = [], k = from, guard = 0; if (!from || !to || from > to) return out; while (k <= to && guard++ < 120){ out.push(k); k = ymAdd(k, 1); } return out; }
 function monthlyRange(A, from, to){
-  var keys = monthRangeKeys(from, to), m = {}; keys.forEach(function(k){ m[k] = { p:0, n:0 }; });
-  A.forEach(function(r){ var k = ym(new Date(r.created_at)); if (m[k]) m[k][r.type === 'proposal' ? 'p' : 'n']++; });
-  return keys.map(function(k){ return { k:k, p:m[k].p, n:m[k].n }; });
+  var keys = monthRangeKeys(from, to), m = {}; keys.forEach(function(k){ m[k] = { p:0, n:0, r:0 }; });
+  A.forEach(function(r){ var k = ym(new Date(r.created_at)); if (m[k]) m[k][r.type === 'proposal' ? 'p' : r.type === 'risk' ? 'r' : 'n']++; });
+  return keys.map(function(k){ return { k:k, p:m[k].p, n:m[k].n, r:m[k].r }; });
 }
 function dashScopeName(){ var D = DESK.dash; return D.site !== 'all' ? D.team + ' › ' + D.site : D.team !== 'all' ? D.team : '전사'; }
 function dashFiltered(){
@@ -2350,30 +2431,30 @@ function deskRenderDash(){
   var high = A.filter(function(r){ return r.type === 'proposal' && OPEN.indexOf(r.status) > -1 && (r.proposed_grade === '가' || r.proposed_grade === '나'); }).length;
   updateOpenBadges(state.all);
   $('#ddMeta').innerHTML = '<b>'+esc(dashScopeName())+'</b> · '+esc(D.from)+' ~ '+esc(D.to)+' · '+A.length.toLocaleString()+'건';
-  var md = monthlyRange(A, D.from, D.to), maxM = Math.max.apply(null, md.map(function(m){ return m.p + m.n; }).concat([1]));
+  var md = monthlyRange(A, D.from, D.to), maxM = Math.max.apply(null, md.map(function(m){ return m.p + m.n + m.r; }).concat([1]));
   var org = orgSummary(A, D), lvName = D.site !== 'all' ? '그룹 / 팀' : D.team !== 'all' ? '사업팀 / 그룹' : '사업팀 / 그룹';
   $('#dDash').innerHTML =
     '<div class="dkpis">' +
-      kpiCard('c-blue','기간 접수','TOTAL', M.total, '개선제안 '+M.p+' · 아차사고 '+M.n) +
+      kpiCard('c-blue','기간 접수','TOTAL', M.total, '제안 '+M.p+' · 위험성 '+M.r+' · 아차 '+M.n) +
       kpiCard('c-blue','월평균 접수','AVG', (Math.round(M.total / months * 10) / 10), months + '개월 기준') +
       kpiCard('c-orange','처리 대기','OPEN', M.open, '가·나등급 제안 '+high+'건 포함') +
       kpiCard('c-pink','위원회 의결예정','가·나·다', M.committee, '산업안전보건위원회 상정') +
-      kpiCard('c-green','조치완료','DONE', M.done, '라등급 · 아차사고 조치') +
+      kpiCard('c-green','조치·반영 완료','DONE', M.done, '라등급 · 아차사고 · 위험성평가') +
       kpiCard('c-green','처리 완료율','RATE', M.rate + '<span style="font-size:16px">%</span>', '종료 '+(M.done+M.committee+M.rejected)+'건') +
     '</div>' +
     '<div class="dgrid g-2-1">' +
       '<div class="panel box"><h3>월별 접수 추이 <span class="mono">'+esc(D.from)+' ~ '+esc(D.to)+'</span></h3>' +
         (md.length ? '<div class="mchart" style="grid-template-columns:repeat('+md.length+',minmax(0,1fr))">' +
-        md.map(function(m){ return '<div class="mcol" title="'+m.k+' · 개선제안 '+m.p+' / 아차사고 '+m.n+'"><div class="mstack"><i class="n" style="height:'+(m.n/maxM*100)+'%"></i><i class="p" style="height:'+(m.p/maxM*100)+'%"></i></div><b>'+(m.p+m.n)+'</b><span>'+(md.length > 18 ? m.k.slice(5) : m.k.slice(2).replace('-','.'))+'</span></div>'; }).join('') +
-        '</div>' : emptyBox('기간을 확인해주세요')) + '<div class="legend"><span><i style="background:var(--blue)"></i>개선제안</span><span><i style="background:var(--orange)"></i>아차사고</span></div></div>' +
+        md.map(function(m){ var t = m.p + m.n + m.r; return '<div class="mcol" title="'+m.k+' · 개선제안 '+m.p+' / 위험성평가 '+m.r+' / 아차사고 '+m.n+'"><div class="mstack"><i class="n" style="height:'+(m.n/maxM*100)+'%"></i><i class="r" style="height:'+(m.r/maxM*100)+'%"></i><i class="p" style="height:'+(m.p/maxM*100)+'%"></i></div><b>'+t+'</b><span>'+(md.length > 18 ? m.k.slice(5) : m.k.slice(2).replace('-','.'))+'</span></div>'; }).join('') +
+        '</div>' : emptyBox('기간을 확인해주세요')) + '<div class="legend"><span><i style="background:var(--blue)"></i>개선제안</span><span><i style="background:#0D9488"></i>위험성평가</span><span><i style="background:var(--orange)"></i>아차사고</span></div></div>' +
       '<div class="panel box"><h3>처리 단계 <span class="mono">PIPELINE</span></h3>'+pipelineHtml(A)+
         '<h3 style="margin-top:18px">개선제안 등급 <span class="mono">GRADE</span></h3>'+gradeDistHtml(A.filter(function(r){ return r.type === 'proposal'; }))+'</div>' +
     '</div>' +
     '<div class="panel box"><h3>조직별 현황 <span class="dh-actions"><span class="mono">행을 누르면 같은 조건의 접수건으로 이동</span><button class="btn btn-ghost btn-sm" id="xlsOrg">조직별 현황 엑셀</button></span></h3>' +
-      '<div class="dtable-wrap"><table class="dtable org"><thead><tr><th>'+lvName+'</th><th>전체</th><th>개선제안</th><th>아차사고</th><th>처리대기</th><th>위원회 의결예정</th><th>조치완료</th><th>반려</th><th style="width:200px">완료율</th></tr></thead><tbody>' +
+      '<div class="dtable-wrap"><table class="dtable org"><thead><tr><th>'+lvName+'</th><th>전체</th><th>개선제안</th><th>위험성평가</th><th>아차사고</th><th>처리대기</th><th>위원회 의결예정</th><th>조치완료</th><th>반려</th><th style="width:200px">완료율</th></tr></thead><tbody>' +
       org.map(function(o){ var m = o.m;
         return '<tr class="lv-'+o.level+'"'+(o.level !== 'total' ? ' data-sel="'+esc(JSON.stringify(o.sel))+'"' : '')+'><td>'+(o.level === 'child' ? '<span class="tree">└</span>' : '')+(o.color ? '<i class="tdot" style="background:'+o.color+'"></i>' : '')+esc(o.name)+'</td>' +
-          '<td class="num">'+m.total+'</td><td class="num">'+m.p+'</td><td class="num">'+m.n+'</td><td class="num'+(m.open ? ' hot' : '')+'">'+m.open+'</td><td class="num">'+m.committee+'</td><td class="num">'+m.done+'</td><td class="num">'+m.rejected+'</td>' +
+          '<td class="num">'+m.total+'</td><td class="num">'+m.p+'</td><td class="num">'+m.r+'</td><td class="num">'+m.n+'</td><td class="num'+(m.open ? ' hot' : '')+'">'+m.open+'</td><td class="num">'+m.committee+'</td><td class="num">'+m.done+'</td><td class="num">'+m.rejected+'</td>' +
           '<td><div class="rate"><div class="track"><div class="fill" style="width:'+m.rate+'%"></div></div><b>'+m.rate+'%</b></div></td></tr>'; }).join('') +
       '</tbody></table></div></div>' +
     '<div class="panel box"><h3>최근 접수 <span class="mono">LATEST 10</span></h3><div class="dtable-wrap">'+reportTable(A.slice(0, 10))+'</div></div>';
@@ -2402,10 +2483,10 @@ $('#dDash').addEventListener('click', function(e){
 function reportTable(L){
   if (!L.length) return emptyBox('조건에 맞는 접수건이 없습니다');
   return '<table class="dtable rep"><thead><tr><th>접수번호</th><th>유형</th><th>상태</th><th>사업팀</th><th>그룹</th><th>팀</th><th>파트</th><th>장소 / 발생일시</th><th>제안</th><th>결정</th><th>내용</th><th>제출일</th><th>종료일</th><th>제출자</th></tr></thead><tbody>' +
-    L.map(function(r){ return '<tr data-id="'+esc(r.id)+'"><td class="mono">'+noOf(r.report_no)+'</td><td>'+typeTag(r.type)+'</td><td>'+statusTag(r.status)+'</td>' +
+    L.map(function(r){ return '<tr data-id="'+esc(r.id)+'"><td class="mono">'+noOf(r.report_no)+'</td><td>'+typeTag(r.type)+'</td><td>'+statusTag(r.status, r.type)+'</td>' +
       '<td><i class="tdot" style="background:'+teamColor(r.team || '본사')+'"></i>'+esc(r.team || '본사')+'</td><td>'+esc(r.site || '-')+'</td><td>'+esc(r.dept || '-')+'</td><td>'+esc(r.part || '-')+'</td>' +
-      '<td class="ell">'+(r.type === 'proposal' ? esc(r.location || '-') : (r.location ? esc(r.location) + ' · ' : '') + '발생 ' + fmt(r.occurred_at))+'</td>' +
-      '<td>'+(gradeTag(r.proposed_grade) || '-')+'</td><td>'+(gradeTag(r.final_grade) || '-')+'</td><td class="ell wide">'+esc(r.detail)+'</td>' +
+      '<td class="ell">'+(r.type === 'nearmiss' ? (r.location ? esc(r.location) + ' · ' : '') + '발생 ' + fmt(r.occurred_at) : esc(r.location || '-') + (r.type === 'risk' && r.category ? ' · ' + esc(r.category) : ''))+'</td>' +
+      '<td>'+(gradeTag(r.proposed_grade) || riskTag(r.risk_level) || '-')+'</td><td>'+(gradeTag(r.final_grade) || riskTag(r.final_risk) || '-')+'</td><td class="ell wide">'+esc(r.detail)+'</td>' +
       '<td class="mono">'+fmt(r.created_at).slice(0, 10)+'</td><td class="mono">'+(r.closed_at ? fmt(r.closed_at).slice(0, 10) : '-')+'</td><td><span class="mono">'+esc(codeOf(r.emp_hash))+'</span>'+(nameOf(r.emp_hash) ? ' <span class="nm">'+esc(nameOf(r.emp_hash))+'</span>' : '')+'</td></tr>'; }).join('') +
     '</tbody></table>';
 }

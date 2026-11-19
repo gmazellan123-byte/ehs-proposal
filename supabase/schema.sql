@@ -77,7 +77,7 @@ create index if not exists employees_site_idx on public.employees (site);
 create table if not exists public.reports (
   id             uuid primary key default gen_random_uuid(),
   report_no      bigint generated always as identity,
-  type           text not null check (type in ('proposal','nearmiss')),
+  type           text not null check (type in ('proposal','nearmiss','risk')),
   author_id      uuid references auth.users(id) on delete set null,
   emp_hash       text references public.employees(emp_hash) on delete set null,
   team           text,
@@ -108,6 +108,12 @@ alter table public.reports add column if not exists part text;
 alter table public.reports add column if not exists org_code text;
 alter table public.reports add column if not exists org_path text;
 create index if not exists reports_path_idx on public.reports (org_path text_pattern_ops);
+-- 위험성평가 참여: 장소(근무지), 위험요인(category), 내용(detail), 위험정도 상·중·하(risk_level)
+--   처리: 검토중 → 반영 완료(done) 시 결정 위험정도(final_risk) 필수
+alter table public.reports drop constraint if exists reports_type_check;
+alter table public.reports add constraint reports_type_check check (type in ('proposal','nearmiss','risk'));
+alter table public.reports add column if not exists risk_level text check (risk_level in ('상','중','하'));
+alter table public.reports add column if not exists final_risk text check (final_risk in ('상','중','하'));
 
 -- ---------------------------------------------------------------------
 -- 4. 처리 이력
@@ -277,10 +283,15 @@ begin
   new.updated_at    := now();
 
   if coalesce(btrim(new.location), '') = '' then raise exception '장소를 입력해야 합니다'; end if;
+  new.final_risk := null;
   if new.type = 'proposal' then
     if new.proposed_grade is null then raise exception '제안 등급을 선택해야 합니다'; end if;
-    new.occurred_at := null; new.category := null; new.prevention := null;
+    new.occurred_at := null; new.category := null; new.prevention := null; new.risk_level := null;
+  elsif new.type = 'risk' then
+    if new.risk_level is null then raise exception '위험정도(상·중·하)를 선택해야 합니다'; end if;
+    new.proposed_grade := null; new.occurred_at := null; new.request := null; new.prevention := null;
   else
+    new.risk_level := null;
     if new.occurred_at is null then raise exception '발생 일시를 입력해야 합니다'; end if;
     if new.occurred_at > now() + interval '5 minutes' then raise exception '발생 일시가 미래입니다'; end if;
     new.proposed_grade := null; new.request := null;
@@ -305,12 +316,24 @@ begin
   new.team := old.team; new.site := old.site; new.dept := old.dept; new.part := old.part;
   new.org_code := old.org_code; new.org_path := old.org_path;
   if new.emp_hash is not null then new.emp_hash := old.emp_hash; end if;   -- 사번 삭제 시 연결만 끊는 것은 허용
+  new.risk_level := old.risk_level;
   if new.type = 'nearmiss' then
     if new.status not in ('received','reviewing','done') then
       raise exception '아차사고는 접수/검토중/조치완료 상태만 사용할 수 있습니다';
     end if;
+    new.final_grade := null; new.final_risk := null;
+  elsif new.type = 'risk' then
+    if new.status not in ('received','reviewing','done') then
+      raise exception '위험성평가는 검토중/반영 완료 상태만 사용할 수 있습니다';
+    end if;
     new.final_grade := null;
+    if new.status = 'done' then
+      if new.final_risk is null then raise exception '반영 완료 시 위험정도(상·중·하)를 선택해야 합니다'; end if;
+    else
+      new.final_risk := null;
+    end if;
   else
+    new.final_risk := null;
     if new.status in ('done','committee') then
       if new.final_grade is null then raise exception '조치완료 처리 시 결정 등급을 선택해야 합니다'; end if;
       new.status := case when new.final_grade in ('가','나','다') then 'committee' else 'done' end;
@@ -322,6 +345,7 @@ begin
   new.updated_at := now();
   if new.status is distinct from old.status
      or new.final_grade is distinct from old.final_grade
+     or new.final_risk is distinct from old.final_risk
      or new.admin_comment is distinct from old.admin_comment then
     new.reviewed_at := now();
   end if;
@@ -349,9 +373,10 @@ begin
     values (new.id, null, new.status, '접수', v_code, v_role);
   elsif new.status is distinct from old.status
         or new.final_grade is distinct from old.final_grade
+        or new.final_risk is distinct from old.final_risk
         or new.admin_comment is distinct from old.admin_comment then
     insert into public.report_logs (report_id, from_status, to_status, final_grade, comment, changed_by_code, changed_by_role)
-    values (new.id, old.status, new.status, new.final_grade, new.admin_comment, v_code, v_role);
+    values (new.id, old.status, new.status, coalesce(new.final_grade, new.final_risk), new.admin_comment, v_code, v_role);
   end if;
   return null;
 end $$;
@@ -385,9 +410,9 @@ grant all on public.org_units, public.employees, public.reports, public.report_l
 grant usage, select on all sequences in schema public to service_role;
 
 grant select on public.org_units, public.employees, public.reports, public.report_logs to authenticated;
-grant insert (type, proposed_grade, location, category, occurred_at, detail, request, prevention, photo_path)
+grant insert (type, proposed_grade, location, category, occurred_at, detail, request, prevention, photo_path, risk_level)
   on public.reports to authenticated;
-grant update (status, final_grade, admin_comment) on public.reports to authenticated;
+grant update (status, final_grade, final_risk, admin_comment) on public.reports to authenticated;
 grant delete on public.reports to authenticated;
 
 drop policy if exists org_select on public.org_units;
