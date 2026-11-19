@@ -2614,7 +2614,7 @@ function saveCsv(filename, rows){
   a.href = url; a.download = filename; a.style.display = 'none'; document.body.appendChild(a); a.click();
   setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 4000); toast('CSV 파일을 저장했습니다');
 }
-var APP_VER = '2026.11.19-h';
+var APP_VER = '2026.11.19-i';
 function wideScreen(){ return window.matchMedia('(min-width: 900px)').matches; }
 async function openExportSheet(){
   var L = filtered(); if (!L.length) return toast('내보낼 데이터가 없습니다', true);
@@ -3040,7 +3040,9 @@ function renderKeyList(){
   var box = $('#keyList'), G = KEYS.groups; if (!box) return;
   if (!G){ box.innerHTML = '<div class="note">1단계에서 인사 명단을 선택하면 사업장 목록이 나옵니다.</div>'; return; }
   var keys = Object.keys(G).sort(function(a, b){ var x = G[a], y = G[b]; return (x.team === '본사') - (y.team === '본사') || x.team.localeCompare(y.team, 'ko', { numeric:true }) || x.site.localeCompare(y.site, 'ko', { numeric:true }); });
-  if (!keys.length){ box.innerHTML = '<div class="notice warn">시스템에 등록된 인원과 일치하는 사번이 없습니다. 명단과 백데이터 반영 상태를 확인해 주세요.</div>'; return; }
+  if (!keys.length){ box.innerHTML = KEYS.matched
+      ? '<div class="notice warn">명단 인원 '+KEYS.matched.toLocaleString()+'명은 확인했지만 소속 정보를 받지 못했습니다. Supabase에서 <b>api 함수를 최신으로 다시 배포</b>한 뒤 명단을 다시 선택해 주세요.</div>'
+      : '<div class="notice warn">명단의 사번이 시스템에 등록된 인원과 하나도 일치하지 않습니다. [백데이터 업로드]에 넣은 것과 같은 인사 명단인지, 사번 열이 "사원번호"인지 확인해 주세요.</div>'; return; }
   box.innerHTML = '<div class="key-bar"><label class="note"><input type="checkbox" id="keyAll"> 전체 선택</label><button class="btn btn-primary btn-sm" id="keySel" type="button">선택한 사업장 KEY 받기</button></div>' +
     '<div class="dtable-wrap" style="max-height:420px"><table class="dtable key-table"><thead><tr><th></th><th>사업팀</th><th>그룹(사업장)</th><th class="num">KEY 인원</th><th></th></tr></thead><tbody>' +
     keys.map(function(k){ var g = G[k]; return '<tr><td><input type="checkbox" data-kchk="'+esc(k)+'"></td><td>'+esc(g.team)+'</td><td><b>'+esc(g.site || '-')+'</b></td><td class="num">'+Object.keys(g.map).length.toLocaleString()+'</td><td><button class="btn btn-ghost" data-kget="'+esc(k)+'">KEY 받기</button> <button class="btn btn-ghost" data-kcopy="'+esc(k)+'" title="첨부가 막힌 경우 메일 본문에 붙여넣기">내용 복사</button></td></tr>'; }).join('') +
@@ -3096,19 +3098,27 @@ $('#keyRoster').addEventListener('change', async function(){
     aoa.slice(hi + 1).forEach(function(r){ var id = normEmp(r[ci]); if (EMP_RE.test(id) && !seen[id]){ seen[id] = 1; people.push({ id:id, name:String(r[ni] || '').trim() }); } });
     aoa = null;   /* 원본 행(다른 개인정보 열 포함)은 바로 버림 */
     if (!people.length) throw new Error('사번이 있는 행이 없습니다');
-    var groups = {}, matched = 0;
+    var groups = {}, matched = 0, noPath = 0, empPath = null;
     for (var i = 0; i < people.length; i += 1000){
       out.innerHTML = '<div class="loading"><span class="spin"></span>서버 확인 중 '+i.toLocaleString()+' / '+people.length.toLocaleString()+'</div>';
       var part = people.slice(i, i + 1000), res = await api.matchNames(part.map(function(p){ return p.id; }), 'keylist', true);
-      (res.matches || []).forEach(function(m){ var p = part[m.i]; if (!p) return; matched++;
+      var M = res.matches || [];
+      /* 서버 함수가 예전 버전이면 소속 경로(p)가 오지 않음 → 화면의 인원 목록(현재 소속)으로 대신 계산 */
+      if (M.length && !M.some(function(m){ return Array.isArray(m.p); })){
+        if (!empPath){ empPath = {}; if (!state.employees || !state.employees.length) state.employees = await api.employees();
+          (state.employees || []).forEach(function(e){ empPath[e.emp_hash] = e.org_path; }); }
+        M.forEach(function(m){ m.p = empPath[m.h] ? [empPath[m.h]] : []; noPath++; });
+      }
+      M.forEach(function(m){ var p = part[m.i]; if (!p) return; matched++;
         var code = codeOf(m.h), done = {};
         (m.p || []).forEach(function(path){ var g = keyGroupOf(path); if (!g || done[g.key]) return; done[g.key] = 1;
           var G = groups[g.key] = groups[g.key] || { team:g.team, site:g.site, map:{} }; G.map[code] = [p.id, p.name]; }); });
     }
     var total = people.length; people = null;
-    KEYS.groups = groups; KEYS.fileName = file.name;
+    KEYS.groups = groups; KEYS.fileName = file.name; KEYS.matched = matched; KEYS.oldServer = noPath > 0;
     out.innerHTML = '<div class="imp-sum"><div><b>'+total.toLocaleString()+'</b><span>명단 인원</span></div><div><b>'+matched.toLocaleString()+'</b><span>시스템 등록 인원</span></div><div><b>'+Object.keys(groups).length+'</b><span>사업장</span></div></div>' +
-      '<p class="note" style="margin:0">사원번호 · 성명 외의 열은 읽지 않고 버렸습니다. 시스템에 없는 사번은 KEY에 넣지 않습니다.</p>';
+      '<p class="note" style="margin:0">사원번호 · 성명 외의 열은 읽지 않고 버렸습니다. 시스템에 없는 사번은 KEY에 넣지 않습니다.</p>' +
+      (noPath ? '<div class="notice warn" style="margin-top:8px"><b>서버 함수(api)가 최신 버전이 아닙니다.</b> 지금은 현재 소속 기준으로만 KEY를 만들어, <b>부서를 옮기거나 퇴직한 인원의 지난 제출건</b>은 실명으로 바뀌지 않을 수 있습니다. Supabase에서 api 함수를 다시 배포해 주세요.</div>' : '');
     renderKeyList();
   } catch(e){ out.innerHTML = ''; KEYS.groups = null; renderKeyList(); fail(e); }
 });
