@@ -182,6 +182,20 @@ end $$;
 revoke all on function public.import_org(jsonb) from public, anon, authenticated;
 grant execute on function public.import_org(jsonb) to service_role;
 
+-- 사업팀 소속 '지원그룹'(1~4지원그룹 등) 또는 그 하위 부서인가? → 소속 인원은 전부 사업팀 권한
+create or replace function public.is_support_unit(p_code text)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.org_units me, public.org_units o
+     where me.code = p_code
+       and left(me.path, length(o.path)) = o.path
+       and o.name ~ '지원그룹$'
+       and coalesce(o.team, '본사') <> '본사');
+$$;
+
+revoke all on function public.is_support_unit(text) from public, anon, authenticated;
+grant execute on function public.is_support_unit(text) to service_role;
+
 -- (서버 함수 전용) 인원 일괄 반영 — 사번해시별 부서코드·성명(마스킹)·권한
 --   신규 사번은 등록, 기존 인원은 소속(부서코드)·권한 갱신 (권한은 직책 기준으로 화면에서 계산해 전달)
 --   본사(hq) 계정의 권한은 바꾸지 않고, 업로드로 본사 권한을 줄 수도 없음
@@ -194,6 +208,7 @@ begin
     select role into v_cur from public.employees where emp_hash = r->>'emp_hash';
     v_role := nullif(r->>'role', '');
     if v_role not in ('worker', 'manager', 'team') then v_role := null; end if;
+    if public.is_support_unit(r->>'org_code') then v_role := 'team'; end if;   -- 지원그룹 인원은 직책과 관계없이 사업팀
     if v_cur is null then
       insert into public.employees (emp_hash, role, org_code, name_mask)
       values (r->>'emp_hash', coalesce(v_role, 'worker'), r->>'org_code', nullif(r->>'name_mask', ''));
@@ -339,6 +354,11 @@ drop trigger if exists trg_reports_after_change on public.reports;
 create trigger trg_reports_after_change
   after insert or update on public.reports
   for each row execute function public.reports_after_change();
+
+-- 6-5) 이미 등록된 인원 바로잡기: 사업팀 소속 지원그룹 인원은 사업팀 권한 (본사 계정 제외)
+--      이 파일을 다시 실행할 때마다 적용되므로, 업로드를 다시 하지 않아도 정리됨
+update public.employees e set role = 'team'
+ where e.role in ('worker', 'manager') and e.org_code is not null and public.is_support_unit(e.org_code);
 
 -- ---------------------------------------------------------------------
 -- 7. 행 단위 보안(RLS)
