@@ -1,14 +1,14 @@
 // =====================================================================
-//  안전보건 제안 시스템 v3 · Edge Function "api"
+//  안전보건 제안 시스템 v4 · Edge Function "api"
 //  역할: 사번을 서버 비밀키로 HMAC-SHA256 처리(단방향 암호화)하고,
 //        가입·로그인 보조·인원관리(소속·권한 범위 검사 포함)를 제공합니다.
 //  사번 원문은 저장하거나 로그로 남기지 않습니다.
 //
-//  권한 범위
+//  권한 범위 (조직 트리: 본사 > 사업팀 > 그룹 > 팀 > 파트, 인사 부서코드 기준)
 //    본사(hq)        : 모든 인원·모든 권한 관리
-//    사업팀(team)    : 소속 팀의 근로자·관리자 관리
-//    관리자(manager) : 소속 그룹의 근로자 관리
-//    조직 백데이터(사번별 그룹·팀·파트) 일괄 업로드는 본사만 가능
+//    사업팀(team)    : 소속 사업팀 안의 근로자·관리자 관리
+//    관리자(manager) : 본인 소속 조직(그룹·팀·파트)과 그 하위의 근로자 관리
+//    조직·인원 백데이터(부서코드·사번·성명) 일괄 업로드는 본사만 가능
 //    근로자(worker)  : 인원관리 불가
 //
 //  필요한 Secrets (대시보드 > Edge Functions > Secrets)
@@ -30,7 +30,8 @@ const HASH_RE = /^[0-9a-f]{64}$/;
 const PW_MIN = 8;
 const ROLES = ["worker", "manager", "team", "hq"] as const;
 type Role = typeof ROLES[number];
-type Unit = { role: Role; team: string | null; site: string | null; dept?: string | null; part?: string | null };
+const CODE_RE = /^[A-Za-z0-9-]{1,30}$/;
+type Unit = { role: Role; org_code: string | null; org_path: string | null };
 type Actor = Unit & { userId: string; empHash: string };
 
 const db = createClient(SUPABASE_URL, SERVICE_KEY, {
@@ -96,41 +97,41 @@ async function getActor(req: Request): Promise<Actor> {
   const { data, error } = await db.auth.getUser(token);
   if (error || !data?.user) throw new HttpError(401, "로그인이 만료되었습니다. 다시 로그인해주세요");
   const { data: me } = await db.from("employees")
-    .select("emp_hash, role, team, site, active").eq("user_id", data.user.id).maybeSingle();
+    .select("emp_hash, role, org_code, org_path, active").eq("user_id", data.user.id).maybeSingle();
   if (!me || !me.active) throw new HttpError(403, "사용이 중지되었거나 등록되지 않은 계정입니다");
   if (me.role === "worker") throw new HttpError(403, "인원관리 권한이 없습니다");
-  return { userId: data.user.id, empHash: me.emp_hash, role: me.role, team: me.team, site: me.site };
+  return { userId: data.user.id, empHash: me.emp_hash, role: me.role, org_code: me.org_code, org_path: me.org_path };
 }
 
-function canManage(a: Actor, t: Unit) {
+// 조직 경로 범위: 사업팀은 최상위(사업팀) 경로 전체, 관리자는 본인 소속 경로와 그 하위
+function teamPrefix(path: string | null) { return path ? path.split("/")[0] + "/" : null; }
+function within(path: string | null, prefix: string | null) { return !!path && !!prefix && path.startsWith(prefix); }
+
+function canManage(a: Actor, t: { role: string; org_path: string | null }) {
   if (a.role === "hq") return true;
-  if (a.role === "team") return (t.role === "worker" || t.role === "manager") && !!t.team && t.team === a.team;
-  if (a.role === "manager") return t.role === "worker" && !!t.site && t.site === a.site;
+  if (a.role === "team") return (t.role === "worker" || t.role === "manager") && within(t.org_path, teamPrefix(a.org_path));
+  if (a.role === "manager") return t.role === "worker" && within(t.org_path, a.org_path);
   return false;
 }
 
-// 권한에 맞는 소속으로 정리하고 조직표(org_sites)로 검증
-async function resolveUnit(roleRaw: unknown, teamRaw: unknown, siteRaw: unknown, deptRaw?: unknown, partRaw?: unknown): Promise<Unit> {
+// 권한 + 부서코드를 조직표(org_units)로 검증 (본사는 부서코드 선택)
+async function resolveUnit(roleRaw: unknown, codeRaw: unknown): Promise<Unit> {
   const role = String(roleRaw ?? "") as Role;
   if (!ROLES.includes(role)) throw new HttpError(400, "권한 값이 올바르지 않습니다");
-  if (role === "worker" || role === "manager") {
-    const site = String(siteRaw ?? "").trim();
-    const { data } = await db.from("org_sites").select("team").eq("site", site).maybeSingle();
-    if (!data) throw new HttpError(400, "그룹을 선택해주세요");
-    return { role, team: data.team, site, dept: cleanText(deptRaw), part: cleanText(partRaw) };
+  const code = String(codeRaw ?? "").trim();
+  if (!code) {
+    if (role === "hq") return { role, org_code: null, org_path: null };
+    throw new HttpError(400, "소속 조직을 선택해주세요");
   }
-  if (role === "team") {
-    const team = String(teamRaw ?? "").trim();
-    const { count } = await db.from("org_sites").select("site", { count: "exact", head: true }).eq("team", team);
-    if (!count) throw new HttpError(400, "사업팀을 선택해주세요");
-    return { role, team, site: null };
-  }
-  return { role: "hq", team: null, site: null };
+  if (!CODE_RE.test(code)) throw new HttpError(400, "부서코드 형식이 올바르지 않습니다");
+  const { data } = await db.from("org_units").select("code, path").eq("code", code).maybeSingle();
+  if (!data) throw new HttpError(400, "등록되지 않은 부서코드입니다. 조직 백데이터를 먼저 업로드하세요");
+  return { role, org_code: data.code, org_path: data.path };
 }
 
 async function findEmployee(hash: string) {
   const { data } = await db.from("employees")
-    .select("emp_hash, emp_code, role, team, site, dept, part, name_mask, active, user_id, registered_at, created_at")
+    .select("emp_hash, emp_code, role, team, site, dept, part, org_code, org_path, name_mask, active, user_id, registered_at, created_at")
     .eq("emp_hash", hash).maybeSingle();
   return data;
 }
@@ -214,7 +215,7 @@ async function actSignup(body: any) {
 // ---------------------------------------------------------------------
 async function actRegister(req: Request, body: any) {
   const actor = await getActor(req);
-  const unit = await resolveUnit(body.role, body.team, body.site, body.dept, body.part);
+  const unit = await resolveUnit(body.role, body.orgCode);
   if (!canManage(actor, unit)) throw new HttpError(403, "해당 권한·소속으로 등록할 수 없습니다 (관리 범위 밖)");
 
   const list: string[] = Array.isArray(body.empIds) ? body.empIds : [];
@@ -229,7 +230,7 @@ async function actRegister(req: Request, body: any) {
     if (!EMP_RE.test(emp)) { invalid.push(emp); continue; }
     hashes.add(await hmacHex(emp));
   }
-  const rows = [...hashes].map((h) => ({ emp_hash: h, role: unit.role, team: unit.team, site: unit.site, dept: unit.dept ?? null, part: unit.part ?? null }));
+  const rows = [...hashes].map((h) => ({ emp_hash: h, role: unit.role, org_code: unit.org_code }));
   let added = 0;
   if (rows.length) {
     const { data, error } = await db.from("employees")
@@ -249,7 +250,8 @@ async function actLookup(req: Request, body: any) {
   if (!canManage(actor, row) && row.emp_hash !== actor.empHash) return { ...base, outOfScope: true };
   const { count } = await db.from("reports").select("id", { count: "exact", head: true }).eq("emp_hash", hash);
   return {
-    ...base, role: row.role, team: row.team, site: row.site, dept: row.dept, part: row.part, nameMask: row.name_mask, active: row.active,
+    ...base, role: row.role, team: row.team, site: row.site, dept: row.dept, part: row.part, orgCode: row.org_code, orgPath: row.org_path,
+    nameMask: row.name_mask, active: row.active,
     registered: !!row.registered_at, reportCount: count ?? 0, self: row.emp_hash === actor.empHash,
   };
 }
@@ -263,11 +265,10 @@ async function actUpdate(req: Request, body: any) {
   if (!canManage(actor, row)) throw new HttpError(403, "관리 범위 밖의 인원입니다");
 
   const patch: Record<string, unknown> = {};
-  if (body.role !== undefined || body.site !== undefined || body.team !== undefined || body.dept !== undefined || body.part !== undefined) {
-    const unit = await resolveUnit(body.role ?? row.role, body.team ?? row.team, body.site ?? row.site,
-      body.dept !== undefined ? body.dept : row.dept, body.part !== undefined ? body.part : row.part);
+  if (body.role !== undefined || body.orgCode !== undefined) {
+    const unit = await resolveUnit(body.role ?? row.role, body.orgCode !== undefined ? body.orgCode : row.org_code);
     if (!canManage(actor, unit)) throw new HttpError(403, "해당 권한·소속으로 변경할 수 없습니다 (관리 범위 밖)");
-    Object.assign(patch, unit);
+    patch.role = unit.role; patch.org_code = unit.org_code;
   }
   if (typeof body.active === "boolean") patch.active = body.active;
   if (!Object.keys(patch).length) return { ok: true };
@@ -301,34 +302,79 @@ async function actRemove(req: Request, body: any) {
   return { ok: true };
 }
 
-// [본사] 조직 백데이터 일괄 반영: rows = [{ empId, site(그룹), dept(팀), part(파트), role(worker|manager|'') }]
+// [본사] 조직 트리 계산: [{code, name, parent}] → 경로·단계·단계별 이름
+//   사업팀(이름이 '사업팀'으로 끝나는 최상위)이 아닌 최상위 조직은 모두 '본사'로 묶어 표시
+function buildOrg(list: any[]) {
+  const map = new Map<string, { code: string; name: string; parent: string | null }>();
+  for (const u of list) {
+    const code = String(u?.code ?? "").trim(), name = cleanText(u?.name, 50);
+    if (!CODE_RE.test(code) || !name) throw new HttpError(400, `조직 데이터 오류: ${code || "(빈 부서코드)"}`);
+    const parent = String(u?.parent ?? "").trim();
+    map.set(code, { code, name, parent: parent && parent !== code && CODE_RE.test(parent) ? parent : null });
+  }
+  const out: any[] = [];
+  const codes = [...map.keys()].sort();
+  for (const code of codes) {
+    const chain: string[] = []; const seen = new Set<string>(); let cur: string | null = code;
+    while (cur && map.has(cur) && !seen.has(cur) && chain.length < 12) { seen.add(cur); chain.unshift(cur); cur = map.get(cur)!.parent; }
+    const names = chain.map((c) => map.get(c)!.name);
+    const top = names[0] ?? "";
+    const biz = /사업팀$/.test(top);
+    const lv = biz ? names : ["본사", ...names.slice(1)];   // 본사 쪽: 최상위(대표이사 등)를 '본사'로
+    out.push({
+      code, name: map.get(code)!.name, parent_code: chain.length > 1 ? chain[chain.length - 2] : null,
+      path: chain.join("/") + "/", depth: chain.length,
+      team: lv[0] ?? null, site: lv[1] ?? null, dept: lv[2] ?? null, part: lv[3] ?? null, sort: codes.indexOf(code),
+    });
+  }
+  return out;
+}
+
+// [본사] 조직·인원 백데이터 일괄 반영
+//   units = [{ code, name, parent }]  (부서코드 트리, 첫 묶음에만 포함)
+//   rows  = [{ empId, nameMask, orgCode, role(worker|manager|'') }]  (성명은 브라우저에서 마스킹된 값)
 async function actImport(req: Request, body: any) {
   const actor = await getActor(req);
   if (actor.role !== "hq") throw new HttpError(403, "조직 백데이터 업로드는 본사만 가능합니다");
+  const units: any[] = Array.isArray(body.units) ? body.units : [];
   const list: any[] = Array.isArray(body.rows) ? body.rows : [];
-  if (!list.length) throw new HttpError(400, "업로드할 데이터가 없습니다");
+  if (!units.length && !list.length) throw new HttpError(400, "업로드할 데이터가 없습니다");
+  if (units.length > 3000) throw new HttpError(400, "조직 단위가 너무 많습니다 (최대 3,000개)");
   if (list.length > 1000) throw new HttpError(400, "한 번에 최대 1,000건까지 처리할 수 있습니다");
-  const { data: org } = await db.from("org_sites").select("site");
-  const sites = new Set((org ?? []).map((o: any) => o.site));
+  let unitCount = 0;
+  if (units.length) {
+    // 기존 조직과 합쳐서 경로 계산 (이번 파일에 없는 상위 조직도 이어지도록)
+    const { data: cur } = await db.from("org_units").select("code, name, parent_code");
+    const merged = new Map<string, any>();
+    for (const o of cur ?? []) merged.set(o.code, { code: o.code, name: o.name, parent: o.parent_code });
+    for (const u of units) merged.set(String(u?.code ?? "").trim(), { code: u?.code, name: u?.name, parent: u?.parent });
+    const built = buildOrg([...merged.values()]);
+    const { data, error } = await db.rpc("import_org", { p_units: built });
+    if (error) throw new HttpError(500, "조직 구조 반영 중 오류가 발생했습니다");
+    unitCount = (data as any)?.units ?? built.length;
+  }
+  const { data: org } = await db.from("org_units").select("code");
+  const codes = new Set((org ?? []).map((o: any) => o.code));
   const invalid: { row: number; reason: string }[] = [];
   const byHash = new Map<string, unknown>();
   for (let i = 0; i < list.length; i++) {
     const r = list[i] ?? {};
+    const rowNo = Number(r.row ?? i + 1);
     const emp = normEmp(r.empId);
-    if (!EMP_RE.test(emp)) { invalid.push({ row: Number(r.row ?? i + 1), reason: "사번 형식 오류" }); continue; }
-    const site = String(r.site ?? "").trim();
-    if (!sites.has(site)) { invalid.push({ row: Number(r.row ?? i + 1), reason: `알 수 없는 그룹: ${site || "(빈칸)"}` }); continue; }
+    if (!EMP_RE.test(emp)) { invalid.push({ row: rowNo, reason: "사번 형식 오류" }); continue; }
+    const code = String(r.orgCode ?? "").trim();
+    if (!codes.has(code)) { invalid.push({ row: rowNo, reason: `알 수 없는 부서코드: ${code || "(빈칸)"}` }); continue; }
     const role = r.role === "manager" ? "manager" : r.role === "worker" ? "worker" : "";
-    byHash.set(await hmacHex(emp), { emp_hash: "", site, dept: cleanText(r.dept) ?? "", part: cleanText(r.part) ?? "", role, name_mask: maskName(r.nameMask) ?? "" });
+    byHash.set(await hmacHex(emp), { org_code: code, role, name_mask: maskName(r.nameMask) ?? "" });
   }
   const rows = [...byHash.entries()].map(([h, v]: [string, any]) => ({ ...v, emp_hash: h }));
   let result = { inserted: 0, updated: 0, skipped: 0 };
   if (rows.length) {
     const { data, error } = await db.rpc("import_employees", { p_rows: rows });
-    if (error) throw new HttpError(500, "백데이터 반영 중 오류가 발생했습니다");
+    if (error) throw new HttpError(500, "인원 반영 중 오류가 발생했습니다");
     result = data as typeof result;
   }
-  return { ...result, invalid };
+  return { ...result, units: unitCount, invalid };
 }
 
 // ---------------------------------------------------------------------

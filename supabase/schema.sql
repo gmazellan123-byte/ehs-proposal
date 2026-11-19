@@ -1,66 +1,75 @@
 -- =====================================================================
---  안전보건 제안 시스템 v3 · Supabase 데이터베이스 설정
+--  안전보건 제안 시스템 v4 · Supabase 데이터베이스 설정
 --  사용법: Supabase 대시보드 > SQL Editor > New query 에 이 파일 전체를
 --          붙여넣고 [Run] 을 한 번 누르면 됩니다.
---  ※ v1 을 설치했다면 reset.sql 을 먼저 실행하세요. (v2 → v3 는 그대로 실행하면 자동 업그레이드)
+--  ※ v1 을 설치했다면 reset.sql 을 먼저 실행하세요. (v2·v3 → v4 는 그대로 실행하면 자동 업그레이드)
+--  v4 변경: 조직을 인사 부서코드 기준 트리(org_units)로 관리하고, 모든 조회·처리 권한을
+--           본사 > 사업팀 > 그룹 > 팀 > 파트 상하 관계로 판단합니다(관리자는 본인 소속 조직과 그 하위만).
 --  ※ 여러 번 실행해도 데이터가 지워지지 않도록 작성되어 있습니다.
 -- =====================================================================
 
 create extension if not exists pgcrypto;
 
 -- ---------------------------------------------------------------------
--- 1. 조직 구조 (본사 > 사업팀 > 그룹(사업장) > 팀 > 파트)
---    사업팀-그룹 관계는 아래 org_sites 표, 그룹 아래 팀·파트는 사번별 백데이터
---    (employees.dept / employees.part, 본사 PC 화면에서 엑셀로 일괄 업로드)로 관리
---    사업장이 바뀌면 아래 목록을 고치고 다시 실행하거나,
---    Table Editor 에서 org_sites 표를 직접 수정하세요.
+-- 1. 조직 구조 (본사 > 사업팀 > 그룹 > 팀 > 파트) — 인사 부서코드 기준 트리
+--    본사 PC 콘솔 [백데이터 업로드]에서 인사 명단(부서코드·부서·상위부서)을 올리면 자동으로 채워집니다.
+--    path : 최상위부터 자기까지의 부서코드를 '/'로 이은 값 (예: AHA000/AHB000/AHB010/)
+--           → 하위 조직 판단은 path 앞부분 일치로 처리
+--    team/site/dept/part : 단계별 조직명 (사업팀/그룹/팀/파트). 사업팀이 아닌 최상위 조직은 '본사'로 묶음
 -- ---------------------------------------------------------------------
-create table if not exists public.org_sites (
-  site  text primary key,
-  team  text not null,
-  sort  int  not null default 0
+create table if not exists public.org_units (
+  code        text primary key check (code ~ '^[A-Za-z0-9-]{1,30}$'),
+  name        text not null check (char_length(name) between 1 and 50),
+  parent_code text,
+  path        text not null,
+  depth       int  not null,
+  team        text,
+  site        text,
+  dept        text,
+  part        text,
+  sort        int  not null default 0,
+  active      boolean not null default true,
+  updated_at  timestamptz not null default now()
 );
-
-insert into public.org_sites (site, team, sort) values
-  ('디지털1그룹', '1사업팀', 11), ('디지털2그룹', '1사업팀', 12), ('서울R&D그룹', '1사업팀', 13),
-  ('나노1그룹',  '2사업팀', 21), ('나노2그룹',  '2사업팀', 22), ('나노3그룹', '2사업팀', 23), ('미래기술그룹', '2사업팀', 24),
-  ('아산1그룹',  '3사업팀', 31), ('아산2그룹',  '3사업팀', 32), ('기흥SDC그룹', '3사업팀', 33),
-  ('평택그룹',   '4사업팀', 41), ('천안그룹',   '4사업팀', 42), ('온양그룹',  '4사업팀', 43)
-on conflict (site) do update set team = excluded.team, sort = excluded.sort;
+create index if not exists org_units_path_idx on public.org_units (path text_pattern_ops);
 
 -- ---------------------------------------------------------------------
 -- 2. 인원(사번) — 사번 원문 없이 HMAC 해시만 저장, 이름·연락처 없음
---    role : worker(근로자) / manager(관리자·그룹) / team(사업팀) / hq(본사)
---    소속 : worker·manager → 그룹(site) 필수 + 팀(dept)·파트(part) 선택
---           team → 사업팀(team) 필수, hq → 없음
+--    role : worker(근로자) / manager(관리자) / team(사업팀) / hq(본사)
+--    소속 : org_code(부서코드) — 근로자·관리자·사업팀은 필수, 본사는 선택
+--           조직명(team/site/dept/part)과 org_path 는 org_units 에서 자동으로 채워짐
+--    권한 범위 : 본사=전체 / 사업팀=소속 사업팀 전체 / 관리자=본인 소속 조직과 그 하위 / 근로자=본인 제출건
 -- ---------------------------------------------------------------------
 create table if not exists public.employees (
   emp_hash      text primary key,
   emp_code      text generated always as (upper(left(emp_hash, 8))) stored,
   role          text not null default 'worker' check (role in ('worker','manager','team','hq')),
   team          text,
-  site          text references public.org_sites(site) on update cascade,
+  site          text,
   active        boolean not null default true,
   user_id       uuid unique references auth.users(id) on delete set null,
   created_at    timestamptz not null default now(),
-  registered_at timestamptz,
-  constraint employees_unit_chk check (
-       (role in ('worker','manager') and site is not null and team is not null)
-    or (role = 'team' and team is not null and site is null)
-    or (role = 'hq'   and team is null     and site is null))
+  registered_at timestamptz
 );
+-- v3 이하에서 업그레이드: 그룹 이름 기준 제약을 없애고 부서코드 기준으로 전환
+alter table public.employees drop constraint if exists employees_site_fkey;
+alter table public.employees drop constraint if exists employees_unit_chk;
+drop table if exists public.org_sites cascade;
 alter table public.employees add column if not exists dept text check (char_length(dept) <= 50);
 alter table public.employees add column if not exists part text check (char_length(part) <= 50);
 -- 성명은 마스킹된 형태(예: 홍*동)만 저장. 원래 성명은 브라우저에서 마스킹 후 전송되며 서버에 저장되지 않음
 alter table public.employees add column if not exists name_mask text check (char_length(name_mask) <= 20);
+alter table public.employees add column if not exists org_code text references public.org_units(code) on update cascade on delete set null;
+alter table public.employees add column if not exists org_path text;
 create index if not exists employees_team_idx on public.employees (team);
+create index if not exists employees_path_idx on public.employees (org_path text_pattern_ops);
 create index if not exists employees_site_idx on public.employees (site);
 
 -- ---------------------------------------------------------------------
 -- 3. 제안·신고
 --    개선제안 : 제안등급(가~라), 장소, 상세내용, 조치요청, 사진
---    아차사고 : 발생일시, 사고유형(선택·추후 등록), 상황설명, 재발방지의견, 사진
---    소속(사업팀·그룹·팀·파트)은 작성자의 사번 등록 정보에서 서버가 자동으로 채웁니다.
+--    아차사고 : 발생일시, 장소, 사고유형(선택·추후 등록), 상황설명, 재발방지의견, 사진
+--    소속(부서코드·사업팀·그룹·팀·파트)은 작성자의 사번 등록 정보에서 서버가 자동으로 채웁니다.
 --    등급 : 가=전사 적용 / 나=사업팀 적용 / 다=그룹 적용 / 라=단순 조치
 --    상태 : received 접수 / reviewing 검토중 / rejected 반려 / done 조치완료
 --           committee 산업안전보건위원회 의결예정 (결정등급 가·나·다 → 자동 종료)
@@ -96,6 +105,9 @@ create index if not exists reports_emp_idx     on public.reports (emp_hash);
 create index if not exists reports_unit_idx    on public.reports (team, site);
 alter table public.reports add column if not exists dept text;
 alter table public.reports add column if not exists part text;
+alter table public.reports add column if not exists org_code text;
+alter table public.reports add column if not exists org_path text;
+create index if not exists reports_path_idx on public.reports (org_path text_pattern_ops);
 
 -- ---------------------------------------------------------------------
 -- 4. 처리 이력
@@ -126,15 +138,18 @@ returns boolean language sql stable security definer set search_path = public as
   select exists (select 1 from public.employees where user_id = auth.uid() and active);
 $$;
 
--- 내 관리 범위 안의 소속인가? (본사=전체, 사업팀=소속 팀, 관리자=소속 사업장)
-create or replace function public.in_scope(p_team text, p_site text)
+-- 내 관리 범위 안의 조직인가? (본사=전체, 사업팀=소속 사업팀 전체, 관리자=본인 소속 조직과 그 하위)
+--   p_path : 대상(제출건·인원)의 조직 경로. 경로 앞부분이 같으면 하위 조직
+create or replace function public.in_scope(p_path text)
 returns boolean language sql stable security definer set search_path = public as $$
   select exists (
     select 1 from public.employees e
      where e.user_id = auth.uid() and e.active and (
            e.role = 'hq'
-        or (e.role = 'team'    and p_team is not null and e.team = p_team)
-        or (e.role = 'manager' and p_site is not null and e.site = p_site)));
+        or (e.role = 'team' and p_path is not null and e.org_path is not null
+            and left(p_path, length(split_part(e.org_path, '/', 1)) + 1) = split_part(e.org_path, '/', 1) || '/')
+        or (e.role = 'manager' and p_path is not null and e.org_path is not null
+            and left(p_path, length(e.org_path)) = e.org_path)));
 $$;
 
 -- (서버 함수 전용) 가상 로그인 ID 로 로그인 계정 찾기 — 재가입 시 잔여 계정 정리용
@@ -145,31 +160,52 @@ $$;
 revoke all on function public.auth_user_id_by_email(text) from public, anon, authenticated;
 grant execute on function public.auth_user_id_by_email(text) to service_role;
 
--- (서버 함수 전용) 조직 백데이터 일괄 반영 — 사번해시별 그룹·팀·파트·권한
---   신규 사번은 등록, 기존 근로자·관리자는 소속 갱신, 사업팀·본사 계정은 변경하지 않음
+-- (서버 함수 전용) 조직 트리 반영 — 서버 함수가 경로·단계별 이름을 계산해서 넘김
+--   기존 부서코드는 이름·상위·경로를 갱신, 새 부서코드는 추가. 소속 인원의 조직명도 함께 갱신
+create or replace function public.import_org(p_units jsonb)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare n int;
+begin
+  insert into public.org_units (code, name, parent_code, path, depth, team, site, dept, part, sort, active, updated_at)
+  select u->>'code', u->>'name', nullif(u->>'parent_code', ''), u->>'path', (u->>'depth')::int,
+         nullif(u->>'team', ''), nullif(u->>'site', ''), nullif(u->>'dept', ''), nullif(u->>'part', ''), coalesce((u->>'sort')::int, 0), true, now()
+    from jsonb_array_elements(p_units) u
+  on conflict (code) do update set name = excluded.name, parent_code = excluded.parent_code, path = excluded.path, depth = excluded.depth,
+    team = excluded.team, site = excluded.site, dept = excluded.dept, part = excluded.part, sort = excluded.sort, active = true, updated_at = now();
+  get diagnostics n = row_count;
+  update public.employees e set team = o.team, site = o.site, dept = o.dept, part = o.part, org_path = o.path
+    from public.org_units o where e.org_code = o.code
+     and (e.org_path is distinct from o.path or e.team is distinct from o.team or e.site is distinct from o.site
+          or e.dept is distinct from o.dept or e.part is distinct from o.part);
+  return jsonb_build_object('units', n);
+end $$;
+revoke all on function public.import_org(jsonb) from public, anon, authenticated;
+grant execute on function public.import_org(jsonb) to service_role;
+
+-- (서버 함수 전용) 인원 일괄 반영 — 사번해시별 부서코드·성명(마스킹)·권한
+--   신규 사번은 등록, 기존 인원은 소속(부서코드) 갱신. 사업팀·본사 계정의 권한은 바꾸지 않음
+drop function if exists public.import_employees(jsonb);
 create or replace function public.import_employees(p_rows jsonb)
 returns jsonb language plpgsql security definer set search_path = public as $$
-declare r jsonb; v_role text; v_cur text; ins int := 0; upd int := 0; skip int := 0;
+declare r jsonb; v_role text; v_cur text; ins int := 0; upd int := 0;
 begin
   for r in select value from jsonb_array_elements(p_rows) loop
     select role into v_cur from public.employees where emp_hash = r->>'emp_hash';
     v_role := nullif(r->>'role', '');
     if v_cur is null then
-      insert into public.employees (emp_hash, role, site, dept, part, name_mask)
-      values (r->>'emp_hash', coalesce(v_role, 'worker'), r->>'site', nullif(r->>'dept', ''), nullif(r->>'part', ''), nullif(r->>'name_mask', ''));
+      insert into public.employees (emp_hash, role, org_code, name_mask)
+      values (r->>'emp_hash', coalesce(v_role, 'worker'), r->>'org_code', nullif(r->>'name_mask', ''));
       ins := ins + 1;
-    elsif v_cur in ('team', 'hq') then
-      skip := skip + 1;
     else
       update public.employees
-         set role = coalesce(v_role, role), site = r->>'site',
-             dept = nullif(r->>'dept', ''), part = nullif(r->>'part', ''),
+         set org_code  = r->>'org_code',
+             role      = case when v_cur in ('team', 'hq') then role else coalesce(v_role, role) end,
              name_mask = coalesce(nullif(r->>'name_mask', ''), name_mask)
        where emp_hash = r->>'emp_hash';
       upd := upd + 1;
     end if;
   end loop;
-  return jsonb_build_object('inserted', ins, 'updated', upd, 'skipped', skip);
+  return jsonb_build_object('inserted', ins, 'updated', upd, 'skipped', 0);
 end $$;
 revoke all on function public.import_employees(jsonb) from public, anon, authenticated;
 grant execute on function public.import_employees(jsonb) to service_role;
@@ -177,20 +213,19 @@ grant execute on function public.import_employees(jsonb) to service_role;
 -- ---------------------------------------------------------------------
 -- 6. 자동 처리 트리거
 -- ---------------------------------------------------------------------
--- 6-1) 인원: 그룹 → 사업팀 자동 채움, 소속 유효성 검사
+-- 6-1) 인원: 부서코드 → 사업팀·그룹·팀·파트 이름과 조직 경로 자동 채움
 create or replace function public.employees_fill_unit()
 returns trigger language plpgsql security definer set search_path = public as $$
+declare o public.org_units;
 begin
-  if new.role in ('worker','manager') then
-    select team into new.team from public.org_sites where site = new.site;
-    if new.team is null then raise exception '사업장(그룹)을 올바르게 선택해야 합니다'; end if;
-  elsif new.role = 'team' then
-    new.site := null; new.dept := null; new.part := null;
-    if not exists (select 1 from public.org_sites where team = new.team) then
-      raise exception '사업팀을 올바르게 선택해야 합니다';
-    end if;
-  else
-    new.team := null; new.site := null; new.dept := null; new.part := null;
+  if new.org_code is not null then
+    select * into o from public.org_units where code = new.org_code;
+    if not found then raise exception '등록되지 않은 부서코드입니다: %', new.org_code; end if;
+    new.team := o.team; new.site := o.site; new.dept := o.dept; new.part := o.part; new.org_path := o.path;
+  elsif new.role = 'hq' then
+    new.team := null; new.site := null; new.dept := null; new.part := null; new.org_path := null;
+  elsif tg_op = 'INSERT' or new.role is distinct from old.role then
+    raise exception '소속 조직을 선택해야 합니다';
   end if;
   return new;
 end $$;
@@ -214,6 +249,8 @@ begin
   new.site          := e.site;
   new.dept          := e.dept;
   new.part          := e.part;
+  new.org_code      := e.org_code;
+  new.org_path      := e.org_path;
   new.status        := 'received';
   new.final_grade   := null;
   new.admin_comment := null;
@@ -222,14 +259,14 @@ begin
   new.created_at    := now();
   new.updated_at    := now();
 
+  if coalesce(btrim(new.location), '') = '' then raise exception '장소를 입력해야 합니다'; end if;
   if new.type = 'proposal' then
     if new.proposed_grade is null then raise exception '제안 등급을 선택해야 합니다'; end if;
-    if coalesce(btrim(new.location), '') = '' then raise exception '장소를 입력해야 합니다'; end if;
     new.occurred_at := null; new.category := null; new.prevention := null;
   else
     if new.occurred_at is null then raise exception '발생 일시를 입력해야 합니다'; end if;
     if new.occurred_at > now() + interval '5 minutes' then raise exception '발생 일시가 미래입니다'; end if;
-    new.proposed_grade := null; new.location := null; new.request := null;
+    new.proposed_grade := null; new.request := null;
   end if;
   return new;
 end $$;
@@ -304,37 +341,38 @@ create trigger trg_reports_after_change
 -- ---------------------------------------------------------------------
 -- 7. 행 단위 보안(RLS)
 --    근로자 : 본인 제출건만
---    관리자 : 소속 사업장 전체 / 사업팀 : 소속 팀 전체 / 본사 : 전체
+--    관리자 : 본인 소속 조직과 그 하위 / 사업팀 : 소속 사업팀 전체 / 본사 : 전체
 --    인원 등록·변경은 서버 함수(Edge Function)만 가능
 -- ---------------------------------------------------------------------
-alter table public.org_sites   enable row level security;
+alter table public.org_units   enable row level security;
 alter table public.employees   enable row level security;
 alter table public.reports     enable row level security;
 alter table public.report_logs enable row level security;
 
-revoke all on public.org_sites, public.employees, public.reports, public.report_logs from anon, authenticated;
+revoke all on public.org_units, public.employees, public.reports, public.report_logs from anon, authenticated;
 
 -- 서버 함수(service_role)용 권한 — 최근 Supabase 프로젝트는 새 표에 자동으로 권한을 주지 않으므로 명시
 grant usage on schema public to service_role, authenticated;
-grant all on public.org_sites, public.employees, public.reports, public.report_logs to service_role;
+grant all on public.org_units, public.employees, public.reports, public.report_logs to service_role;
 grant usage, select on all sequences in schema public to service_role;
 
-grant select on public.org_sites, public.employees, public.reports, public.report_logs to authenticated;
+grant select on public.org_units, public.employees, public.reports, public.report_logs to authenticated;
 grant insert (type, proposed_grade, location, category, occurred_at, detail, request, prevention, photo_path)
   on public.reports to authenticated;
 grant update (status, final_grade, admin_comment) on public.reports to authenticated;
 grant delete on public.reports to authenticated;
 
-drop policy if exists org_select on public.org_sites;
-create policy org_select on public.org_sites for select to authenticated using (true);
+drop policy if exists org_select on public.org_units;
+create policy org_select on public.org_units for select to authenticated
+  using (public.my_role() in ('manager', 'team', 'hq'));   -- 근로자에게는 조직표를 보여주지 않음
 
 drop policy if exists emp_select on public.employees;
 create policy emp_select on public.employees for select to authenticated
-  using (user_id = auth.uid() or public.in_scope(team, site));
+  using (user_id = auth.uid() or public.in_scope(org_path));
 
 drop policy if exists rep_select on public.reports;
 create policy rep_select on public.reports for select to authenticated
-  using (author_id = auth.uid() or public.in_scope(team, site));
+  using (author_id = auth.uid() or public.in_scope(org_path));
 
 drop policy if exists rep_insert on public.reports;
 create policy rep_insert on public.reports for insert to authenticated
@@ -342,7 +380,7 @@ create policy rep_insert on public.reports for insert to authenticated
 
 drop policy if exists rep_update on public.reports;
 create policy rep_update on public.reports for update to authenticated
-  using (public.in_scope(team, site)) with check (public.in_scope(team, site));
+  using (public.in_scope(org_path)) with check (public.in_scope(org_path));
 
 drop policy if exists rep_delete on public.reports;
 create policy rep_delete on public.reports for delete to authenticated
@@ -351,6 +389,8 @@ create policy rep_delete on public.reports for delete to authenticated
 drop policy if exists log_select on public.report_logs;
 create policy log_select on public.report_logs for select to authenticated
   using (exists (select 1 from public.reports r where r.id = report_id));  -- reports RLS 가 범위를 제한
+
+drop function if exists public.in_scope(text, text);   -- v3 이하의 이름 기준 범위 함수 정리
 
 -- ---------------------------------------------------------------------
 -- 8. 사진 저장소 (비공개, 5MB) · 경로: report-photos/{사용자ID}/{파일}.jpg
@@ -376,8 +416,8 @@ create policy photo_delete on storage.objects for delete to authenticated
   using (bucket_id = 'report-photos'
          and ((storage.foldername(name))[1] = auth.uid()::text or public.my_role() = 'hq'));
 
--- 완료 확인: 4개 테이블과 사업장 수(13)가 보이면 정상
-select 'org_sites' as t, count(*) from public.org_sites
+-- 완료 확인: 4개 테이블이 보이면 정상 (org_units 는 본사 콘솔에서 인사 명단을 올리면 채워짐)
+select 'org_units' as t, count(*) from public.org_units
 union all select 'employees', count(*) from public.employees
 union all select 'reports', count(*) from public.reports
 union all select 'report_logs', count(*) from public.report_logs;

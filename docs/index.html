@@ -663,6 +663,80 @@ body.desk .toast{bottom:28px;}
 .inst-steps .ii-t{display:inline-block;padding:0 6px;border-radius:5px;background:#fff;border:1px solid var(--line2);}
 .inst-url{display:flex;align-items:center;gap:8px;margin:0 0 12px;padding:10px 12px;border-radius:var(--r-sm);background:#fff;border:1px dashed var(--line2);}
 .inst-url .mono{flex:1;min-width:0;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* ===== v4: 한 화면 패널 레이아웃 (본사 PC 콘솔) ===== */
+body.desk .desk-main{display:flex;flex-direction:column;height:100vh;overflow:hidden;padding:0 24px 18px;}
+body.desk .desk-head{position:static;flex:none;padding:18px 0 14px;margin:0;background:none;}
+.desk-main > section[data-dscreen]{flex:1;min-height:0;display:flex;flex-direction:column;}
+.desk-main > section[data-dscreen].hidden{display:none !important;}
+.dpanel{flex:1;min-height:0;display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--sh-2);overflow:hidden;}
+.dpanel-h{flex:none;display:flex;align-items:center;flex-wrap:wrap;gap:8px 10px;min-height:60px;padding:10px 14px;border-bottom:1px solid var(--line2);background:linear-gradient(180deg,#FBFCFE,#EFF3F8);}
+.dpanel-h.dfilters{padding:10px 14px;}
+.dpanel-t{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:800;letter-spacing:-.2px;color:var(--ink);white-space:nowrap;}
+.dpanel-t .mono{font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--ink-faint);}
+.dpanel-t .cnt{font-size:12.5px;font-weight:700;color:var(--ink-soft);font-family:var(--mono);}
+.dpanel-meta{margin-left:auto;font-size:12.5px;color:var(--ink-soft);}
+.dpanel-meta b{color:var(--ink);}
+.dpanel-sub{flex:none;display:flex;align-items:center;gap:12px;padding:8px 14px;font-size:13px;color:var(--ink-soft);border-bottom:1px solid var(--line);background:#fff;}
+.dpanel-sub b{color:var(--ink);font-family:var(--mono);}
+.dpanel-sub .note{margin:0 0 0 auto;}
+.dpanel-sub .dtools{margin-left:12px;}
+.dpanel-b{flex:1;min-height:0;overflow:auto;}
+.dpanel-b.pad{padding:14px;background:#F6F8FB;}
+.dpanel-b .dtable th{top:0;}
+.dpanel-b > .empty,.dpanel-b > .loading{margin:30px auto;}
+.dpanel-f{flex:none;display:flex;align-items:center;justify-content:center;gap:5px;margin:0 !important;padding:8px 12px;border-top:1px solid var(--line);background:linear-gradient(180deg,#FBFCFE,#F3F6FA);}
+.dpanel-f .pg-info{margin-right:auto;font-size:12px;color:var(--ink-faint);font-family:var(--mono);}
+.dpanel-f .pg-info + button{margin-left:0;}
+.dpanel-f::after{content:"";margin-left:auto;}
+.dpanel-f button{height:30px;min-width:32px;}
+body.desk .dorg-grid{flex:1;min-height:0;display:grid;grid-template-columns:270px minmax(0,1fr);gap:14px;align-items:stretch;}
+body.desk .dtree{position:static;max-height:none;padding:8px;}
+.dfilters > select,.dfilters > input{min-width:120px;}
+.dpreset{display:flex;gap:4px;padding:3px;border-radius:10px;background:#E6ECF3;}
+.dpreset button{border:none;background:none;padding:6px 10px;border-radius:8px;font-size:12.5px;font-weight:700;color:var(--ink-soft);cursor:pointer;white-space:nowrap;}
+.dpreset button.on{background:#fff;color:var(--brand);box-shadow:0 1px 3px rgba(20,32,57,.15);}
+.drange input[type=month]{width:150px;}
+.dpanel-b.pad .dgrid:first-child{margin-top:0;}
+.dpanel-b.pad .box{margin-top:12px;}
+.dpanel-b.pad .dkpis + .dgrid{margin-top:12px;}
+.tdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:1px;flex:none;}
+.tnode .tdot{margin-right:0;}
+.tnode span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tnode{justify-content:flex-start;}
+.dtable.org tr.lv-child td:first-child{padding-left:14px;}
+
+/* ===== v4: 소속 선택기 (사업팀 색상 구분) ===== */
+.opick{display:flex;flex-direction:column;gap:7px;margin-top:8px;}
+.opick:empty{display:none;}
+.op-fixed{display:flex;align-items:center;gap:8px;padding:11px 12px;border-radius:var(--r-sm);background:var(--bg2);border:1px solid var(--line);font-size:13.5px;font-weight:700;color:var(--ink-soft);}
+.op-fixed i{width:9px;height:9px;border-radius:50%;background:var(--c,#94A3B8);flex:none;}
+.gp{position:relative;}
+.gp-btn{width:100%;display:flex;align-items:center;gap:9px;padding:11px 12px;border-radius:var(--r-sm);cursor:pointer;text-align:left;font-size:14px;color:var(--ink);
+  border:1px solid var(--line2);border-left:5px solid var(--c,#94A3B8);background:linear-gradient(180deg,#fff,#F5F8FB);box-shadow:inset 0 -2px 0 rgba(20,32,57,.05),0 2px 5px rgba(20,32,57,.06);}
+.gp-btn i{width:10px;height:10px;border-radius:50%;background:var(--c,#94A3B8);flex:none;}
+.gp-btn span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.gp-btn span small{color:var(--ink-faint);font-weight:600;}
+.gp-btn.ph{color:var(--ink-faint);}
+.gp-btn svg{width:18px;height:18px;color:var(--ink-faint);flex:none;transition:transform .15s;}
+.gp.open .gp-btn svg{transform:rotate(180deg);}
+.gp-pop{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:30;max-height:min(56vh,420px);overflow:auto;padding:6px;border-radius:14px;background:#fff;border:1px solid var(--line2);box-shadow:0 16px 40px rgba(15,25,45,.22);}
+.gp-sec{border-radius:10px;margin-bottom:6px;background:color-mix(in srgb,var(--c) 7%,#fff);border:1px solid color-mix(in srgb,var(--c) 22%,#fff);overflow:hidden;}
+.gp-sec:last-child{margin-bottom:0;}
+.gp-h{width:100%;display:flex;align-items:center;gap:8px;padding:9px 11px;border:none;cursor:pointer;text-align:left;font-size:13.5px;font-weight:800;color:#fff;background:var(--c);}
+.gp-h i{width:8px;height:8px;border-radius:50%;background:#fff;opacity:.9;}
+.gp-h small{margin-left:auto;font-size:11px;font-weight:700;opacity:.85;}
+.gp-h:disabled{cursor:default;}
+.gp-h:disabled small{display:none;}
+.gp-items{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;padding:7px;}
+.gp-items button{padding:9px 10px;border-radius:8px;border:1px solid color-mix(in srgb,var(--c) 30%,#fff);border-left:4px solid var(--c);background:#fff;cursor:pointer;text-align:left;font-size:13px;font-weight:700;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.gp-items button:hover{background:color-mix(in srgb,var(--c) 10%,#fff);}
+.gp-items button.on{color:#fff;background:var(--c);}
+.gp-empty{padding:16px;font-size:13px;color:var(--ink-soft);text-align:center;}
+.op-sel{font-size:14px;}
+#regRole,#mvRole{margin-top:0;}
+.dmodal .gp-pop{position:static;margin-top:6px;max-height:330px;box-shadow:none;}
+.dmodal .opick{margin-top:10px;}
 </style>
 </head>
 <body>
@@ -802,12 +876,14 @@ body.desk .toast{bottom:28px;}
       <!-- 아차사고 -->
       <form class="panel form-card form-panel" id="form-nearmiss" data-type="nearmiss" novalidate>
         <div class="field"><label class="label"><span class="no">01</span>발생 일시 <span class="req">*</span></label><input type="datetime-local" data-f="occurred_at"></div>
-        <div class="field"><label class="label"><span class="no">02</span>사고 유형 <span class="opt" id="catHint">선택</span></label><select data-f="category"></select></div>
-        <div class="field"><label class="label"><span class="no">03</span>상황 설명 <span class="req">*</span></label>
+        <div class="field"><label class="label"><span class="no">02</span>장소 <span class="req">*</span></label>
+          <input type="text" data-f="location" maxlength="100" placeholder="예: 지하 주차장 진입로, A동 2층 계단"></div>
+        <div class="field"><label class="label"><span class="no">03</span>사고 유형 <span class="opt" id="catHint">선택</span></label><select data-f="category"></select></div>
+        <div class="field"><label class="label"><span class="no">04</span>상황 설명 <span class="req">*</span></label>
           <textarea data-f="detail" maxlength="2000" placeholder="어떤 상황이었는지 육하원칙으로 작성해주세요"></textarea><div class="counter" data-count="detail">0 / 2000</div></div>
-        <div class="field"><label class="label"><span class="no">04</span>재발 방지 의견 <span class="opt">선택</span></label>
+        <div class="field"><label class="label"><span class="no">05</span>재발 방지 의견 <span class="opt">선택</span></label>
           <textarea data-f="prevention" maxlength="2000" placeholder="같은 상황이 반복되지 않으려면 무엇이 필요할지 작성해주세요"></textarea></div>
-        <div class="field"><label class="label"><span class="no">05</span>사진 첨부 <span class="opt">선택</span></label><div data-photo></div>
+        <div class="field"><label class="label"><span class="no">06</span>사진 첨부 <span class="opt">선택</span></label><div data-photo></div>
           <p class="note">보안정책상 촬영이 제한된 사업장에서는 사진 없이 작성해주세요. 위치정보(GPS)는 자동으로 제거됩니다.</p></div>
       </form>
 
@@ -861,16 +937,10 @@ body.desk .toast{bottom:28px;}
           <label class="label">등록할 사번 <span class="opt">줄바꿈·쉼표로 여러 건 입력</span></label>
           <textarea id="regList" class="mono" placeholder="20240101&#10;20240102&#10;20240103" style="min-height:96px"></textarea>
         </div>
-        <div class="frow" style="margin-top:0">
-          <select id="regRole"></select>
-          <select id="regUnit"></select>
-        </div>
-        <div class="frow" id="regOrgDetail">
-          <input id="regDept" placeholder="팀 (선택)" maxlength="50">
-          <input id="regPart" placeholder="파트 (선택)" maxlength="50">
-        </div>
+        <select id="regRole"></select>
+        <div class="opick" id="regOrg"></div>
         <button class="btn btn-ghost btn-block" id="regBtn" type="button" style="margin-top:8px">일괄 등록</button>
-        <p class="note">등록된 사번만 [최초 등록]으로 가입할 수 있고, 제출건은 여기서 지정한 그룹·팀·파트로 자동 분류됩니다. 원본 사번 명단은 사내에 별도로 보관하세요.</p>
+        <p class="note">등록된 사번만 [최초 등록]으로 가입할 수 있고, 제출건은 여기서 지정한 소속(사업팀·그룹·팀·파트)으로 자동 분류됩니다. 관리자는 지정한 소속과 그 하위 조직만 조회·처리할 수 있습니다.</p>
         <div id="regResult"></div>
       </div>
 
@@ -919,75 +989,97 @@ body.desk .toast{bottom:28px;}
           <div class="desk-actions" id="dActions"></div>
         </header>
 
-        <section data-dscreen="ddash"><div id="dDash"></div></section>
+        <section data-dscreen="ddash">
+          <div class="dpanel">
+            <div class="dpanel-h">
+              <span class="dpanel-t">조회 조건 <span class="mono">FILTER</span></span>
+              <div class="dorg" id="ddOrg"></div>
+              <div class="drange"><input type="month" id="ddFrom" title="시작 월"><span>~</span><input type="month" id="ddTo" title="종료 월"></div>
+              <div class="dpreset" id="ddPreset"><button data-p="m1">이번 달</button><button data-p="m3">최근 3개월</button><button data-p="ytd">올해</button><button data-p="m12">최근 12개월</button><button data-p="all">전체</button></div>
+              <span class="dpanel-meta" id="ddMeta"></span>
+            </div>
+            <div class="dpanel-b pad" id="dDash"></div>
+          </div>
+        </section>
 
         <section data-dscreen="dlist" class="hidden">
-          <div class="panel dfilters">
-            <select id="dfType"><option value="all">유형 전체</option><option value="proposal">개선제안</option><option value="nearmiss">아차사고</option></select>
-            <select id="dfStatus"></select>
-            <div class="dorg" id="dfOrg"></div>
-            <select id="dfGrade"></select>
-            <div class="drange"><input type="date" id="dfFrom" title="제출일 시작"><span>~</span><input type="date" id="dfTo" title="제출일 종료"></div>
-            <input type="search" id="dfQ" placeholder="장소 · 내용 · 식별코드 · 접수번호 검색">
-            <button class="btn btn-ghost" id="dfReset">초기화</button>
+          <div class="dpanel">
+            <div class="dpanel-h dfilters">
+              <select id="dfType"><option value="all">유형 전체</option><option value="proposal">개선제안</option><option value="nearmiss">아차사고</option></select>
+              <select id="dfStatus"></select>
+              <div class="dorg" id="dfOrg"></div>
+              <select id="dfGrade"></select>
+              <div class="drange"><input type="date" id="dfFrom" title="제출일 시작"><span>~</span><input type="date" id="dfTo" title="제출일 종료"></div>
+              <input type="search" id="dfQ" placeholder="장소 · 내용 · 식별코드 · 접수번호 검색">
+              <button class="btn btn-ghost" id="dfReset">초기화</button>
+            </div>
+            <div class="dpanel-sub"><span id="dEmpChip"></span><span id="dCount"></span><span class="note">행을 누르면 상세 보기·처리 창이 열립니다</span></div>
+            <div class="dpanel-b" id="dTableWrap"></div>
+            <div class="dpanel-f dpager" id="dPager"></div>
           </div>
-          <div class="dlisthead"><span id="dEmpChip"></span><span id="dCount"></span><span class="note">행을 누르면 상세 보기·처리 창이 열립니다</span></div>
-          <div class="panel dtable-wrap tall" id="dTableWrap"></div>
-          <div class="dpager" id="dPager"></div>
         </section>
 
         <section data-dscreen="dorg" class="hidden">
           <div class="dorg-grid">
-            <div class="panel dtree" id="dTree"></div>
-            <div>
-              <div class="dlisthead">
-                <span id="dEmpCount"></span>
+            <div class="dpanel">
+              <div class="dpanel-h"><span class="dpanel-t">조직도 <span class="mono">ORG</span></span><span class="dpanel-meta" id="dTreeMeta"></span></div>
+              <div class="dpanel-b dtree" id="dTree"></div>
+            </div>
+            <div class="dpanel">
+              <div class="dpanel-h">
+                <span class="dpanel-t" id="dEmpCount">전체</span>
                 <span class="dtools"><input id="dEmpQ" class="mono" placeholder="식별코드 검색"><select id="dEmpRole"><option value="all">권한 전체</option><option value="worker">근로자</option><option value="manager">관리자</option><option value="team">사업팀</option><option value="hq">본사</option></select>
                   <button class="btn btn-primary dbtn" data-modal="reg">＋ 사번 등록</button><button class="btn btn-ghost" data-modal="lk">사번 조회</button></span>
               </div>
-              <div class="panel dtable-wrap tall" id="dEmpWrap"></div>
-              <div class="dpager" id="dEmpPager"></div>
+              <div class="dpanel-b" id="dEmpWrap"></div>
+              <div class="dpanel-f dpager" id="dEmpPager"></div>
             </div>
           </div>
         </section>
 
         <section data-dscreen="dpw" class="hidden">
-          <div class="panel dfilters">
-            <select id="pwRole"><option value="all">권한 전체</option><option value="worker">근로자</option><option value="manager">관리자</option><option value="team">사업팀</option></select>
-            <div class="dorg" id="pwOrg"></div>
-            <select id="pwJoin"><option value="joined">가입 완료자</option><option value="all">가입 여부 전체</option><option value="wait">가입 대기자</option></select>
-            <input type="search" id="pwQ" class="mono" placeholder="식별코드 검색">
+          <div class="dpanel">
+            <div class="dpanel-h dfilters">
+              <select id="pwRole"><option value="all">권한 전체</option><option value="worker">근로자</option><option value="manager">관리자</option><option value="team">사업팀</option></select>
+              <div class="dorg" id="pwOrg"></div>
+              <select id="pwJoin"><option value="joined">가입 완료자</option><option value="all">가입 여부 전체</option><option value="wait">가입 대기자</option></select>
+              <input type="search" id="pwQ" class="mono" placeholder="식별코드 검색">
+            </div>
+            <div class="dpanel-sub"><span id="pwCount"></span><span class="note">초기화 시 기존 비밀번호는 즉시 무효 · 본인이 [최초 등록]으로 재설정</span><span class="dtools"><span class="pw-direct"><input id="pwEmp" class="mono" placeholder="사번 입력" maxlength="20"><button class="btn btn-ghost" id="pwEmpBtn">사번으로 초기화</button></span><button class="btn btn-danger" id="pwBulk" disabled>선택 초기화</button></span></div>
+            <div class="dpanel-b" id="pwWrap"></div>
+            <div class="dpanel-f dpager" id="pwPager"></div>
           </div>
-          <div class="dlisthead"><span id="pwCount"></span><span class="note" style="margin:0">초기화 시 기존 비밀번호는 즉시 무효 · 본인이 [최초 등록]으로 재설정</span><span class="dtools"><span class="pw-direct"><input id="pwEmp" class="mono" placeholder="사번 입력" maxlength="20"><button class="btn btn-ghost" id="pwEmpBtn">사번으로 초기화</button></span><button class="btn btn-danger" id="pwBulk" disabled>선택 초기화</button></span></div>
-          <div class="panel dtable-wrap tall" id="pwWrap"></div>
-          <div class="dpager" id="pwPager"></div>
         </section>
 
         <section data-dscreen="dimport" class="hidden">
-          <div class="dgrid g-2-1">
-            <div class="panel box">
-              <h3>1. 양식 준비 <span class="mono">STEP 1</span></h3>
-              <p class="note" style="margin-top:0">상단 [업로드 양식 다운로드]로 받은 엑셀에 <b>사번 · 성명 · 그룹 · 팀 · 파트 · 권한</b>을 채웁니다. 인사 시스템에서 내려받은 파일도 첫 행에 같은 열 이름이 있으면 그대로 쓸 수 있습니다.</p>
-              <h3 style="margin-top:18px">2. 파일 선택 <span class="mono">STEP 2</span></h3>
-              <label class="drop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
-                <b>엑셀 파일 선택 (.xlsx · .xls · .csv)</b><span id="impFileName">선택된 파일 없음</span><input type="file" id="impFile" accept=".xlsx,.xls,.csv"></label>
-              <div id="impPreview"></div>
-              <h3 style="margin-top:18px">3. 반영 <span class="mono">STEP 3</span></h3>
-              <button class="btn btn-primary" id="impRun" disabled>서버에 반영하기</button>
-              <div id="impResult"></div>
-            </div>
-            <div class="panel box guide">
-              <h3>반영 규칙 <span class="mono">RULES</span></h3>
-              <ul>
-                <li><b>모든 조직 구분은 사번 기준</b>입니다. 근로자 화면에는 소속이 표시되지 않고, 제출건은 사번의 소속으로 자동 분류됩니다.</li>
-                <li>새 사번은 <b>등록</b>되고, 이미 있는 근로자·관리자는 <b>그룹·팀·파트가 갱신</b>됩니다.</li>
-                <li>권한 칸이 비어 있으면 신규는 근로자, 기존 인원은 현재 권한을 유지합니다.</li>
-                <li>사업팀·본사 계정은 업로드로 바뀌지 않습니다.</li>
-                <li>그룹명은 서버 조직표와 정확히 같아야 합니다 (양식의 [그룹목록] 시트 참고).</li>
-                <li><b>성명은 브라우저에서 마스킹(예: 홍길동 → 홍*동)된 뒤 전송</b>되며, 원래 성명은 서버 어디에도 저장되지 않습니다.</li>
-                <li>업로드 파일은 서버에 저장되지 않습니다. 사번은 HTTPS로 전송되어 서버에서 암호화된 값으로만 저장됩니다.</li>
-                <li>이미 가입한 직원의 소속이 바뀌어도 로그인 정보는 그대로 유지되며, <b>이후 제출건부터</b> 새 소속으로 분류됩니다.</li>
-              </ul>
+          <div class="dpanel">
+            <div class="dpanel-h"><span class="dpanel-t">조직 · 인원 백데이터 <span class="mono">UPLOAD</span></span><span class="dpanel-meta">사번(암호화) · 성명(마스킹) · 소속(부서코드)만 서버로 전송</span></div>
+            <div class="dpanel-b pad">
+              <div class="dgrid g-2-1" style="margin-top:0">
+                <div class="panel box">
+                  <h3>1. 파일 준비 <span class="mono">STEP 1</span></h3>
+                  <p class="note" style="margin-top:0">인사 시스템에서 내려받은 <b>사원 명단 엑셀을 그대로</b> 올리거나, 상단 [업로드 양식 다운로드]의 양식에 <b>사원번호 · 성명 · 부서코드 · 부서 · 상위부서</b>를 채워 올립니다.</p>
+                  <h3 style="margin-top:18px">2. 파일 선택 <span class="mono">STEP 2</span></h3>
+                  <label class="drop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+                    <b>엑셀 파일 선택 (.xlsx · .xls · .csv)</b><span id="impFileName">선택된 파일 없음</span><input type="file" id="impFile" accept=".xlsx,.xls,.csv"></label>
+                  <div id="impPreview"></div>
+                  <h3 style="margin-top:18px">3. 반영 <span class="mono">STEP 3</span></h3>
+                  <button class="btn btn-primary" id="impRun" disabled>서버에 반영하기</button>
+                  <div id="impResult"></div>
+                </div>
+                <div class="panel box guide">
+                  <h3>반영 규칙 <span class="mono">RULES</span></h3>
+                  <ul>
+                    <li><b>필요한 열만 읽습니다.</b> 사원번호 · 성명 · 부서코드 · 부서 · 상위부서(· 권한) 외의 열(주민번호·연락처·주소 등)은 브라우저에서도 읽지 않고 버리며 서버로 보내지 않습니다.</li>
+                    <li><b>사번</b>은 HTTPS로 전송되어 서버 비밀키로 암호화(HMAC)된 값만 저장됩니다.</li>
+                    <li><b>성명</b>은 브라우저에서 가운데를 가린 뒤(홍길동 → 홍*동) 전송되며, 원래 성명은 어디에도 저장되지 않습니다.</li>
+                    <li><b>소속</b>은 부서코드로 저장되고, 부서·상위부서로 <b>본사 › 사업팀 › 그룹 › 팀 › 파트</b> 조직도가 자동으로 만들어집니다.</li>
+                    <li>모든 조회·등록·결재 권한은 이 조직도의 상하 관계를 따릅니다. 관리자는 <b>본인 소속 조직과 그 하위</b>만 볼 수 있습니다.</li>
+                    <li>새 사번은 근로자로 <b>등록</b>되고, 이미 있는 인원은 <b>소속이 갱신</b>됩니다 (권한은 유지, 권한 열이 있으면 근로자/관리자로 반영).</li>
+                    <li>재직여부 열이 있으면 <b>재직</b> 인원만 반영합니다. 업로드 파일 자체는 서버에 저장되지 않습니다.</li>
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -1031,6 +1123,7 @@ var PICK = { proposal:['received','reviewing','rejected','done'], nearmiss:['rec
 var OPEN = ['received','reviewing'];
 var CLOSED = ['rejected','done','committee'];
 var EMP_RE = /^[A-Z0-9]{4,20}$/;
+var CODE_RE = /^[A-Za-z0-9-]{1,30}$/;   /* 인사 부서코드 */
 var PW_MIN = 8;
 
 var $ = function(s, r){ return (r||document).querySelector(s); };
@@ -1047,13 +1140,17 @@ function unitOf(o){ return (o && (o.site || o.team)) || '본사'; }
 
 $$('[data-logo]').forEach(function(img){ img.src = LOGO; });
 
-/* 관리 범위 (서버 규칙과 동일) */
-function inScope(a, team, site){ if(!a) return false;
-  return a.role === 'hq' || (a.role === 'team' && !!team && team === a.team) || (a.role === 'manager' && !!site && site === a.site); }
+/* 관리 범위 (서버 규칙과 동일) — 조직 경로(부서코드를 '/'로 이은 값)의 앞부분이 같으면 하위 조직
+   본사=전체 / 사업팀=소속 사업팀 전체 / 관리자=본인 소속 조직과 그 하위 */
+function teamPrefix(path){ return path ? String(path).split('/')[0] + '/' : null; }
+function within(path, prefix){ return !!path && !!prefix && String(path).indexOf(prefix) === 0; }
+function scopePrefix(a){ return !a ? null : a.role === 'team' ? teamPrefix(a.org_path) : a.role === 'manager' ? a.org_path : null; }
+function inScope(a, path){ if(!a) return false;
+  return a.role === 'hq' || ((a.role === 'team' || a.role === 'manager') && within(path, scopePrefix(a))); }
 function canManage(a, t){ if(!a) return false;
   if (a.role === 'hq') return true;
-  if (a.role === 'team') return (t.role === 'worker' || t.role === 'manager') && !!t.team && t.team === a.team;
-  if (a.role === 'manager') return t.role === 'worker' && !!t.site && t.site === a.site;
+  if (a.role === 'team') return (t.role === 'worker' || t.role === 'manager') && within(t.org_path, scopePrefix(a));
+  if (a.role === 'manager') return t.role === 'worker' && within(t.org_path, scopePrefix(a));
   return false; }
 function allowedRoles(a){ return a.role === 'hq' ? ['worker','manager','team','hq'] : a.role === 'team' ? ['worker','manager'] : a.role === 'manager' ? ['worker'] : []; }
 
@@ -1111,6 +1208,12 @@ function makeRealApi(){
     if (/row-level|permission/i.test(m)) return new Error('권한이 없습니다.');
     return new Error(m || '처리 중 오류가 발생했습니다.');
   }
+  /* 서버는 한 번에 1,000행까지만 돌려주므로 나눠서 모두 받음 */
+  async function pageAll(q){ var out = [], size = 1000;
+    for (var from = 0; from < 50000; from += size){
+      var r = await q().range(from, from + size - 1); if (r.error) throw dbErr(r.error);
+      out = out.concat(r.data || []); if (!r.data || r.data.length < size) break; }
+    return out; }
   async function signInWith(loginId, pw){
     var r = await sb.auth.signInWithPassword({ email: loginId, password: pw });
     if (r.error){
@@ -1122,15 +1225,15 @@ function makeRealApi(){
     onSignedOut: function(cb){ sb.auth.onAuthStateChange(function(ev){ if(ev === 'SIGNED_OUT') cb(); }); },
     me: async function(){
       var s = await session(); if (!s) return null;
-      var r = await sb.from('employees').select('emp_hash, emp_code, role, team, site, dept, part, active').eq('user_id', s.user.id).maybeSingle();
+      var r = await sb.from('employees').select('emp_hash, emp_code, role, team, site, dept, part, org_code, org_path, active').eq('user_id', s.user.id).maybeSingle();
       if (r.error) throw dbErr(r.error);
       if (!r.data || !r.data.active){ await sb.auth.signOut(); throw new Error('사용이 중지되었거나 등록되지 않은 계정입니다. 관리자에게 문의하세요.'); }
-      return { uid:s.user.id, hash:r.data.emp_hash, code:r.data.emp_code, role:r.data.role, team:r.data.team, site:r.data.site, dept:r.data.dept, part:r.data.part };
+      return { uid:s.user.id, hash:r.data.emp_hash, code:r.data.emp_code, role:r.data.role, team:r.data.team, site:r.data.site, dept:r.data.dept, part:r.data.part, org_code:r.data.org_code, org_path:r.data.org_path };
     },
     signIn: async function(empId, pw){ var r = await fn('resolve', { empId:empId }); await signInWith(r.loginId, pw); return this.me(); },
     signUp: async function(empId, pw){ var r = await fn('signup', { empId:empId, password:pw }); await signInWith(r.loginId, pw); return this.me(); },
     signOut: async function(){ await sb.auth.signOut(); },
-    org: async function(){ var r = await sb.from('org_sites').select('site, team, sort').order('sort'); if (r.error) throw dbErr(r.error); return r.data; },
+    org: async function(){ return await pageAll(function(){ return sb.from('org_units').select('code, name, parent_code, path, depth, team, site, dept, part, sort, active').order('sort'); }); },
     submit: async function(type, data, photo){
       var s = await session(); if (!s) throw new Error('로그인이 만료되었습니다. 다시 로그인해주세요.');
       var row = Object.assign({ type:type }, data);
@@ -1147,8 +1250,7 @@ function makeRealApi(){
     mine: async function(){ var s = await session();
       var r = await sb.from('reports').select('*').eq('author_id', s.user.id).order('created_at', { ascending:false }).limit(300);
       if (r.error) throw dbErr(r.error); return r.data; },
-    all: async function(){ var r = await sb.from('reports').select('*').order('created_at', { ascending:false }).limit(3000);
-      if (r.error) throw dbErr(r.error); return r.data; },
+    all: async function(){ return await pageAll(function(){ return sb.from('reports').select('*').order('created_at', { ascending:false }).order('id'); }); },
     logs: async function(id){ var r = await sb.from('report_logs').select('*').eq('report_id', id).order('created_at', { ascending:true });
       if (r.error) throw dbErr(r.error); return r.data; },
     photoUrl: async function(path){ var r = await sb.storage.from(BUCKET).createSignedUrl(path, 300);
@@ -1157,10 +1259,9 @@ function makeRealApi(){
       if (r.error) throw dbErr(r.error); return r.data; },
     remove: async function(rep){ var r = await sb.from('reports').delete().eq('id', rep.id); if (r.error) throw dbErr(r.error);
       if (rep.photo_path) await sb.storage.from(BUCKET).remove([rep.photo_path]); },
-    employees: async function(){ var r = await sb.from('employees').select('emp_hash, emp_code, role, team, site, dept, part, name_mask, active, registered_at, created_at').order('created_at', { ascending:false });
-      if (r.error) throw dbErr(r.error); return r.data; },
-    register: function(ids, unit){ return fn('admin_register', { empIds:ids, role:unit.role, team:unit.team, site:unit.site, dept:unit.dept, part:unit.part }); },
-    importEmployees: function(rows){ return fn('admin_import', { rows:rows }); },
+    employees: async function(){ return await pageAll(function(){ return sb.from('employees').select('emp_hash, emp_code, role, team, site, dept, part, org_code, org_path, name_mask, active, registered_at, created_at').order('created_at', { ascending:false }).order('emp_hash'); }); },
+    register: function(ids, unit){ return fn('admin_register', { empIds:ids, role:unit.role, orgCode:unit.orgCode }); },
+    importEmployees: function(units, rows){ return fn('admin_import', { units:units || [], rows:rows || [] }); },
     lookup:   function(empId){ return fn('admin_lookup', { empId:empId }); },
     updateEmployee: function(hash, patch){ return fn('admin_update', Object.assign({ empHash:hash }, patch)); },
     reset:    function(hash){ return fn('admin_reset', { empHash:hash }); },
@@ -1169,47 +1270,54 @@ function makeRealApi(){
 }
 
 /* =====================================================================
-   2. 데모 모드 (서버 없이 화면 체험 — 메모리에만 저장)
+   2. 데모 모드 (서버 없이 화면 체험 — 메모리에만 저장, 가상 조직·가상 인원)
    ===================================================================== */
 function makeDemoApi(){
-  var ORG = [['디지털1그룹','1사업팀'],['디지털2그룹','1사업팀'],['서울R&D그룹','1사업팀'],['나노1그룹','2사업팀'],['나노2그룹','2사업팀'],['나노3그룹','2사업팀'],['미래기술그룹','2사업팀'],
-    ['아산1그룹','3사업팀'],['아산2그룹','3사업팀'],['기흥SDC그룹','3사업팀'],['평택그룹','4사업팀'],['천안그룹','4사업팀'],['온양그룹','4사업팀']]
-    .map(function(o, i){ return { site:o[0], team:o[1], sort:i }; });
-  var DEPTS = { '보안1팀':['출입관리파트','순찰파트'], '보안2팀':['상황실파트','주차관리파트'], '시설팀':['기계파트','전기파트'] };
+  /* 가상 조직: 대표이사(본사) + 1~4사업팀 > 그룹 > 팀 > 파트 — 실제 부서코드와 무관한 예시 코드 */
+  var RAW = [['H000','대표이사',''],['H100','EHS팀','H000'],['H110','EHS그룹','H100'],['H200','경영지원팀','H000'],['H210','인사그룹','H200']];
+  var GROUPS = [['디지털1그룹','디지털2그룹','서울R&D그룹'],['나노1그룹','나노2그룹','나노3그룹','미래기술그룹'],['아산1그룹','아산2그룹','기흥SDC그룹'],['평택그룹','천안그룹','온양그룹']];
+  GROUPS.forEach(function(gs, ti){ var tc = 'B' + (ti+1) + '00'; RAW.push([tc, (ti+1) + '사업팀', '']);
+    gs.forEach(function(g, gi){ var gc = 'B' + (ti+1) + 'G' + (gi+1); RAW.push([gc, g, tc]);
+      ['보안1팀','보안2팀','시설팀'].slice(0, gi === 0 ? 3 : 2).forEach(function(d, di){ var dc = gc + '-T' + (di+1); RAW.push([dc, d, gc]);
+        ['A조','B조','C조'].slice(0, di === 2 ? 2 : 3).forEach(function(pt, pi){ RAW.push([dc + '-' + 'ABC'[pi], pt, dc]); }); }); }); });
+  var UNITS = buildOrg(RAW.map(function(r){ return { code:r[0], name:r[1], parent:r[2] }; }));
+  function unitOfCode(c){ return UNITS.find(function(u){ return u.code === c; }); }
+  var PARTS = UNITS.filter(function(u){ return u.depth === 4 && u.team !== '본사'; });
+  function codeFor(site, dept, part){ var u = UNITS.find(function(x){ return x.site === site && (!dept || x.dept === dept) && (part ? x.part === part : (dept ? x.depth === 3 : x.depth === 2)); }); return u ? u.code : null; }
   var seedN = 7; function rnd(){ seedN = (Math.imul(seedN, 1664525) + 1013904223) >>> 0; return seedN / 4294967296; }
   function pickOne(a){ return a[Math.floor(rnd() * a.length)]; }
-  function teamOf(site){ var o = ORG.find(function(x){ return x.site === site; }); return o ? o.team : null; }
   function h64(s){ var out=''; for (var k=0;k<8;k++){ var x = 0x811c9dc5 ^ (k*0x9e3779b1); var t='demo|'+k+'|'+s;
       for (var i=0;i<t.length;i++){ x ^= t.charCodeAt(i); x = Math.imul(x, 0x01000193) >>> 0; } out += x.toString(16).padStart(8,'0'); } return out; }
   var emps = {}, pw = {}, me = null, reports = [], logs = [], seq = 200;
-  function cleanT(v){ v = String(v == null ? '' : v).trim(); return v ? v.slice(0, 50) : null; }
-  function norm(u){
-    if (u.role === 'worker' || u.role === 'manager'){ u.team = teamOf(u.site); if(!u.team) throw new Error('그룹을 선택해주세요'); u.dept = cleanT(u.dept); u.part = cleanT(u.part); }
-    else if (u.role === 'team'){ u.site = null; u.dept = null; u.part = null; if (!ORG.some(function(o){ return o.team === u.team; })) throw new Error('사업팀을 선택해주세요'); }
-    else { u.team = null; u.site = null; u.dept = null; u.part = null; } return u; }
+  function applyOrg(e, role, code){
+    if (code){ var u = unitOfCode(code); if (!u) throw new Error('등록되지 않은 부서코드입니다');
+      e.org_code = u.code; e.org_path = u.path; e.team = u.team; e.site = u.site; e.dept = u.dept; e.part = u.part; }
+    else if (role === 'hq'){ e.org_code = null; e.org_path = null; e.team = null; e.site = null; e.dept = null; e.part = null; }
+    else throw new Error('소속 조직을 선택해주세요');
+    e.role = role; return e; }
   var SUR = '김이박최정강조윤장임한오서신권황안송류홍', GIV = ['민준','서연','도윤','지우','하준','서윤','예준','지민','시우','수빈','현우','지훈','은서','태호','영수'];
-  function addEmp(id, role, site, team, reg, dept, part, nm){ var h = h64(id); var u = norm({ role:role, site:site||null, team:team||null, dept:dept, part:part });
-    emps[h] = { emp_hash:h, emp_code:codeOf(h), name_mask: maskName(nm === undefined ? pickOne(SUR.split('')) + pickOne(GIV) : nm), role:u.role, team:u.team, site:u.site, dept:u.dept, part:u.part, active:true,
-      registered_at: reg ? new Date(Date.now()-864e5*20).toISOString() : null, created_at:new Date(Date.now()-864e5*30).toISOString() };
+  function addEmp(id, role, code, reg, nm){ var h = h64(id);
+    emps[h] = applyOrg({ emp_hash:h, emp_code:codeOf(h), name_mask: maskName(nm === undefined ? pickOne(SUR.split('')) + pickOne(GIV) : nm), active:true,
+      registered_at: reg ? new Date(Date.now()-864e5*20).toISOString() : null, created_at:new Date(Date.now()-864e5*30).toISOString() }, role, code);
     if (reg) pw[h] = 'demo1234'; return h; }
-  addEmp('9001','hq',null,null,true); addEmp('8001','team',null,'4사업팀',true); addEmp('8002','team',null,'2사업팀',true);
-  addEmp('7001','manager','평택그룹',null,true,'보안1팀'); addEmp('7002','manager','나노1그룹',null,true,'시설팀');
-  addEmp('1001','worker','평택그룹',null,true,'보안1팀','순찰파트');
-  addEmp('1002','worker','평택그룹',null,false,'보안2팀','상황실파트'); addEmp('1003','worker','천안그룹',null,false,'시설팀','기계파트');
+  addEmp('9001','hq','H110',true); addEmp('8001','team','B400',true); addEmp('8002','team','B200',true);
+  addEmp('7001','manager',codeFor('평택그룹'),true); addEmp('7002','manager',codeFor('나노1그룹','보안1팀'),true); addEmp('7003','manager',codeFor('평택그룹','보안1팀','A조'),true);
+  addEmp('1001','worker',codeFor('평택그룹','보안1팀','A조'),true);
+  addEmp('1002','worker',codeFor('평택그룹','보안2팀','B조'),false); addEmp('1003','worker',codeFor('천안그룹','보안1팀','A조'),false);
   var workers = [h64('1001')];
-  for (var n = 0; n < 60; n++){ var d = pickOne(Object.keys(DEPTS)), site = n < 8 ? '평택그룹' : pickOne(ORG).site;
-    workers.push(addEmp(String(3000 + n), 'worker', site, null, rnd() > 0.15, d, pickOne(DEPTS[d]))); }
+  for (var n = 0; n < 90; n++){ var pu = n < 12 ? pickOne(PARTS.filter(function(u){ return u.site === '평택그룹'; })) : pickOne(PARTS);
+    workers.push(addEmp(String(3000 + n), 'worker', pu.code, rnd() > 0.15)); }
   var LOCS = ['A동 출입 게이트','B동 지하 1층 전기실 앞','정문 초소','지상 주차장','지하 창고','R&D동 1층 로비','물류 하역장','옥상 기계실','후문 차량 통제소','클린룸 출입구'];
   var PDET = ['바닥 배수 불량으로 우천 시 미끄러짐 위험이 있습니다.','분전반 문이 열린 채로 방치되어 감전 위험이 있습니다.','초소 내부 조도가 낮아 서류 확인이 어렵습니다.','적재 선반 상단 물품 낙하 우려가 있습니다.','차량 스토퍼 파손으로 보행 중 걸려 넘어질 위험이 있습니다.','계단 논슬립이 마모되어 미끄럽습니다.'];
   var NDET = ['야간 순찰 중 지게차 후진 경보음이 작동하지 않아 충돌할 뻔했습니다.','우천 후 출입구 경사로에서 미끄러져 넘어질 뻔했습니다.','에어샤워 자동문에 손가락이 끼일 뻔했습니다.','주차장 진입 차량과 보행자가 부딪힐 뻔했습니다.'];
   var ST = ['received','received','reviewing','reviewing','done','done','committee','rejected'];
-  for (var k = 0; k < 70; k++){
+  for (var k = 0; k < 120; k++){
     var author = k < 4 ? h64('1001') : pickOne(workers), e = emps[author], isP = rnd() < 0.7;
-    var t = new Date(Date.now() - Math.floor(rnd() * 330) * 864e5 - Math.floor(rnd()*864e5)).toISOString();
+    var t = new Date(Date.now() - Math.floor(rnd() * 400) * 864e5 - Math.floor(rnd()*864e5)).toISOString();
     var st = pickOne(isP ? ST : ['received','reviewing','done','done']), pg = pickOne(GRADES);
     var fg = isP && st === 'committee' ? pickOne(['가','나','다']) : isP && st === 'done' ? '라' : null;
-    var r = { id:uuid(), report_no:++seq, type: isP ? 'proposal' : 'nearmiss', author_id:author, emp_hash:author, team:e.team, site:e.site, dept:e.dept, part:e.part,
-      proposed_grade: isP ? pg : null, final_grade:fg, location: isP ? pickOne(LOCS) : null, category:null, occurred_at: isP ? null : t,
+    var r = { id:uuid(), report_no:++seq, type: isP ? 'proposal' : 'nearmiss', author_id:author, emp_hash:author, team:e.team, site:e.site, dept:e.dept, part:e.part, org_code:e.org_code, org_path:e.org_path,
+      proposed_grade: isP ? pg : null, final_grade:fg, location: pickOne(LOCS), category:null, occurred_at: isP ? null : t,
       detail: isP ? pickOne(PDET) : pickOne(NDET), request: isP ? '개선 조치 요청드립니다.' : null, prevention: isP ? null : '작업 전 점검 강화 및 안내 표지 설치',
       photo_path:null, status:st, admin_comment: st === 'committee' ? '산업안전보건위원회 상정 예정입니다.' : st === 'done' ? '조치 완료했습니다. 감사합니다.' : st === 'rejected' ? '이미 개선 일정이 잡혀 있어 반려합니다.' : null,
       created_at:t, updated_at:t, reviewed_at: st !== 'received' ? t : null, closed_at: CLOSED.indexOf(st) > -1 ? t : null };
@@ -1223,7 +1331,9 @@ function makeDemoApi(){
   function staff(){ var a = actor(); if (!a || a.role === 'worker') throw new Error('인원관리 권한이 없습니다'); return a; }
   function hashOf(id){ id = normEmp(id); if(!EMP_RE.test(id)) throw new Error('사번 형식이 올바르지 않습니다 (영문·숫자 4~20자)'); return h64(id); }
   function clone(o){ return JSON.parse(JSON.stringify(o)); }
-  function meObj(){ var e = emps[me]; return { uid:me, hash:me, code:e.emp_code, role:e.role, team:e.team, site:e.site, dept:e.dept, part:e.part }; }
+  function meObj(){ var e = emps[me]; return { uid:me, hash:me, code:e.emp_code, role:e.role, team:e.team, site:e.site, dept:e.dept, part:e.part, org_code:e.org_code, org_path:e.org_path }; }
+  function target(role, code){ var u = code ? unitOfCode(code) : null; if (code && !u) throw new Error('등록되지 않은 부서코드입니다'); if (!code && role !== 'hq') throw new Error('소속 조직을 선택해주세요');
+    return { role:role, org_path: u ? u.path : null }; }
   return {
     onSignedOut: function(){},
     me: async function(){
@@ -1238,19 +1348,19 @@ function makeDemoApi(){
       if (e.registered_at) throw new Error('이미 가입된 사번입니다. 비밀번호를 잊었다면 관리자에게 초기화를 요청하세요');
       pw[h] = p; e.registered_at = new Date().toISOString(); me = h; authStorage.setItem('ehs-demo-me', h); return meObj(); },
     signOut: async function(){ me = null; authStorage.removeItem('ehs-demo-me'); },
-    org: async function(){ return clone(ORG); },
+    org: async function(){ var a = actor(); return a && a.role !== 'worker' ? clone(UNITS) : []; },
     submit: async function(type, data, photo){ await wait(400); var e = actor(), now = new Date().toISOString();
       var r = Object.assign({ proposed_grade:null, location:null, category:null, occurred_at:null, request:null, prevention:null }, data,
-        { id:uuid(), report_no:++seq, type:type, author_id:me, emp_hash:me, team:e.team, site:e.site, dept:e.dept, part:e.part, final_grade:null,
+        { id:uuid(), report_no:++seq, type:type, author_id:me, emp_hash:me, team:e.team, site:e.site, dept:e.dept, part:e.part, org_code:e.org_code, org_path:e.org_path, final_grade:null,
           photo_path: photo ? URL.createObjectURL(photo) : null, status:'received', admin_comment:null, created_at:now, updated_at:now, reviewed_at:null, closed_at:null });
       reports.unshift(r); logs.push({ report_id:r.id, from_status:null, to_status:'received', comment:'접수', changed_by_code:e.emp_code, changed_by_role:e.role, created_at:now });
       return r.report_no; },
     mine: async function(){ await wait(); return clone(reports.filter(function(r){ return r.author_id === me; })); },
-    all: async function(){ await wait(); var a = actor(); return clone(reports.filter(function(r){ return r.author_id === me || inScope(a, r.team, r.site); })); },
+    all: async function(){ await wait(); var a = actor(); return clone(reports.filter(function(r){ return r.author_id === me || inScope(a, r.org_path); })); },
     logs: async function(id){ return clone(logs.filter(function(l){ return l.report_id === id; })); },
     photoUrl: async function(p){ return p; },
     update: async function(id, patch){ await wait(); var a = actor(), r = reports.find(function(x){ return x.id === id; });
-      if (!inScope(a, r.team, r.site)) throw new Error('권한이 없습니다.');
+      if (!inScope(a, r.org_path)) throw new Error('권한이 없습니다.');
       var n = Object.assign({}, r, patch);
       if (n.type === 'nearmiss'){ if (['received','reviewing','done'].indexOf(n.status) < 0) throw new Error('아차사고는 접수/검토중/조치완료 상태만 사용할 수 있습니다'); n.final_grade = null; }
       else if (n.status === 'done' || n.status === 'committee'){ if (!n.final_grade) throw new Error('조치완료 처리 시 결정 등급을 선택해야 합니다'); n.status = COMMITTEE.indexOf(n.final_grade) > -1 ? 'committee' : 'done'; }
@@ -1262,26 +1372,25 @@ function makeDemoApi(){
       n.updated_at = now; Object.assign(r, n); return clone(r); },
     remove: async function(rep){ if (actor().role !== 'hq') throw new Error('권한이 없습니다.'); reports = reports.filter(function(x){ return x.id !== rep.id; }); },
     employees: async function(){ await wait(); var a = actor();
-      return clone(Object.keys(emps).map(function(k){ return emps[k]; }).filter(function(e){ return e.emp_hash === me || inScope(a, e.team, e.site); })); },
-    register: async function(ids, unit){ await wait(); var a = staff(); var u = norm(Object.assign({}, unit));
-      if (!canManage(a, u)) throw new Error('해당 권한·소속으로 등록할 수 없습니다 (관리 범위 밖)');
+      return clone(Object.keys(emps).map(function(k){ return emps[k]; }).filter(function(e){ return e.emp_hash === me || inScope(a, e.org_path); })); },
+    register: async function(ids, unit){ await wait(); var a = staff();
+      if (!canManage(a, target(unit.role, unit.orgCode))) throw new Error('해당 권한·소속으로 등록할 수 없습니다 (관리 범위 밖)');
       var added = 0, skipped = 0, invalid = [];
       ids.forEach(function(raw){ var id = normEmp(raw); if(!id) return; if(!EMP_RE.test(id)){ invalid.push(id); return; }
-        if (emps[h64(id)]) skipped++; else { addEmp(id, u.role, u.site, u.team, false, u.dept, u.part); added++; } });
+        if (emps[h64(id)]) skipped++; else { addEmp(id, unit.role, unit.orgCode, false, null); added++; } });
       return { added:added, skipped:skipped, invalid:invalid }; },
     lookup: async function(id){ await wait(); var a = staff(), h = hashOf(id), e = emps[h];
       var base = { empHash:h, empCode:codeOf(h), exists:!!e }; if (!e) return base;
       if (!canManage(a, e) && h !== me) return Object.assign(base, { outOfScope:true });
-      return Object.assign(base, { role:e.role, team:e.team, site:e.site, dept:e.dept, part:e.part, nameMask:e.name_mask, active:e.active, registered:!!e.registered_at, self:h===me,
+      return Object.assign(base, { role:e.role, team:e.team, site:e.site, dept:e.dept, part:e.part, orgCode:e.org_code, orgPath:e.org_path, nameMask:e.name_mask, active:e.active, registered:!!e.registered_at, self:h===me,
         reportCount: reports.filter(function(r){ return r.emp_hash === h; }).length }); },
     updateEmployee: async function(h, patch){ await wait(); var a = staff(), e = emps[h];
       if (h === me) throw new Error('본인 계정의 권한·소속은 직접 변경할 수 없습니다');
       if (!canManage(a, e)) throw new Error('관리 범위 밖의 인원입니다');
-      if (['role','site','team','dept','part'].some(function(k){ return patch[k] !== undefined; })){
-        var pick = function(k){ return patch[k] !== undefined ? patch[k] : e[k]; };
-        var u = norm({ role:pick('role'), site:pick('site'), team:pick('team'), dept:pick('dept'), part:pick('part') });
-        if (!canManage(a, u)) throw new Error('해당 권한·소속으로 변경할 수 없습니다 (관리 범위 밖)');
-        Object.assign(e, u); }
+      if (patch.role !== undefined || patch.orgCode !== undefined){
+        var role = patch.role !== undefined ? patch.role : e.role, code = patch.orgCode !== undefined ? patch.orgCode : e.org_code;
+        if (!canManage(a, target(role, code))) throw new Error('해당 권한·소속으로 변경할 수 없습니다 (관리 범위 밖)');
+        applyOrg(e, role, code); }
       if (typeof patch.active === 'boolean') e.active = patch.active; return { ok:true }; },
     reset: async function(h){ await wait(); var a = staff(), e = emps[h];
       if (h === me) throw new Error('본인 계정은 초기화할 수 없습니다'); if (!canManage(a, e)) throw new Error('관리 범위 밖의 인원입니다');
@@ -1290,16 +1399,21 @@ function makeDemoApi(){
     removeEmployee: async function(h){ var a = staff(), e = emps[h];
       if (h === me) throw new Error('본인 계정은 삭제할 수 없습니다'); if (!canManage(a, e)) throw new Error('관리 범위 밖의 인원입니다');
       delete emps[h]; delete pw[h]; reports.forEach(function(r){ if (r.emp_hash === h){ r.emp_hash = null; r.author_id = null; } }); return { ok:true }; },
-    importEmployees: async function(rows){ await wait(300); var a = actor(); if (!a || a.role !== 'hq') throw new Error('조직 백데이터 업로드는 본사만 가능합니다');
-      var ins = 0, upd = 0, skip = 0, invalid = [];
-      rows.forEach(function(r){ var id = normEmp(r.empId);
+    importEmployees: async function(units, rows){ await wait(300); var a = actor(); if (!a || a.role !== 'hq') throw new Error('조직 백데이터 업로드는 본사만 가능합니다');
+      var nu = 0;
+      if (units && units.length){
+        var merged = {}; UNITS.forEach(function(u){ merged[u.code] = { code:u.code, name:u.name, parent:u.parent_code }; });
+        units.forEach(function(u){ merged[u.code] = { code:u.code, name:u.name, parent:u.parent }; });
+        UNITS = buildOrg(Object.keys(merged).map(function(k){ return merged[k]; })); nu = UNITS.length;
+        Object.keys(emps).forEach(function(k){ var e = emps[k]; if (e.org_code) applyOrg(e, e.role, e.org_code); }); }
+      var ins = 0, upd = 0, invalid = [];
+      (rows || []).forEach(function(r){ var id = normEmp(r.empId);
         if (!EMP_RE.test(id)) return invalid.push({ row:r.row, reason:'사번 형식 오류' });
-        if (!teamOf(r.site)) return invalid.push({ row:r.row, reason:'알 수 없는 그룹: ' + (r.site || '(빈칸)') });
+        if (!unitOfCode(r.orgCode)) return invalid.push({ row:r.row, reason:'알 수 없는 부서코드: ' + (r.orgCode || '(빈칸)') });
         var h = h64(id), e = emps[h];
-        if (!e){ addEmp(id, r.role || 'worker', r.site, null, false, r.dept, r.part, r.nameMask || null); ins++; }
-        else if (e.role === 'team' || e.role === 'hq') skip++;
-        else { Object.assign(e, norm({ role: r.role || e.role, site:r.site, dept:r.dept, part:r.part })); if (r.nameMask) e.name_mask = maskName(r.nameMask); upd++; } });
-      return { inserted:ins, updated:upd, skipped:skip, invalid:invalid }; }
+        if (!e){ addEmp(id, r.role || 'worker', r.orgCode, false, r.nameMask || null); ins++; }
+        else { applyOrg(e, (e.role === 'team' || e.role === 'hq') ? e.role : (r.role || e.role), r.orgCode); if (r.nameMask) e.name_mask = maskName(r.nameMask); upd++; } });
+      return { inserted:ins, updated:upd, skipped:0, units:nu, invalid:invalid }; }
   };
 }
 
@@ -1341,7 +1455,7 @@ function bindGradePick(box, onPick){ box.addEventListener('click', function(e){ 
 
 function itemHtml(r, staffView){
   var isP = r.type === 'proposal';
-  var title = isP ? esc(r.location || '장소 미기재') : esc(r.category ? r.category + ' · ' : '') + '발생 ' + fmt(r.occurred_at);
+  var title = isP ? esc(r.location || '장소 미기재') : (r.location ? esc(r.location) + ' · ' : '') + esc(r.category ? r.category + ' · ' : '') + '발생 ' + fmt(r.occurred_at);
   var grades = isP ? gradeTag(r.proposed_grade, '제안') + (r.final_grade ? ' ' + gradeTag(r.final_grade, '결정') : '') : '';
   return '<button class="item k-'+(TYPE[r.type]?r.type:'x')+'" data-id="'+esc(r.id)+'">' +
     '<div class="r1"><span>'+noOf(r.report_no)+'</span>'+typeTag(r.type)+grades+'<span class="sp"></span>'+statusTag(r.status)+'</div>' +
@@ -1404,10 +1518,18 @@ $('#authForm').addEventListener('submit', async function(e){
    ===================================================================== */
 var state = { user:null, org:[], screen:null, type:'proposal', grade:null, photos:{proposal:null, nearmiss:null}, all:[], employees:[],
   filter:{ chip:'all', status:'all', org:null, q:'', emp:null }, empSel:null };
+if (DEMO) window.__ehs = { state:state };   /* 데모 모드 점검용 */
 function isStaff(){ return state.user && state.user.role !== 'worker'; }
-function teams(){ var t = []; state.org.forEach(function(o){ if (t.indexOf(o.team) < 0) t.push(o.team); }); return t; }
-function sitesOf(team){ return state.org.filter(function(o){ return !team || o.team === team; }).map(function(o){ return o.site; }); }
-function scopeLabel(u){ return u.role === 'hq' ? '전사' : u.role === 'team' ? u.team : u.site; }
+/* 조직표(state.org): 부서코드 트리 — 사업팀(depth 1) › 그룹(2) › 팀(3) › 파트(4). 사업팀이 아닌 최상위는 '본사' */
+function teams(){ var t = []; state.org.forEach(function(o){ if (o.depth === 1 && o.team && t.indexOf(o.team) < 0) t.push(o.team); });
+  t.sort(function(a,b){ return (a === '본사') - (b === '본사') || a.localeCompare(b, 'ko', { numeric:true }); });
+  if (t.indexOf('본사') < 0) t.push('본사'); return t; }
+function sitesOf(team){ var out = []; state.org.forEach(function(o){ if (o.depth === 2 && (!team || o.team === team) && out.indexOf(o.site) < 0) out.push(o.site); }); return out; }
+function unitByCode(c){ return state.org.find(function(o){ return o.code === c; }) || null; }
+function childUnits(code){ return state.org.filter(function(o){ return o.parent_code === code; }).sort(function(a,b){ return a.sort - b.sort; }); }
+function scopeLabel(u){ return u.role === 'hq' ? '전사' : u.role === 'team' ? (u.team || '-') : (u.part || u.dept || u.site || u.team || '-'); }
+var TEAM_COLORS = ['#1D6FE0','#13893F','#E25E07','#7C3AED','#0E9AA7','#C2185B','#8D6E00'];
+function teamColor(t){ if (!t || t === '본사') return '#475569'; var T = teams().filter(function(x){ return x !== '본사'; }), i = T.indexOf(t); return TEAM_COLORS[(i < 0 ? 0 : i) % TEAM_COLORS.length]; }
 var NAVS = { worker:[['write','작성'],['mine','내 제출내역']], staff:[['dash','현황'],['list','접수목록'],['people','인원관리'],['write','작성']] };
 
 async function enterApp(user){
@@ -1515,7 +1637,9 @@ $('#submitBtn').addEventListener('click', async function(){
   } else {
     var oc = v('occurred_at'); if (!oc) return toast('발생 일시를 입력해주세요', true);
     var od = new Date(oc); if (isNaN(od) || od > new Date(Date.now()+6e4)) return toast('발생 일시를 다시 확인해주세요', true);
-    data.occurred_at = od.toISOString(); data.category = v('category') || null;
+    data.occurred_at = od.toISOString(); data.location = v('location');
+    if (!data.location) return toast('장소를 입력해주세요', true);
+    data.category = v('category') || null;
     if (data.detail.length < 5) return toast('상황 설명을 5자 이상 작성해주세요', true);
     data.prevention = v('prevention') || null;
   }
@@ -1561,11 +1685,11 @@ function committeeNote(r){
 }
 async function openDetail(r, staffView){
   var isP = r.type === 'proposal', u = state.user;
-  var canProc = staffView && inScope(u, r.team, r.site);
+  var canProc = staffView && inScope(u, r.org_path);
   var meta = staffView ? [['소속', esc((r.team || '본사') + (r.site ? ' › ' + fullUnit(r) : ''))]] : [];   /* 근로자에게는 소속 비표시 */
   if (isP){ meta.push(['장소', esc(r.location||'-')], ['제안 등급', r.proposed_grade ? gradeTag(r.proposed_grade)+' '+GRADE[r.proposed_grade].desc : '-'],
     ['결정 등급', r.final_grade ? gradeTag(r.final_grade)+' '+GRADE[r.final_grade].desc : '<span style="color:var(--ink-faint)">미결정</span>']); }
-  else meta.push(['발생 일시', fmt(r.occurred_at)], ['사고 유형', esc(r.category || '미분류')]);
+  else meta.push(['발생 일시', fmt(r.occurred_at)], ['장소', esc(r.location || '-')], ['사고 유형', esc(r.category || '미분류')]);
   meta.push(['제출 일시', fmt(r.created_at)]);
   if (staffView) meta.push(['제출자 식별코드', '<span class="mono" style="color:var(--brand)">'+esc(codeOf(r.emp_hash))+'</span>'], ['종료 일시', fmt(r.closed_at)]);
   var blocks = isP ? [['DETAIL · 상세 내용', r.detail], ['REQUEST · 조치 요청사항', r.request]]
@@ -1635,7 +1759,7 @@ async function openDetail(r, staffView){
 }
 
 /* =====================================================================
-   9. 관리: 조직 구조(사업팀 > 그룹 > 팀 > 파트) · 범위별 필터
+   9. 관리: 조직 구조(본사 > 사업팀 > 그룹 > 팀 > 파트) · 범위별 필터
    ===================================================================== */
 var LV_LABEL = { team:'사업팀', site:'그룹', dept:'팀', part:'파트' };
 /* 성명 마스킹: 첫 글자·끝 글자만 표시 (홍길동→홍*동, 남궁민수→남**수, 이산→이*) — 원래 성명은 서버로 보내지 않음 */
@@ -1643,18 +1767,39 @@ function maskName(v){ var c = Array.from(String(v == null ? '' : v).trim().repla
   return c.length === 1 ? c[0] : c.length === 2 ? c[0] + '*' : c[0] + new Array(c.length - 1).join('*') + c[c.length - 1]; }
 function nameOf(hash){ if (!hash || !state.employees) return ''; var e = state.employees.find(function(x){ return x.emp_hash === hash; }); return e && e.name_mask ? e.name_mask : ''; }
 function fullUnit(o){ var a = [o.site, o.dept, o.part].filter(Boolean); return a.length ? a.join(' › ') : (o.team || '본사'); }
-function levelsFor(role){ return role === 'hq' ? ['team','site','dept','part'] : role === 'team' ? ['site','dept','part'] : role === 'manager' ? ['dept','part'] : []; }
+function pathLabel(o){ return [o.team || '본사'].concat([o.site, o.dept, o.part].filter(Boolean)).join(' › '); }
+
+/* 부서코드 트리 계산 (서버 함수와 같은 규칙): [{code, name, parent}] → 경로·단계·단계별 이름
+   이름이 '사업팀'으로 끝나는 최상위는 사업팀, 그 밖의 최상위(대표이사 등)는 '본사'로 묶음 */
+function buildOrg(list){
+  var map = {};
+  list.forEach(function(u){ var code = String(u.code || '').trim(), name = String(u.name || '').trim().replace(/\s+/g, ' ').slice(0, 50), par = String(u.parent || '').trim();
+    if (!CODE_RE.test(code) || !name) return; map[code] = { code:code, name:name, parent: par && par !== code && CODE_RE.test(par) ? par : null }; });
+  var codes = Object.keys(map).sort();
+  return codes.map(function(code, idx){
+    var chain = [], seen = {}, cur = code;
+    while (cur && map[cur] && !seen[cur] && chain.length < 12){ seen[cur] = 1; chain.unshift(cur); cur = map[cur].parent; }
+    var names = chain.map(function(c){ return map[c].name; }), biz = /사업팀$/.test(names[0] || '');
+    var lv = biz ? names : ['본사'].concat(names.slice(1));
+    return { code:code, name:map[code].name, parent_code: chain.length > 1 ? chain[chain.length - 2] : null, path: chain.join('/') + '/', depth: chain.length,
+      team: lv[0] || null, site: lv[1] || null, dept: lv[2] || null, part: lv[3] || null, sort: idx, active:true };
+  });
+}
+
+/* 화면에 보여줄 조직 단계: 본사=전체, 사업팀=그룹부터, 관리자=본인 소속 아래 단계부터 */
+function levelsFor(u){ var all = ['team','site','dept','part']; if (u.role === 'hq') return all; if (u.role === 'team') return all.slice(1);
+  var d = u.org_path ? String(u.org_path).split('/').filter(Boolean).length : 2; return all.slice(Math.min(d, 4)); }
 function newOrgSel(){ return { team:'all', site:'all', dept:'all', part:'all' }; }
-function matchOrg(r, sel){ return ['team','site','dept','part'].every(function(k){ return !sel[k] || sel[k] === 'all' || (r[k] || '') === sel[k]; }); }
+function matchOrg(r, sel){ return ['team','site','dept','part'].every(function(k){ return !sel[k] || sel[k] === 'all' || (k === 'team' ? (r.team || '본사') : (r[k] || '')) === sel[k]; }); }
 function distinctVals(rows, key, sel, levels){
   var idx = levels.indexOf(key), vals = [];
   rows.forEach(function(r){
-    for (var i = 0; i < idx; i++){ var k = levels[i]; if (sel[k] !== 'all' && (r[k] || '') !== sel[k]) return; }
-    var v = r[key]; if (v && vals.indexOf(v) < 0) vals.push(v);
+    for (var i = 0; i < idx; i++){ var k = levels[i]; if (sel[k] !== 'all' && (k === 'team' ? (r.team || '본사') : (r[k] || '')) !== sel[k]) return; }
+    var v = key === 'team' ? (r.team || '본사') : r[key]; if (v && vals.indexOf(v) < 0) vals.push(v);
   });
   if (key === 'team'){ var T = teams(); vals.sort(function(a,b){ return T.indexOf(a) - T.indexOf(b); }); }
   else if (key === 'site'){ var S = sitesOf(); vals.sort(function(a,b){ return S.indexOf(a) - S.indexOf(b); }); }
-  else vals.sort(function(a,b){ return a.localeCompare(b, 'ko'); });
+  else vals.sort(function(a,b){ return a.localeCompare(b, 'ko', { numeric:true }); });
   return vals;
 }
 /* 캐스케이드 선택상자: 상위 조직을 고르면 하위 목록이 좁혀짐 */
@@ -1670,14 +1815,71 @@ function renderOrgSelects(container, rows, levels, sel, onChange){
     levels.slice(levels.indexOf(k) + 1).forEach(function(d){ sel[d] = 'all'; });
     renderOrgSelects(container, rows, levels, sel, onChange); onChange(); }); });
 }
-function siteOptions(list, placeholder){
-  var html = placeholder ? '<option value="">'+placeholder+'</option>' : '';
-  if (state.user.role === 'hq'){
-    teams().forEach(function(t){ html += '<optgroup label="'+esc(t)+'">' + sitesOf(t).filter(function(s){ return list.indexOf(s) > -1; }).map(function(s){ return '<option>'+esc(s)+'</option>'; }).join('') + '</optgroup>'; });
-  } else html += list.map(function(s){ return '<option>'+esc(s)+'</option>'; }).join('');
-  return html;
+
+/* 소속 선택기 (사번 등록·권한 변경용)
+   - 사업팀/그룹: 사업팀별 색상으로 구분된 목록 (아이폰에서도 색이 보이도록 직접 그린 드롭다운)
+   - 팀/파트: 선택한 조직의 하위 목록
+   - 관리자는 본인 소속 아래, 사업팀은 소속 사업팀 안에서만 고를 수 있음 */
+var CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
+function orgPicker(box, opts){
+  var P = { code: opts.value || null, open:false };
+  function actor(){ return state.user; }
+  function prefix(){ return scopePrefix(actor()); }
+  function allowed(unit){ var px = prefix(); return !!unit && (!px || within(unit.path, px)); }
+  function chainOf(code){ var u = code ? unitByCode(code) : null; return u ? u.path.split('/').filter(Boolean) : []; }
+  function lvName(d){ return d === 1 ? '사업팀' : d === 2 ? '그룹' : d === 3 ? '팀' : d === 4 ? '파트' : '하위 조직'; }
+  function topList(role){
+    var px = prefix(), tops = state.org.filter(function(o){ return o.depth === 1 && (!px || within(o.path, teamPrefix(px))); });
+    tops.sort(function(a,b){ return (a.team === '본사') - (b.team === '본사') || a.sort - b.sort; });
+    return '<div class="gp-pop">' + (tops.length ? tops.map(function(t){
+      var kids = role === 'team' ? [] : childUnits(t.code).filter(allowed);
+      var headOk = allowed(t) && (role === 'team' || actor().role === 'hq' || actor().role === 'team');
+      return '<div class="gp-sec" style="--c:'+teamColor(t.team)+'">' +
+        '<button type="button" class="gp-h" data-code="'+esc(t.code)+'"'+(headOk ? '' : ' disabled')+'><i></i>'+esc(t.team)+(t.team === '본사' ? '' : '')+'<small>'+(role === 'team' ? '사업팀' : '사업팀 직속')+'</small></button>' +
+        (kids.length ? '<div class="gp-items">' + kids.map(function(k){ return '<button type="button" data-code="'+esc(k.code)+'"'+(k.code === P.code || chainOf(P.code)[1] === k.code ? ' class="on"' : '')+'>'+esc(k.name)+'</button>'; }).join('') + '</div>' : '') + '</div>'; }).join('')
+      : '<div class="gp-empty">조직 정보가 없습니다. 본사 콘솔에서 조직 백데이터를 먼저 업로드하세요.</div>') + '</div>';
+  }
+  function render(){
+    var role = opts.role(), a = actor(), html = '';
+    if (role === 'hq'){ P.code = null; box.innerHTML = '<div class="op-fixed">본사 권한 · 전사 범위 (소속 지정 없음)</div>'; return; }
+    var cur = P.code ? unitByCode(P.code) : null;
+    if (cur && (!allowed(cur) || (role === 'team' && cur.depth !== 1))) cur = null;
+    var base = a.role === 'manager' ? unitByCode(a.org_code) : null;
+    if (a.role === 'manager' && !cur && base) cur = base;
+    P.code = cur ? cur.code : null;
+    var chain = chainOf(P.code), anchor;
+    if (a.role === 'manager'){
+      html += '<div class="op-fixed" style="--c:'+teamColor(base ? base.team : '')+'"><i></i>'+(base ? esc(pathLabel(base)) : '소속 정보 없음')+'</div>';
+      anchor = base;
+    } else {
+      var top = chain.length ? unitByCode(chain[Math.min(chain.length, 2) - 1]) : null;
+      var label = top ? (top.depth === 1 ? esc(top.team) + ' <small>(사업팀 직속)</small>' : esc(top.team) + ' › <b>' + esc(top.name) + '</b>') : (role === 'team' ? '사업팀 선택' : '사업팀 › 그룹 선택');
+      html += '<div class="gp'+(P.open ? ' open' : '')+'"><button type="button" class="gp-btn'+(top ? '' : ' ph')+'" style="--c:'+teamColor(top ? top.team : '')+'"><i></i><span>'+label+'</span>'+CHEV+'</button>' + (P.open ? topList(role) : '') + '</div>';
+      anchor = top && top.depth === 2 ? top : null;
+    }
+    if (role !== 'team' && anchor){
+      var u = anchor, guard = 0;
+      while (u && guard++ < 8){
+        var kids = childUnits(u.code).filter(allowed); if (!kids.length) break;
+        var picked = chain[u.depth] || '';
+        html += '<select class="op-sel" data-parent="'+esc(u.code)+'"><option value="">'+lvName(u.depth + 1)+' 선택 안 함 ('+esc(u.name)+' 소속)</option>' +
+          kids.map(function(k){ return '<option value="'+esc(k.code)+'"'+(k.code === picked ? ' selected' : '')+'>'+esc(k.name)+'</option>'; }).join('') + '</select>';
+        u = picked ? unitByCode(picked) : null;
+      }
+    }
+    box.innerHTML = html;
+  }
+  function set(code){ P.code = code || null; P.open = false; render(); if (opts.onChange) opts.onChange(P.code); }
+  box.addEventListener('click', function(e){
+    var b = e.target.closest('.gp-btn'); if (b){ P.open = !P.open; render(); return; }
+    var it = e.target.closest('.gp-pop [data-code]'); if (it && !it.disabled){ set(it.dataset.code); }
+  });
+  box.addEventListener('change', function(e){ var s = e.target.closest('.op-sel'); if (!s) return; set(s.value || s.dataset.parent); });
+  document.addEventListener('click', function(e){ if (P.open && e.target.isConnected && !box.contains(e.target)){ P.open = false; render(); } });
+  render();
+  return { get:function(){ return P.code; }, set:set, refresh:function(){ P.open = false; render(); } };
 }
-function visibleSites(){ var u = state.user; return u.role === 'hq' ? sitesOf() : u.role === 'team' ? sitesOf(u.team) : [u.site]; }
+
 function setupStaffUI(){
   var u = state.user;
   state.filter = { chip:'all', status:'all', org:newOrgSel(), q:'', emp:null };
@@ -1686,27 +1888,17 @@ function setupStaffUI(){
   $('#fStatus').innerHTML = '<option value="all">상태 전체</option>' + STATUS_ORDER.map(function(s){ return '<option value="'+s+'">'+STATUS[s]+'</option>'; }).join('');
   $('#peopleScope').textContent = '관리 범위 · ' + scopeLabel(u);
   $('#regRole').innerHTML = allowedRoles(u).map(function(r){ return '<option value="'+r+'">'+ROLE[r].ko+' 권한</option>'; }).join('');
-  renderRegUnit();
+  if (!state.regPick) state.regPick = orgPicker($('#regOrg'), { role:function(){ return $('#regRole').value; } });
+  state.regPick.set(null);
 }
-function renderRegUnit(){
-  var role = $('#regRole').value, sel = $('#regUnit'), u = state.user, grp = role === 'worker' || role === 'manager';
-  sel.disabled = false;
-  $('#regOrgDetail').classList.toggle('hidden', !grp);
-  if (grp){ sel.innerHTML = siteOptions(visibleSites(), '그룹 선택'); if (u.role === 'manager'){ sel.value = u.site; sel.disabled = true; } }
-  else if (role === 'team'){ sel.innerHTML = '<option value="">사업팀 선택</option>' + teams().map(function(t){ return '<option>'+esc(t)+'</option>'; }).join(''); }
-  else { sel.innerHTML = '<option value="">본사 (소속 지정 없음)</option>'; sel.disabled = true; }
-}
-$('#regRole').addEventListener('change', renderRegUnit);
-function unitFromSelect(role, val, dept, part){
-  var grp = role === 'worker' || role === 'manager';
-  return { role:role, team: role === 'team' ? val : null, site: grp ? val : null, dept: grp ? (dept || null) : null, part: grp ? (part || null) : null };
-}
+$('#regRole').addEventListener('change', function(){ if (state.regPick) state.regPick.refresh(); });
+function unitFromPick(role, code){ return { role:role, orgCode: role === 'hq' ? (code || null) : code }; }
 
 /* =====================================================================
    10. 관리: 현황 (모바일)
    ===================================================================== */
 async function fetchAll(){ state.all = await api.all(); return state.all; }
-function scoped(){ var u = state.user; return state.all.filter(function(r){ return inScope(u, r.team, r.site) || r.author_id === u.uid; }); }
+function scoped(){ var u = state.user; return state.all.filter(function(r){ return inScope(u, r.org_path) || r.author_id === u.uid; }); }
 function updateOpenBadges(A){
   var open = A.filter(function(r){ return OPEN.indexOf(r.status) > -1; }).length;
   $$('#nav [data-go=list], .side-nav [data-dgo=dlist]').forEach(function(b){ var old = $('.badge', b); if (old) old.remove();
@@ -1733,7 +1925,7 @@ async function loadDash(){
   var month = cnt(function(r){ return new Date(r.created_at) >= mStart; });
   var closed = cnt(function(r){ return CLOSED.indexOf(r.status) > -1; });
   var nP = cnt(function(r){ return r.type === 'proposal'; }), nN = A.length - nP;
-  var key = u.role === 'hq' ? 'team' : u.role === 'team' ? 'site' : 'dept';
+  var key = levelsFor(u)[0] || 'part';
   var by = {}; A.forEach(function(r){ var k = r[key] || (key === 'team' ? '본사' : '미지정'); by[k] = (by[k] || 0) + 1; });
   var keys = Object.keys(by).sort(function(a,b){ return by[b] - by[a]; });
   var maxB = Math.max.apply(null, keys.map(function(k){ return by[k]; }).concat([1]));
@@ -1788,7 +1980,7 @@ function renderList(){
 }
 async function loadList(){
   if (!state.all.length) $('#adminList').innerHTML = '<div class="loading"><span class="spin"></span>불러오는 중</div>';
-  try { await fetchAll(); renderOrgSelects($('#fOrg'), scoped(), levelsFor(state.user.role), state.filter.org, renderList); renderList(); updateOpenBadges(scoped()); }
+  try { await fetchAll(); renderOrgSelects($('#fOrg'), scoped(), levelsFor(state.user), state.filter.org, renderList); renderList(); updateOpenBadges(scoped()); }
   catch(e){ $('#adminList').innerHTML = emptyBox('불러오지 못했습니다'); fail(e); }
 }
 $('#typeChips').addEventListener('click', function(e){
@@ -1813,7 +2005,7 @@ $('#xlsBtn').addEventListener('click', function(){
    ===================================================================== */
 async function loadPeople(){
   $('#empList').innerHTML = '<div class="loading"><span class="spin"></span>불러오는 중</div>';
-  try { state.employees = await api.employees(); renderOrgSelects($('#empOrg'), state.employees, levelsFor(state.user.role), state.empSel, renderEmps); renderEmps(); }
+  try { state.employees = await api.employees(); renderOrgSelects($('#empOrg'), state.employees, levelsFor(state.user), state.empSel, renderEmps); renderEmps(); }
   catch(e){ $('#empList').innerHTML = emptyBox('불러오지 못했습니다'); fail(e); }
 }
 var ROLE_RANK = { hq:0, team:1, manager:2, worker:3 };
@@ -1842,10 +2034,10 @@ function openEmpSheet(emp){
   openSheet('<div class="sheet-head"><div class="h"><span class="kicker">EMPLOYEE</span><h3 class="mono">'+esc(emp.emp_code)+'</h3></div><button class="icon-btn" data-close>✕</button></div>' +
     '<div class="kv">'+(emp.name_mask ? '<span>성명</span><b>'+esc(emp.name_mask)+'</b>' : '')+'<span>권한</span><b>'+roleChip(emp.role)+'</b><span>소속</span><b>'+esc(emp.team || '본사')+(emp.site ? ' › ' + esc(fullUnit(emp)) : '')+'</b><span>가입</span><b>'+(emp.registered_at ? fmt(emp.registered_at) : '가입 대기')+'</b><span>상태</span><b>'+(emp.active ? '사용중' : '사용중지')+'</b></div>' +
     '<div class="panel box" style="margin-top:14px"><h3>권한 · 소속 변경 <span class="mono">MOVE</span></h3>' +
-      '<div class="frow" style="margin-top:0"><select id="mvRole">'+allowedRoles(u).map(function(r){ return '<option value="'+r+'"'+(r === emp.role ? ' selected' : '')+'>'+ROLE[r].ko+'</option>'; }).join('')+'</select><select id="mvUnit"></select></div>' +
-      '<div class="frow" id="mvOrg"><input id="mvDept" placeholder="팀 (예: 보안1팀)" maxlength="50" value="'+esc(emp.dept || '')+'"><input id="mvPart" placeholder="파트 (예: 순찰파트)" maxlength="50" value="'+esc(emp.part || '')+'"></div>' +
+      '<select id="mvRole">'+allowedRoles(u).map(function(r){ return '<option value="'+r+'"'+(r === emp.role ? ' selected' : '')+'>'+ROLE[r].ko+'</option>'; }).join('')+'</select>' +
+      '<div class="opick" id="mvOrg"></div>' +
       '<button class="btn btn-ghost btn-block" id="mvSave" style="margin-top:8px">변경 저장</button>' +
-      '<p class="note">팀·파트는 본사의 조직 백데이터 업로드로 일괄 갱신될 수 있습니다.</p></div>' +
+      '<p class="note">소속은 본사의 조직 백데이터 업로드(인사 명단)로 일괄 갱신될 수 있습니다.</p></div>' +
     '<div id="empActs" style="display:flex;flex-direction:column;gap:8px;margin-top:12px">' +
       '<button class="btn btn-ghost btn-block" data-a="active">'+(emp.active ? '사용 중지 (퇴사·이동 시)' : '사용 재개')+'</button>' +
       '<button class="btn btn-ghost btn-block" data-a="reports">이 사람의 제출건 보기</button>' +
@@ -1853,16 +2045,12 @@ function openEmpSheet(emp){
       '<button class="btn btn-danger btn-block" data-a="remove">사번 등록 삭제</button>' +
     '</div><p class="note">비밀번호 초기화 후 해당 직원이 [최초 등록]으로 다시 가입합니다. 등록 삭제 시 제출 기록은 남고 식별코드 연결만 끊어집니다.</p>');
   $('[data-close]', sheet).onclick = closeSheet;
-  function fillMv(){ var role = $('#mvRole').value, sel = $('#mvUnit'), grp = role === 'worker' || role === 'manager'; sel.disabled = false;
-    $('#mvOrg').classList.toggle('hidden', !grp);
-    if (grp){ sel.innerHTML = siteOptions(visibleSites(), '그룹 선택'); sel.value = emp.site || ''; if (u.role === 'manager'){ sel.value = u.site; sel.disabled = true; } }
-    else if (role === 'team'){ sel.innerHTML = '<option value="">사업팀 선택</option>' + teams().map(function(t){ return '<option>'+esc(t)+'</option>'; }).join(''); sel.value = emp.team || ''; }
-    else { sel.innerHTML = '<option value="">본사</option>'; sel.disabled = true; } }
-  $('#mvRole').addEventListener('change', fillMv); fillMv();
+  var mvPick = orgPicker($('#mvOrg'), { role:function(){ return $('#mvRole').value; }, value:emp.org_code });
+  $('#mvRole').addEventListener('change', function(){ mvPick.refresh(); });
   $('#mvSave').onclick = async function(){
-    var role = $('#mvRole').value, val = $('#mvUnit').value;
-    if (role !== 'hq' && !val) return toast('소속을 선택해주세요', true);
-    try { await api.updateEmployee(emp.emp_hash, unitFromSelect(role, val, $('#mvDept').value.trim(), $('#mvPart').value.trim())); closeSheet(); toast('권한·소속이 변경되었습니다'); reloadPeopleViews(); } catch(e){ fail(e); } };
+    var role = $('#mvRole').value, code = mvPick.get();
+    if (role !== 'hq' && !code) return toast('소속을 선택해주세요', true);
+    try { await api.updateEmployee(emp.emp_hash, unitFromPick(role, code)); closeSheet(); toast('권한·소속이 변경되었습니다'); reloadPeopleViews(); } catch(e){ fail(e); } };
   var armed = {};
   $('#empActs', sheet).addEventListener('click', async function(ev){
     var a = ev.target.closest('[data-a]'); if (!a) return; var k = a.dataset.a;
@@ -1889,14 +2077,13 @@ $('#empList').addEventListener('click', function(e){
 $('#regBtn').addEventListener('click', async function(){
   var ids = $('#regList').value.split(/[\s,;]+/).map(normEmp).filter(Boolean);
   if (!ids.length) return toast('등록할 사번을 입력해주세요', true);
-  var role = $('#regRole').value, val = $('#regUnit').value;
-  if ((role === 'worker' || role === 'manager') && !val) return toast('그룹을 선택해주세요', true);
-  if (role === 'team' && !val) return toast('사업팀을 선택해주세요', true);
-  var unit = unitFromSelect(role, val, $('#regDept').value.trim(), $('#regPart').value.trim());
+  var role = $('#regRole').value, code = state.regPick ? state.regPick.get() : null;
+  if (role !== 'hq' && !code) return toast(role === 'team' ? '사업팀을 선택해주세요' : '소속(사업팀 › 그룹 › 팀 › 파트)을 선택해주세요', true);
+  var unit = unitFromPick(role, code), uu = code ? unitByCode(code) : null;
   var btn = this; btn.disabled = true;
   try {
     var r = await api.register(ids, unit);
-    $('#regResult').innerHTML = '<div class="result"><div class="kv"><span>등록 소속</span><b>'+roleChip(role)+' '+esc(unit.site ? fullUnit(unit) : (val || '본사'))+'</b><span>신규 등록</span><b style="color:var(--green)">'+r.added+'건</b><span>이미 등록됨</span><b>'+r.skipped+'건</b>' +
+    $('#regResult').innerHTML = '<div class="result"><div class="kv"><span>등록 소속</span><b>'+roleChip(role)+' '+esc(uu ? pathLabel(uu) : '본사')+'</b><span>신규 등록</span><b style="color:var(--green)">'+r.added+'건</b><span>이미 등록됨</span><b>'+r.skipped+'건</b>' +
       (r.invalid && r.invalid.length ? '<span>형식 오류</span><b style="color:var(--red)">'+esc(r.invalid.join(', '))+'</b>' : '') + '</div></div>';
     $('#regList').value = ''; reloadPeopleViews();
   } catch(e){ fail(e); } finally { btn.disabled = false; }
@@ -1956,8 +2143,8 @@ function reportRows(L){
 }
 function employeeRows(E){
   var cnt = {}; state.all.forEach(function(r){ if (r.emp_hash) cnt[r.emp_hash] = (cnt[r.emp_hash] || 0) + 1; });
-  return [['식별코드','성명(마스킹)','권한','사업팀','그룹','팀','파트','가입여부','가입일시','상태','제출건수','사번등록일']]
-    .concat(sortEmps(E.slice()).map(function(e){ return [e.emp_code, e.name_mask || '', ROLE[e.role].ko, e.team || '본사', e.site || '', e.dept || '', e.part || '', e.registered_at ? '가입' : '미가입',
+  return [['식별코드','성명(마스킹)','권한','부서코드','사업팀','그룹','팀','파트','가입여부','가입일시','상태','제출건수','사번등록일']]
+    .concat(sortEmps(E.slice()).map(function(e){ return [e.emp_code, e.name_mask || '', ROLE[e.role].ko, e.org_code || '', e.team || '본사', e.site || '', e.dept || '', e.part || '', e.registered_at ? '가입' : '미가입',
       e.registered_at ? fmt(e.registered_at) : '', e.active ? '사용중' : '사용중지', cnt[e.emp_hash] || 0, fmt(e.created_at)]; }));
 }
 function metrics(rows){
@@ -1966,20 +2153,35 @@ function metrics(rows){
     if (r.status === 'committee') m.committee++; if (r.status === 'done') m.done++; if (r.status === 'rejected') m.rejected++; });
   m.rate = m.total ? Math.round((m.committee + m.done + m.rejected) / m.total * 100) : 0; return m;
 }
-function orgSummary(A){
-  var out = [];
-  teams().concat(['본사']).forEach(function(t){
-    var tr = A.filter(function(r){ return t === '본사' ? !r.team : r.team === t; });
-    if (t === '본사' && !tr.length) return;
-    out.push({ level:'team', name:t, team:t, m:metrics(tr) });
-    if (t !== '본사') sitesOf(t).forEach(function(s){ out.push({ level:'site', name:s, team:t, site:s, m:metrics(tr.filter(function(r){ return r.site === s; })) }); });
-  });
-  out.push({ level:'total', name:'전사 합계', m:metrics(A) });
+/* 조직별 집계: 조건(D: team/site)에 따라 한 단계 아래까지 펼침
+   전체 → 사업팀 + 그룹 / 사업팀 선택 → 그 사업팀 + 그룹 / 그룹 선택 → 그 그룹 + 팀 */
+function orgSummary(A, D){
+  D = D || { team:'all', site:'all' }; var out = [], T = function(r){ return r.team || '본사'; };
+  function kids(rows, key, order){ var v = []; rows.forEach(function(r){ var k = r[key] || '(직속)'; if (v.indexOf(k) < 0) v.push(k); });
+    return v.sort(function(a,b){ var ia = order ? order.indexOf(a) : -1, ib = order ? order.indexOf(b) : -1; return (a === '(직속)') - (b === '(직속)') || (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib) || a.localeCompare(b, 'ko', { numeric:true }); }); }
+  if (D.site !== 'all'){
+    var sr = A.filter(function(r){ return T(r) === D.team && r.site === D.site; });
+    out.push({ level:'team', name:D.site, color:teamColor(D.team), sel:{ team:D.team, site:D.site }, m:metrics(sr) });
+    kids(sr, 'dept').forEach(function(d){ out.push({ level:'child', name:d, sel:{ team:D.team, site:D.site, dept: d === '(직속)' ? 'all' : d }, m:metrics(sr.filter(function(r){ return (r.dept || '(직속)') === d; })) }); });
+  } else {
+    var list = D.team !== 'all' ? [D.team] : teams(), S = sitesOf();
+    list.forEach(function(t){
+      var tr = A.filter(function(r){ return T(r) === t; });
+      if (!tr.length && (t === '본사' || D.team === 'all' && !sitesOf(t).length)) return;
+      out.push({ level:'team', name:t, color:teamColor(t), sel:{ team:t }, m:metrics(tr) });
+      var sites = sitesOf(t).slice(); kids(tr, 'site', S).forEach(function(x){ if (sites.indexOf(x) < 0) sites.push(x); });
+      sites.forEach(function(x){ var xr = tr.filter(function(r){ return (r.site || '(직속)') === x; }); if (x === '(직속)' && !xr.length) return;
+        out.push({ level:'child', name:x, sel: x === '(직속)' ? { team:t } : { team:t, site:x }, m:metrics(xr) }); });
+    });
+  }
+  out.push({ level:'total', name: D.site !== 'all' ? D.site + ' 합계' : D.team !== 'all' ? D.team + ' 합계' : '전사 합계', m:metrics(A) });
   return out;
 }
-function orgSummaryRows(A){
-  return [['구분','사업팀','그룹','전체','개선제안','아차사고','처리대기','위원회의결예정','조치완료','반려','완료율(%)']]
-    .concat(orgSummary(A).map(function(o){ var m = o.m; return [o.level === 'team' ? '사업팀' : o.level === 'site' ? '그룹' : '합계', o.team || '', o.site || '', m.total, m.p, m.n, m.open, m.committee, m.done, m.rejected, m.rate]; }));
+function orgSummaryRows(A, D){
+  D = D || { team:'all', site:'all' };
+  var sub = D.site !== 'all' ? '팀' : '그룹';
+  return [['구분','조직','전체','개선제안','아차사고','처리대기','위원회의결예정','조치완료','반려','완료율(%)']]
+    .concat(orgSummary(A, D).map(function(o){ var m = o.m; return [o.level === 'team' ? (D.site !== 'all' ? '그룹' : '사업팀') : o.level === 'child' ? sub : '합계', o.name, m.total, m.p, m.n, m.open, m.committee, m.done, m.rejected, m.rate]; }));
 }
 function gradeRows(A){
   var P = A.filter(function(r){ return r.type === 'proposal'; });
@@ -1995,12 +2197,15 @@ function monthlyData(A, n){
 /* =====================================================================
    14. 본사 PC 콘솔 (화면 너비 900px 이상에서 본사 계정 로그인 시)
    ===================================================================== */
+function ym(d){ return d.getFullYear() + '-' + pad(d.getMonth() + 1); }
+function ymAdd(k, n){ var p = k.split('-'), d = new Date(+p[0], +p[1] - 1 + n, 1); return ym(d); }
+function dashDefault(){ var now = ym(new Date()); return { team:'all', site:'all', from:ymAdd(now, -11), to:now }; }
 var DESK = { on:false, screen:'ddash', sel:newOrgSel(), f:{ type:'all', status:'all', grade:'all', from:'', to:'', q:'' }, page:1, emp:null,
-  empSel:newOrgSel(), empQ:'', empRole:'all', empPage:1, imp:null, home:null,
+  dash:dashDefault(), empSel:newOrgSel(), empQ:'', empRole:'all', empPage:1, imp:null, home:null,
   pw:{ role:'all', join:'joined', q:'', sel:newOrgSel(), page:1, checked:{} } };
 var PAGE = 50;
-var DTITLE = { ddash:['대시보드','전사 안전 개선제안 · 아차사고 접수 현황'], dlist:['접수 관리','전사 접수건 조회 · 처리 · 엑셀 다운로드'],
-  dorg:['조직 · 인원','사업팀 › 그룹 › 팀 › 파트 별 인원과 권한 관리'], dpw:['비밀번호 관리','근로자 · 관리자 · 사업팀 계정의 비밀번호 초기화'], dimport:['조직 백데이터 업로드','사번별 그룹 · 팀 · 파트 정보를 엑셀로 일괄 반영'] };
+var DTITLE = { ddash:['대시보드','사업장 · 기간별 안전 개선제안 · 아차사고 접수 현황'], dlist:['접수 관리','전사 접수건 조회 · 처리 · 엑셀 다운로드'],
+  dorg:['조직 · 인원','본사 › 사업팀 › 그룹 › 팀 › 파트 별 인원과 권한 관리'], dpw:['비밀번호 관리','근로자 · 관리자 · 사업팀 계정의 비밀번호 초기화'], dimport:['조직 백데이터 업로드','인사 명단의 사번 · 성명 · 부서코드로 조직도와 인원을 일괄 반영'] };
 function deskEligible(u){ return u.role === 'hq' && window.matchMedia('(min-width: 900px)').matches; }
 function enterDesk(user){
   DESK.on = true; document.body.classList.add('desk');
@@ -2010,7 +2215,7 @@ function enterDesk(user){
   if (!DESK.home) DESK.home = { parent:reg.parentNode, before:lk.nextSibling };
   $('#dRegHolder').appendChild(reg); $('#dLkHolder').appendChild(lk);
   setupStaffUI();
-  DESK.sel = newOrgSel(); DESK.f = { type:'all', status:'all', grade:'all', from:'', to:'', q:'' }; DESK.emp = null; DESK.empSel = newOrgSel();
+  DESK.sel = newOrgSel(); DESK.f = { type:'all', status:'all', grade:'all', from:'', to:'', q:'' }; DESK.emp = null; DESK.empSel = newOrgSel(); DESK.dash = dashDefault();
   dgo('ddash');
 }
 function leaveDesk(){
@@ -2027,24 +2232,26 @@ function dgo(s){
   $$('.side-nav button').forEach(function(b){ b.classList.toggle('on', b.dataset.dgo === s); });
   $('#dTitle').textContent = DTITLE[s][0]; $('#dSub').textContent = DTITLE[s][1];
   var act = $('#dActions');
-  if (s === 'ddash') act.innerHTML = '<button class="btn btn-ghost" data-da="refresh">새로고침</button><button class="btn btn-primary dbtn" data-da="xlsAll">전체 데이터 엑셀</button>';
+  if (s === 'ddash') act.innerHTML = '<button class="btn btn-ghost" data-da="refresh">새로고침</button><button class="btn btn-primary dbtn" data-da="xlsAll">조회 조건 엑셀</button>';
   if (s === 'dlist') act.innerHTML = '<button class="btn btn-ghost" data-da="refresh">새로고침</button><button class="btn btn-primary dbtn" data-da="xlsList">조회 결과 엑셀</button>';
   if (s === 'dorg') act.innerHTML = '<button class="btn btn-ghost" data-da="refresh">새로고침</button><button class="btn btn-primary dbtn" data-da="xlsEmp">인원 목록 엑셀</button>';
   if (s === 'dimport') act.innerHTML = '<button class="btn btn-primary dbtn" data-da="tpl">업로드 양식 다운로드</button>';
   if (s === 'dpw') act.innerHTML = '<button class="btn btn-ghost" data-da="refresh">새로고침</button>';
-  $('.desk-main').scrollTop = 0;
   if (s === 'ddash') deskLoadDash();
   if (s === 'dlist') deskLoadList();
   if (s === 'dorg') deskLoadOrg();
   if (s === 'dimport') deskRenderImport();
   if (s === 'dpw') deskLoadPw();
 }
-$('#dActions').addEventListener('click', function(e){
+async function deskReloadOrg(){ try { state.org = await api.org(); } catch(e){} }
+$('#dActions').addEventListener('click', async function(e){
   var b = e.target.closest('[data-da]'); if (!b) return; var k = b.dataset.da;
-  if (k === 'refresh') dgo(DESK.screen);
-  if (k === 'xlsAll') downloadXlsx('안전보건제안_전사_' + stamp() + '.xlsx', [
-    { name:'조직별현황', rows:orgSummaryRows(state.all) }, { name:'접수목록', rows:reportRows(state.all) },
-    { name:'등급현황', rows:gradeRows(state.all) }, { name:'월별추이', rows:[['월','개선제안','아차사고','합계']].concat(monthlyData(state.all, 12).map(function(m){ return [m.k, m.p, m.n, m.p + m.n]; })) } ]);
+  if (k === 'refresh'){ if (DESK.screen === 'dorg' || DESK.screen === 'ddash') await deskReloadOrg(); dgo(DESK.screen); }
+  if (k === 'xlsAll'){ var A = dashFiltered(), D = DESK.dash;
+    downloadXlsx('안전보건제안_' + dashScopeName().replace(/ › /g, '_') + '_' + D.from.replace('-', '') + '-' + D.to.replace('-', '') + '.xlsx', [
+      { name:'조회조건', rows:[['항목','값'], ['사업장', dashScopeName()], ['기간', D.from + ' ~ ' + D.to], ['접수 건수', A.length], ['내려받은 시각', fmt(new Date())]] },
+      { name:'조직별현황', rows:orgSummaryRows(A, D) }, { name:'접수목록', rows:reportRows(A) },
+      { name:'등급현황', rows:gradeRows(A) }, { name:'월별추이', rows:[['월','개선제안','아차사고','합계']].concat(monthlyRange(A, D.from, D.to).map(function(m){ return [m.k, m.p, m.n, m.p + m.n]; })) } ]); }
   if (k === 'xlsList'){ var L = deskFiltered(); if (!L.length) return toast('내보낼 데이터가 없습니다', true);
     downloadXlsx('안전보건제안_접수목록_' + stamp() + '.xlsx', [{ name:'접수목록', rows:reportRows(L) }]); }
   if (k === 'xlsEmp'){ var E = deskEmpFiltered(); if (!E.length) return toast('내보낼 데이터가 없습니다', true);
@@ -2052,48 +2259,81 @@ $('#dActions').addEventListener('click', function(e){
   if (k === 'tpl') downloadTemplate();
 });
 
-/* ---- 대시보드 ---- */
+/* ---- 대시보드 (사업장 · 기간 조회) ---- */
+function monthRangeKeys(from, to){ var out = [], k = from, guard = 0; if (!from || !to || from > to) return out; while (k <= to && guard++ < 120){ out.push(k); k = ymAdd(k, 1); } return out; }
+function monthlyRange(A, from, to){
+  var keys = monthRangeKeys(from, to), m = {}; keys.forEach(function(k){ m[k] = { p:0, n:0 }; });
+  A.forEach(function(r){ var k = ym(new Date(r.created_at)); if (m[k]) m[k][r.type === 'proposal' ? 'p' : 'n']++; });
+  return keys.map(function(k){ return { k:k, p:m[k].p, n:m[k].n }; });
+}
+function dashScopeName(){ var D = DESK.dash; return D.site !== 'all' ? D.team + ' › ' + D.site : D.team !== 'all' ? D.team : '전사'; }
+function dashFiltered(){
+  var D = DESK.dash, from = D.from ? new Date(D.from + '-01T00:00:00') : null, to = D.to ? new Date(ymAdd(D.to, 1) + '-01T00:00:00') : null;
+  return state.all.filter(function(r){
+    if (D.team !== 'all' && (r.team || '본사') !== D.team) return false;
+    if (D.site !== 'all' && r.site !== D.site) return false;
+    var c = new Date(r.created_at); if (from && c < from) return false; if (to && c >= to) return false;
+    return true; });
+}
 async function deskLoadDash(){
   if (!state.all.length) $('#dDash').innerHTML = '<div class="loading"><span class="spin"></span>불러오는 중</div>';
   try { await Promise.all([fetchAll(), deskEnsureEmps()]); deskRenderDash(); } catch(e){ $('#dDash').innerHTML = emptyBox('불러오지 못했습니다'); fail(e); }
 }
+function dashOrgRows(){ return state.org.filter(function(o){ return o.depth <= 2; }).map(function(o){ return { team:o.team, site:o.depth === 2 ? o.site : null }; }).concat(state.all); }
 function deskRenderDash(){
-  var A = state.all, now = new Date(), mStart = new Date(now.getFullYear(), now.getMonth(), 1), M = metrics(A);
-  var month = A.filter(function(r){ return new Date(r.created_at) >= mStart; }).length;
+  var D = DESK.dash;
+  renderOrgSelects($('#ddOrg'), dashOrgRows(), ['team','site'], D, deskRenderDash);
+  $('#ddFrom').value = D.from; $('#ddTo').value = D.to;
+  $$('#ddPreset button').forEach(function(b){ b.classList.toggle('on', presetRange(b.dataset.p).from === D.from && presetRange(b.dataset.p).to === D.to); });
+  var A = dashFiltered(), M = metrics(A), months = monthRangeKeys(D.from, D.to).length || 1;
   var high = A.filter(function(r){ return r.type === 'proposal' && OPEN.indexOf(r.status) > -1 && (r.proposed_grade === '가' || r.proposed_grade === '나'); }).length;
-  updateOpenBadges(A);
-  var md = monthlyData(A, 12), maxM = Math.max.apply(null, md.map(function(m){ return m.p + m.n; }).concat([1]));
-  var org = orgSummary(A);
+  updateOpenBadges(state.all);
+  $('#ddMeta').innerHTML = '<b>'+esc(dashScopeName())+'</b> · '+esc(D.from)+' ~ '+esc(D.to)+' · '+A.length.toLocaleString()+'건';
+  var md = monthlyRange(A, D.from, D.to), maxM = Math.max.apply(null, md.map(function(m){ return m.p + m.n; }).concat([1]));
+  var org = orgSummary(A, D), lvName = D.site !== 'all' ? '그룹 / 팀' : D.team !== 'all' ? '사업팀 / 그룹' : '사업팀 / 그룹';
   $('#dDash').innerHTML =
     '<div class="dkpis">' +
-      kpiCard('c-blue','누적 접수','TOTAL', M.total, '개선제안 '+M.p+' · 아차사고 '+M.n) +
-      kpiCard('c-blue','이번 달 접수','MTD', month, now.getFullYear()+'년 '+(now.getMonth()+1)+'월') +
+      kpiCard('c-blue','기간 접수','TOTAL', M.total, '개선제안 '+M.p+' · 아차사고 '+M.n) +
+      kpiCard('c-blue','월평균 접수','AVG', (Math.round(M.total / months * 10) / 10), months + '개월 기준') +
       kpiCard('c-orange','처리 대기','OPEN', M.open, '가·나등급 제안 '+high+'건 포함') +
       kpiCard('c-pink','위원회 의결예정','가·나·다', M.committee, '산업안전보건위원회 상정') +
       kpiCard('c-green','조치완료','DONE', M.done, '라등급 · 아차사고 조치') +
       kpiCard('c-green','처리 완료율','RATE', M.rate + '<span style="font-size:16px">%</span>', '종료 '+(M.done+M.committee+M.rejected)+'건') +
     '</div>' +
     '<div class="dgrid g-2-1">' +
-      '<div class="panel box"><h3>월별 접수 추이 <span class="mono">최근 12개월</span></h3><div class="mchart">' +
-        md.map(function(m){ return '<div class="mcol" title="'+m.k+' · 개선제안 '+m.p+' / 아차사고 '+m.n+'"><div class="mstack"><i class="n" style="height:'+(m.n/maxM*100)+'%"></i><i class="p" style="height:'+(m.p/maxM*100)+'%"></i></div><b>'+(m.p+m.n)+'</b><span>'+m.k.slice(2).replace('-','.')+'</span></div>'; }).join('') +
-      '</div><div class="legend"><span><i style="background:var(--blue)"></i>개선제안</span><span><i style="background:var(--orange)"></i>아차사고</span></div></div>' +
+      '<div class="panel box"><h3>월별 접수 추이 <span class="mono">'+esc(D.from)+' ~ '+esc(D.to)+'</span></h3>' +
+        (md.length ? '<div class="mchart" style="grid-template-columns:repeat('+md.length+',minmax(0,1fr))">' +
+        md.map(function(m){ return '<div class="mcol" title="'+m.k+' · 개선제안 '+m.p+' / 아차사고 '+m.n+'"><div class="mstack"><i class="n" style="height:'+(m.n/maxM*100)+'%"></i><i class="p" style="height:'+(m.p/maxM*100)+'%"></i></div><b>'+(m.p+m.n)+'</b><span>'+(md.length > 18 ? m.k.slice(5) : m.k.slice(2).replace('-','.'))+'</span></div>'; }).join('') +
+        '</div>' : emptyBox('기간을 확인해주세요')) + '<div class="legend"><span><i style="background:var(--blue)"></i>개선제안</span><span><i style="background:var(--orange)"></i>아차사고</span></div></div>' +
       '<div class="panel box"><h3>처리 단계 <span class="mono">PIPELINE</span></h3>'+pipelineHtml(A)+
         '<h3 style="margin-top:18px">개선제안 등급 <span class="mono">GRADE</span></h3>'+gradeDistHtml(A.filter(function(r){ return r.type === 'proposal'; }))+'</div>' +
     '</div>' +
-    '<div class="panel box"><h3>조직별 현황 <span class="dh-actions"><span class="mono">사업팀 › 그룹 · 행을 누르면 해당 접수건으로 이동</span><button class="btn btn-ghost btn-sm" id="xlsOrg">조직별 현황 엑셀</button></span></h3>' +
-      '<div class="dtable-wrap"><table class="dtable org"><thead><tr><th>사업팀 / 그룹</th><th>전체</th><th>개선제안</th><th>아차사고</th><th>처리대기</th><th>위원회 의결예정</th><th>조치완료</th><th>반려</th><th style="width:200px">완료율</th></tr></thead><tbody>' +
+    '<div class="panel box"><h3>조직별 현황 <span class="dh-actions"><span class="mono">행을 누르면 같은 조건의 접수건으로 이동</span><button class="btn btn-ghost btn-sm" id="xlsOrg">조직별 현황 엑셀</button></span></h3>' +
+      '<div class="dtable-wrap"><table class="dtable org"><thead><tr><th>'+lvName+'</th><th>전체</th><th>개선제안</th><th>아차사고</th><th>처리대기</th><th>위원회 의결예정</th><th>조치완료</th><th>반려</th><th style="width:200px">완료율</th></tr></thead><tbody>' +
       org.map(function(o){ var m = o.m;
-        return '<tr class="lv-'+o.level+'"'+(o.level !== 'total' ? ' data-team="'+esc(o.team)+'"'+(o.site ? ' data-site="'+esc(o.site)+'"' : '') : '')+'><td>'+(o.level === 'site' ? '<span class="tree">└</span>' : '')+esc(o.name)+'</td>' +
+        return '<tr class="lv-'+o.level+'"'+(o.level !== 'total' ? ' data-sel="'+esc(JSON.stringify(o.sel))+'"' : '')+'><td>'+(o.level === 'child' ? '<span class="tree">└</span>' : '')+(o.color ? '<i class="tdot" style="background:'+o.color+'"></i>' : '')+esc(o.name)+'</td>' +
           '<td class="num">'+m.total+'</td><td class="num">'+m.p+'</td><td class="num">'+m.n+'</td><td class="num'+(m.open ? ' hot' : '')+'">'+m.open+'</td><td class="num">'+m.committee+'</td><td class="num">'+m.done+'</td><td class="num">'+m.rejected+'</td>' +
           '<td><div class="rate"><div class="track"><div class="fill" style="width:'+m.rate+'%"></div></div><b>'+m.rate+'%</b></div></td></tr>'; }).join('') +
       '</tbody></table></div></div>' +
     '<div class="panel box"><h3>최근 접수 <span class="mono">LATEST 10</span></h3><div class="dtable-wrap">'+reportTable(A.slice(0, 10))+'</div></div>';
-  $('#xlsOrg').onclick = function(){ downloadXlsx('안전보건제안_조직별현황_' + stamp() + '.xlsx', [{ name:'조직별현황', rows:orgSummaryRows(state.all) }]); };
+  $('#xlsOrg').onclick = function(){ downloadXlsx('안전보건제안_조직별현황_' + stamp() + '.xlsx', [{ name:'조직별현황', rows:orgSummaryRows(dashFiltered(), DESK.dash) }]); };
 }
+function presetRange(p){ var now = ym(new Date());
+  if (p === 'm1') return { from:now, to:now }; if (p === 'm3') return { from:ymAdd(now, -2), to:now };
+  if (p === 'ytd') return { from:now.slice(0, 4) + '-01', to:now }; if (p === 'm12') return { from:ymAdd(now, -11), to:now };
+  var first = state.all.reduce(function(m, r){ var k = ym(new Date(r.created_at)); return !m || k < m ? k : m; }, null);
+  return { from:first || ymAdd(now, -11), to:now }; }
+$('#ddPreset').addEventListener('click', function(e){ var b = e.target.closest('[data-p]'); if (!b) return; var r = presetRange(b.dataset.p); DESK.dash.from = r.from; DESK.dash.to = r.to; deskRenderDash(); });
+['ddFrom','ddTo'].forEach(function(id){ $('#'+id).addEventListener('change', function(){
+  var D = DESK.dash, v = this.value; if (!v) return;
+  if (id === 'ddFrom'){ D.from = v; if (D.to < v) D.to = v; } else { D.to = v; if (D.from > v) D.from = v; }
+  deskRenderDash(); }); });
 function kpiCard(cls, k, tag, v, s){ return '<div class="panel kpi '+cls+'"><div class="k">'+k+' <span class="mono">'+tag+'</span></div><div class="v">'+v+'</div><div class="s">'+s+'</div></div>'; }
 $('#dDash').addEventListener('click', function(e){
-  var tr = e.target.closest('tr[data-team]');
-  if (tr){ DESK.sel = newOrgSel(); if (tr.dataset.team !== '본사') DESK.sel.team = tr.dataset.team; if (tr.dataset.site) DESK.sel.site = tr.dataset.site; DESK.emp = null; dgo('dlist'); return; }
+  var tr = e.target.closest('tr[data-sel]');
+  if (tr){ var sel = JSON.parse(tr.dataset.sel), D = DESK.dash; DESK.sel = Object.assign(newOrgSel(), sel); DESK.emp = null;
+    DESK.f = { type:'all', status:'all', grade:'all', from: D.from + '-01', to: (function(){ var d = new Date(ymAdd(D.to, 1) + '-01T00:00:00'); d.setDate(0); return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); })(), q:'' };
+    dgo('dlist'); return; }
   var row = e.target.closest('tr[data-id]'); if (row){ var r = state.all.find(function(x){ return x.id === row.dataset.id; }); if (r) openDetail(r, true); }
 });
 
@@ -2102,8 +2342,8 @@ function reportTable(L){
   if (!L.length) return emptyBox('조건에 맞는 접수건이 없습니다');
   return '<table class="dtable rep"><thead><tr><th>접수번호</th><th>유형</th><th>상태</th><th>사업팀</th><th>그룹</th><th>팀</th><th>파트</th><th>장소 / 발생일시</th><th>제안</th><th>결정</th><th>내용</th><th>제출일</th><th>종료일</th><th>제출자</th></tr></thead><tbody>' +
     L.map(function(r){ return '<tr data-id="'+esc(r.id)+'"><td class="mono">'+noOf(r.report_no)+'</td><td>'+typeTag(r.type)+'</td><td>'+statusTag(r.status)+'</td>' +
-      '<td>'+esc(r.team || '본사')+'</td><td>'+esc(r.site || '-')+'</td><td>'+esc(r.dept || '-')+'</td><td>'+esc(r.part || '-')+'</td>' +
-      '<td class="ell">'+(r.type === 'proposal' ? esc(r.location || '-') : '발생 ' + fmt(r.occurred_at))+'</td>' +
+      '<td><i class="tdot" style="background:'+teamColor(r.team || '본사')+'"></i>'+esc(r.team || '본사')+'</td><td>'+esc(r.site || '-')+'</td><td>'+esc(r.dept || '-')+'</td><td>'+esc(r.part || '-')+'</td>' +
+      '<td class="ell">'+(r.type === 'proposal' ? esc(r.location || '-') : (r.location ? esc(r.location) + ' · ' : '') + '발생 ' + fmt(r.occurred_at))+'</td>' +
       '<td>'+(gradeTag(r.proposed_grade) || '-')+'</td><td>'+(gradeTag(r.final_grade) || '-')+'</td><td class="ell wide">'+esc(r.detail)+'</td>' +
       '<td class="mono">'+fmt(r.created_at).slice(0, 10)+'</td><td class="mono">'+(r.closed_at ? fmt(r.closed_at).slice(0, 10) : '-')+'</td><td><span class="mono">'+esc(codeOf(r.emp_hash))+'</span>'+(nameOf(r.emp_hash) ? ' <span class="nm">'+esc(nameOf(r.emp_hash))+'</span>' : '')+'</td></tr>'; }).join('') +
     '</tbody></table>';
@@ -2127,7 +2367,7 @@ async function deskLoadList(){
   var f = DESK.f;
   $('#dfType').value = f.type; $('#dfStatus').value = f.status; $('#dfGrade').value = f.grade; $('#dfFrom').value = f.from; $('#dfTo').value = f.to; $('#dfQ').value = f.q;
   renderOrgSelects($('#dfOrg'), state.all, ['team','site','dept','part'], DESK.sel, function(){ DESK.page = 1; deskRenderList(); });
-  DESK.page = 1; deskRenderList(); updateOpenBadges(state.all);
+  deskRenderList(); updateOpenBadges(state.all);
 }
 function deskRenderList(){
   var L = deskFiltered(), pages = Math.max(1, Math.ceil(L.length / PAGE));
@@ -2136,17 +2376,17 @@ function deskRenderList(){
   if (DESK.emp) $('#dClearEmp').onclick = function(){ DESK.emp = null; deskRenderList(); };
   $('#dCount').innerHTML = '조회 <b>'+L.length.toLocaleString()+'</b>건 / 전체 '+state.all.length.toLocaleString()+'건';
   $('#dTableWrap').innerHTML = reportTable(L.slice((DESK.page - 1) * PAGE, DESK.page * PAGE));
+  $('#dTableWrap').scrollTop = 0;
   $('#dPager').innerHTML = pagerHtml(DESK.page, pages);
 }
 function pagerHtml(p, pages){
-  if (pages <= 1) return '';
   var a = [], s = Math.max(1, p - 3), e = Math.min(pages, s + 6); s = Math.max(1, e - 6);
   a.push('<button data-pg="'+(p-1)+'"'+(p === 1 ? ' disabled' : '')+'>‹</button>');
   for (var i = s; i <= e; i++) a.push('<button data-pg="'+i+'"'+(i === p ? ' class="on"' : '')+'>'+i+'</button>');
   a.push('<button data-pg="'+(p+1)+'"'+(p === pages ? ' disabled' : '')+'>›</button>');
-  return a.join('');
+  return '<span class="pg-info">'+p+' / '+pages+' 페이지</span>' + a.join('');
 }
-$('#dPager').addEventListener('click', function(e){ var b = e.target.closest('[data-pg]'); if (!b || b.disabled) return; DESK.page = +b.dataset.pg; deskRenderList(); $('.desk-main').scrollTop = 0; });
+$('#dPager').addEventListener('click', function(e){ var b = e.target.closest('[data-pg]'); if (!b || b.disabled) return; DESK.page = +b.dataset.pg; deskRenderList(); });
 $('#dTableWrap').addEventListener('click', function(e){ var row = e.target.closest('tr[data-id]'); if (!row) return;
   var r = state.all.find(function(x){ return x.id === row.dataset.id; }); if (r) openDetail(r, true); });
 (function(){
@@ -2165,27 +2405,30 @@ async function deskLoadOrg(){
   catch(e){ $('#dEmpWrap').innerHTML = emptyBox('불러오지 못했습니다'); return fail(e); }
   deskRenderTree(); deskRenderEmps();
 }
+function byName(a, b){ return a.localeCompare(b, 'ko', { numeric:true }); }
 function deskRenderTree(){
   var E = state.employees, T = {};
   E.forEach(function(e){
     var t = e.team || '본사'; T[t] = T[t] || { n:0, sites:{} }; T[t].n++;
     if (!e.site) return; var S = T[t].sites[e.site] = T[t].sites[e.site] || { n:0, depts:{} }; S.n++;
-    var d = e.dept || '(팀 미지정)'; var D = S.depts[d] = S.depts[d] || { n:0, parts:{} }; D.n++;
+    var d = e.dept || '(직속)'; var D = S.depts[d] = S.depts[d] || { n:0, parts:{} }; D.n++;
     if (e.part) D.parts[e.part] = (D.parts[e.part] || 0) + 1; });
   var sel = DESK.empSel, isOn = function(t, s, d, p){ return sel.team === t && sel.site === (s || 'all') && sel.dept === (d || 'all') && sel.part === (p || 'all'); };
-  var node = function(cls, label, n, path, on){ return '<button class="tnode '+cls+(on ? ' on' : '')+'" data-path="'+esc(JSON.stringify(path))+'"><span>'+esc(label)+'</span><b>'+n+'</b></button>'; };
+  var node = function(cls, label, n, path, on, color){ return '<button class="tnode '+cls+(on ? ' on' : '')+'" data-path="'+esc(JSON.stringify(path))+'">'+(color ? '<i class="tdot" style="background:'+color+'"></i>' : '')+'<span>'+esc(label)+'</span><b>'+n+'</b></button>'; };
   var html = node('t0', '전체', E.length, [], sel.team === 'all');
-  teams().concat(['본사']).forEach(function(t){ var TT = T[t]; if (!TT) return;
-    html += node('t1', t, TT.n, [t], isOn(t));
-    sitesOf(t).forEach(function(s){ var S = TT.sites[s]; if (!S) return;
+  var siteOrder = sitesOf();
+  teams().forEach(function(t){ var TT = T[t]; if (!TT) return;
+    html += node('t1', t, TT.n, [t], isOn(t), teamColor(t));
+    Object.keys(TT.sites).sort(function(a,b){ var ia = siteOrder.indexOf(a), ib = siteOrder.indexOf(b); return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib) || byName(a, b); }).forEach(function(s){ var S = TT.sites[s];
       html += node('t2', s, S.n, [t, s], isOn(t, s));
-      if (sel.site !== s) return;
-      Object.keys(S.depts).sort(function(a,b){ return a.localeCompare(b, 'ko'); }).forEach(function(d){ var D = S.depts[d];
-        var dv = d === '(팀 미지정)' ? '' : d;
+      if (sel.site !== s || sel.team !== t) return;
+      Object.keys(S.depts).sort(byName).forEach(function(d){ var D = S.depts[d];
+        var dv = d === '(직속)' ? '' : d;
         html += node('t3', d, D.n, [t, s, dv], isOn(t, s, dv || 'all') && sel.dept !== 'all');
         if (sel.dept !== dv || !dv) return;
-        Object.keys(D.parts).sort(function(a,b){ return a.localeCompare(b, 'ko'); }).forEach(function(p){ html += node('t4', p, D.parts[p], [t, s, dv, p], isOn(t, s, dv, p)); }); }); }); });
-  $('#dTree').innerHTML = '<div class="dtree-h">조직도 <span class="mono">ORG</span></div>' + html;
+        Object.keys(D.parts).sort(byName).forEach(function(p){ html += node('t4', p, D.parts[p], [t, s, dv, p], isOn(t, s, dv, p)); }); }); }); });
+  $('#dTree').innerHTML = html;
+  $('#dTreeMeta').textContent = '사업팀 ' + teams().filter(function(t){ return t !== '본사' && T[t]; }).length + ' · 그룹 ' + Object.keys(T).reduce(function(n, t){ return n + Object.keys(T[t].sites).length; }, 0);
 }
 $('#dTree').addEventListener('click', function(e){
   var b = e.target.closest('.tnode'); if (!b) return; var p = JSON.parse(b.dataset.path);
@@ -2208,13 +2451,14 @@ function deskRenderEmps(){
   if (DESK.empPage > pages) DESK.empPage = pages;
   var cnt = {}; state.all.forEach(function(r){ if (r.emp_hash) cnt[r.emp_hash] = (cnt[r.emp_hash] || 0) + 1; });
   var s = DESK.empSel, path = [s.team, s.site, s.dept, s.part].filter(function(x){ return x && x !== 'all'; });
-  $('#dEmpCount').innerHTML = '<b>'+(path.length ? esc(path.join(' › ')) : '전체')+'</b> · '+E.length.toLocaleString()+'명 (가입 '+E.filter(function(e){ return e.registered_at; }).length.toLocaleString()+'명)';
+  $('#dEmpCount').innerHTML = esc(path.length ? path.join(' › ') : '전체') + ' <span class="cnt">'+E.length.toLocaleString()+'명 · 가입 '+E.filter(function(e){ return e.registered_at; }).length.toLocaleString()+'명</span>';
   $('#dEmpWrap').innerHTML = E.length ? '<table class="dtable"><thead><tr><th>식별코드</th><th>성명</th><th>권한</th><th>사업팀</th><th>그룹</th><th>팀</th><th>파트</th><th>가입</th><th>상태</th><th>제출</th><th></th></tr></thead><tbody>' +
     E.slice((DESK.empPage - 1) * PAGE, DESK.empPage * PAGE).map(function(e){ var mine = e.emp_hash === u.hash;
-      return '<tr class="'+(e.active ? '' : 'off')+'"><td class="mono"><b>'+esc(e.emp_code)+'</b>'+(mine ? ' <span class="mini">나</span>' : '')+'</td><td>'+esc(e.name_mask || '-')+'</td><td>'+roleChip(e.role)+'</td><td>'+esc(e.team || '본사')+'</td><td>'+esc(e.site || '-')+'</td><td>'+esc(e.dept || '-')+'</td><td>'+esc(e.part || '-')+'</td>' +
+      return '<tr class="'+(e.active ? '' : 'off')+'"><td class="mono"><b>'+esc(e.emp_code)+'</b>'+(mine ? ' <span class="mini">나</span>' : '')+'</td><td>'+esc(e.name_mask || '-')+'</td><td>'+roleChip(e.role)+'</td><td><i class="tdot" style="background:'+teamColor(e.team || '본사')+'"></i>'+esc(e.team || '본사')+'</td><td>'+esc(e.site || '-')+'</td><td>'+esc(e.dept || '-')+'</td><td>'+esc(e.part || '-')+'</td>' +
         '<td>'+(e.registered_at ? '<span class="mini ok">가입</span>' : '<span class="mini wait">대기</span>')+'</td><td>'+(e.active ? '<span class="mini">사용중</span>' : '<span class="mini stop">중지</span>')+'</td>' +
         '<td class="num">'+(cnt[e.emp_hash] || 0)+'</td><td>'+(mine ? '' : '<button class="btn btn-ghost btn-sm" data-emp="'+esc(e.emp_hash)+'">관리</button>')+'</td></tr>'; }).join('') +
     '</tbody></table>' : emptyBox('조건에 맞는 인원이 없습니다');
+  $('#dEmpWrap').scrollTop = 0;
   $('#dEmpPager').innerHTML = pagerHtml(DESK.empPage, pages);
 }
 $('#dEmpWrap').addEventListener('click', function(e){ var b = e.target.closest('[data-emp]'); if (!b) return;
@@ -2223,63 +2467,122 @@ $('#dEmpPager').addEventListener('click', function(e){ var b = e.target.closest(
 $('#dEmpQ').addEventListener('input', function(){ DESK.empQ = this.value; DESK.empPage = 1; deskRenderEmps(); });
 $('#dEmpRole').addEventListener('change', function(){ DESK.empRole = this.value; DESK.empPage = 1; deskRenderEmps(); });
 
-/* ---- 조직 백데이터 업로드 ---- */
+/* ---- 조직 · 인원 백데이터 업로드 ----
+   읽는 열: 사원번호 · 성명 · 부서코드 · 부서 · 상위부서 · (권한) · (재직여부: 필터용, 전송 안 함)
+   그 밖의 열은 읽지 않음. 사번은 서버에서 암호화, 성명은 여기서 마스킹 후 전송 */
+var IMP_COLS = { empId:['사원번호','사번','empid','emp_id'], name:['성명','이름','name'], code:['부서코드','조직코드','소속코드'], dname:['부서','부서명','소속'],
+  parent:['상위부서','상위부서명','상위조직'], role:['권한','권한(선택)','role'], status:['재직여부','재직구분'] };
 function downloadTemplate(){
-  var ex = sitesOf().slice(0, 2);
-  downloadXlsx('조직백데이터_업로드양식.xlsx', [
-    { name:'백데이터', rows:[['사번','성명','그룹','팀','파트','권한'], ['20240101', '홍길동', ex[0] || '평택그룹', '보안1팀', '순찰파트', '근로자'], ['20240102', '김철수', ex[0] || '평택그룹', '보안1팀', '출입관리파트', ''], ['20240103', '남궁민수', ex[1] || '천안그룹', '시설팀', '', '관리자']] },
-    { name:'그룹목록(참고)', rows:[['사업팀','그룹']].concat(state.org.map(function(o){ return [o.team, o.site]; })) },
-    { name:'작성방법', rows:[['항목','설명'], ['사번','필수. 영문·숫자 4~20자'], ['성명','선택. 브라우저에서 마스킹(예: 홍*동) 후 전송되며, 원래 성명은 서버에 저장되지 않음'], ['그룹','필수. [그룹목록(참고)] 시트의 그룹명과 정확히 같아야 함'], ['팀','선택. 그룹 아래 팀명'], ['파트','선택. 팀 아래 파트명'],
-      ['권한','선택. 근로자 / 관리자. 비워두면 신규는 근로자, 기존 인원은 현재 권한 유지'], ['참고','사업팀·본사 계정은 업로드로 변경되지 않습니다. 같은 사번이 여러 행이면 마지막 행이 적용됩니다.']] } ]);
+  var U = state.org.slice().sort(function(a,b){ return a.sort - b.sort; });
+  var ex = U.filter(function(u){ return u.depth >= 3 && u.team !== '본사'; }).slice(0, 3);
+  var parentName = function(u){ var p = u.parent_code ? unitByCode(u.parent_code) : null; return p ? p.name : ''; };
+  var sample = ex.length ? ex.map(function(u, i){ return ['2024010' + (i + 1), ['홍길동','김철수','남궁민수'][i], u.code, u.name, parentName(u), i === 2 ? '관리자' : '']; })
+    : [['20240101','홍길동','ABC010-A1','예시1_A1','예시1팀',''], ['20240102','김철수','ABC010','예시1팀','예시그룹',''], ['20240103','남궁민수','ABC000','예시그룹','예시사업팀','관리자']];
+  downloadXlsx('조직인원_업로드양식.xlsx', [
+    { name:'인원명단', rows:[['사원번호','성명','부서코드','부서','상위부서','권한(선택)']].concat(sample) },
+    { name:'부서코드(참고)', rows:[['부서코드','부서','상위부서코드','상위부서','사업팀','그룹','팀','파트']].concat(U.map(function(u){ return [u.code, u.name, u.parent_code || '', parentName(u), u.team || '', u.site || '', u.dept || '', u.part || '']; })) },
+    { name:'작성방법', rows:[['항목','설명'], ['사원번호','필수. 영문·숫자 4~20자. 서버에서 암호화된 값만 저장'], ['성명','선택. 브라우저에서 가운데를 가린 뒤(홍길동→홍*동) 전송, 원래 성명은 저장하지 않음'],
+      ['부서코드','필수. 인사 시스템의 부서코드. [부서코드(참고)] 시트 참고'], ['부서','새 부서코드일 때 필수. 부서 이름'], ['상위부서','새 부서코드일 때 필수. 상위 부서 이름 (조직도 연결용)'],
+      ['권한(선택)','근로자 / 관리자. 비워두면 신규는 근로자, 기존 인원은 현재 권한 유지 (사업팀·본사 권한은 화면에서 지정)'],
+      ['참고','인사 시스템에서 내려받은 사원 명단을 그대로 올려도 됩니다. 위 열 외의 정보(주민번호·연락처·주소 등)는 읽지 않습니다.']] } ]);
 }
 function deskRenderImport(){ if (!DESK.imp) $('#impPreview').innerHTML = ''; $('#impRun').disabled = !DESK.imp || !DESK.imp.valid.length; }
-var IMP_COLS = { empId:['사번','사원번호','empid','emp_id'], name:['성명','이름','name'], site:['그룹','사업장','site'], dept:['팀','부서','dept'], part:['파트','part'], role:['권한','role'] };
 function roleCode(v){ v = String(v || '').trim(); if (!v) return ''; if (/^(근로자|worker|직원)$/i.test(v)) return 'worker'; if (/^(관리자|manager)$/i.test(v)) return 'manager'; return null; }
+/* 부서명 → 부서코드 연결 (상위부서는 이름으로 주어지므로) · 이름으로 못 찾으면 부서코드 모양으로 추정 */
+function guessParentByCode(code, has){
+  var m;
+  if (code.indexOf('-') > 0){ var b = code.split('-')[0]; if (has(b)) return b; }
+  if ((m = /^([A-Za-z]{3})(\d{3})$/.exec(code)) && m[2] !== '000' && has(m[1] + '000')) return m[1] + '000';
+  if ((m = /^([A-Za-z]{2})([A-Za-z])000$/.exec(code)) && m[2].toUpperCase() !== 'A' && has(m[1] + 'A000')) return m[1] + 'A000';
+  return null;
+}
+function resolveUnits(fileUnits){
+  /* fileUnits: { code: { name, parentName } } → [{code, name, parent}] (기존 조직 포함하여 상위 연결) */
+  var byCode = {}, nameIdx = {};
+  state.org.forEach(function(u){ byCode[u.code] = { code:u.code, name:u.name, parent:u.parent_code, old:true }; });
+  Object.keys(fileUnits).forEach(function(c){ var f = fileUnits[c]; byCode[c] = Object.assign(byCode[c] || { code:c }, { name: f.name || (byCode[c] && byCode[c].name) || c, parentName:f.parentName, old:false }); });
+  function idx(){ nameIdx = {}; Object.keys(byCode).forEach(function(c){ var n = byCode[c].name; (nameIdx[n] = nameIdx[n] || []).push(c); }); }
+  idx();
+  /* 이름만 있고 부서코드 행이 없는 상위부서 (예: 팀 행은 없고 파트만 있는 경우) → 하위 코드에서 코드를 만들어 추가 */
+  Object.keys(fileUnits).forEach(function(c){ var pn = fileUnits[c].parentName; if (!pn || nameIdx[pn] || pn === byCode[c].name) return;
+    var base = c.indexOf('-') > 0 ? c.split('-')[0] : null;
+    var code = base && !byCode[base] ? base : ('X-' + Array.from(pn).map(function(ch){ return ch.charCodeAt(0).toString(36); }).join('').slice(0, 20));
+    if (!byCode[code]){ byCode[code] = { code:code, name:pn, parentName:null, old:false, synthetic:true }; idx(); } });
+  var has = function(c){ return !!byCode[c]; };
+  Object.keys(byCode).forEach(function(c){ var u = byCode[c]; if (u.old && u.parentName === undefined) return;
+    var cands = u.parentName ? (nameIdx[u.parentName] || []).filter(function(x){ return x !== c; }) : [];
+    var guess = guessParentByCode(c, has);
+    if (cands.length > 1){ var fresh = cands.filter(function(x){ return !byCode[x].old; }); if (fresh.length) cands = fresh; }   /* 같은 이름이면 이번 파일의 부서를 우선 */
+    var p = cands.length === 1 ? cands[0] : cands.length > 1 ? (cands.indexOf(guess) > -1 ? guess : cands[0]) : guess;
+    if (!p && u.synthetic){ var kid = Object.keys(byCode).find(function(k){ return byCode[k].parentName === u.name; }); if (kid) p = guessParentByCode(kid.split('-')[0], has); }
+    u.parent = p || null; });
+  /* 사업팀이 아닌 최상위(노동조합 등)는 본사(대표이사) 아래로 */
+  var roots = Object.keys(byCode).filter(function(c){ return !byCode[c].parent; });
+  var isHqName = function(c){ return /대표이사|본사/.test(byCode[c].name); };
+  var hq = roots.find(function(c){ return isHqName(c) && !byCode[c].old; }) || roots.find(isHqName) || null;
+  roots.forEach(function(c){ if (hq && c !== hq && !isHqName(c) && !/사업팀$/.test(byCode[c].name)) byCode[c].parent = hq; });
+  return Object.keys(byCode).map(function(c){ var u = byCode[c]; return { code:u.code, name:u.name, parent:u.parent || null, isNew:!u.old }; });
+}
 $('#impFile').addEventListener('change', async function(){
   var file = this.files && this.files[0]; if (!file) return;
   $('#impFileName').textContent = file.name;
   try {
-    var X = await loadXLSX(), wb = X.read(await file.arrayBuffer(), { type:'array' });
-    var aoa = X.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1, raw:false, defval:'' });
-    var hi = aoa.findIndex(function(r){ return r.some(function(c){ return IMP_COLS.empId.indexOf(String(c).trim().toLowerCase()) > -1 || String(c).trim() === '사번'; }); });
-    if (hi < 0) throw new Error('첫 시트에서 "사번" 열을 찾지 못했습니다. 업로드 양식을 사용해주세요.');
-    var head = aoa[hi].map(function(c){ return String(c).trim().toLowerCase(); }), col = {};
+    var X = await loadXLSX(), wb = X.read(await file.arrayBuffer(), { type:'array', cellDates:false });
+    var ws = wb.Sheets[wb.SheetNames[0]], aoa = X.utils.sheet_to_json(ws, { header:1, raw:false, defval:'' }); wb = null; ws = null;
+    var low = function(c){ return String(c).trim().toLowerCase(); };
+    var hi = aoa.slice(0, 20).findIndex(function(r){ return r.some(function(c){ return IMP_COLS.empId.indexOf(low(c)) > -1; }) && r.some(function(c){ return IMP_COLS.code.indexOf(low(c)) > -1; }); });
+    if (hi < 0) throw new Error('첫 시트에서 "사원번호"와 "부서코드" 열을 찾지 못했습니다. 인사 명단 또는 업로드 양식을 사용해주세요.');
+    var head = aoa[hi].map(low), col = {};
     Object.keys(IMP_COLS).forEach(function(k){ col[k] = head.findIndex(function(h){ return IMP_COLS[k].indexOf(h) > -1; }); });
-    if (col.site < 0) throw new Error('"그룹" 열을 찾지 못했습니다.');
-    var sites = sitesOf(), byId = {}, invalid = [];
-    aoa.slice(hi + 1).forEach(function(r, i){
-      var rowNo = hi + i + 2, g = function(k){ return col[k] > -1 ? String(r[col[k]] || '').trim() : ''; };
-      var id = normEmp(g('empId')); if (!id && !g('site')) return;
-      var reason = !EMP_RE.test(id) ? '사번 형식 오류' : sites.indexOf(g('site')) < 0 ? '알 수 없는 그룹: ' + (g('site') || '(빈칸)') : roleCode(g('role')) === null ? '권한 값 오류: ' + g('role') : '';
-      if (reason) return invalid.push({ row:rowNo, id:id, reason:reason });
-      byId[id] = { row:rowNo, empId:id, nameMask:maskName(g('name')), site:g('site'), dept:g('dept'), part:g('part'), role:roleCode(g('role')) };   /* 성명은 여기서 마스킹되어 원문은 전송되지 않음 */
+    var usedCols = Object.keys(col).filter(function(k){ return col[k] > -1; }).length, ignored = head.filter(Boolean).length - usedCols;
+    /* 필요한 열만 꺼내고 원본 행은 바로 버림 */
+    var picked = aoa.slice(hi + 1).map(function(r, i){ var g = function(k){ return col[k] > -1 ? String(r[col[k]] == null ? '' : r[col[k]]).trim() : ''; };
+      return { row:hi + i + 2, id:normEmp(g('empId')), name:g('name'), code:g('code'), dname:g('dname'), parent:g('parent'), role:g('role'), status:g('status') }; });
+    aoa = null;
+    var known = {}; state.org.forEach(function(u){ known[u.code] = true; });
+    var fileUnits = {}, byId = {}, invalid = [], retired = 0;
+    picked.forEach(function(p){
+      if (!p.id && !p.code) return;
+      if (p.status && !/^재직/.test(p.status)){ retired++; return; }
+      var reason = !EMP_RE.test(p.id) ? '사번 형식 오류' : !CODE_RE.test(p.code) ? '부서코드 오류: ' + (p.code || '(빈칸)') : (!p.dname && !known[p.code]) ? '새 부서코드인데 부서명이 없음: ' + p.code : roleCode(p.role) === null ? '권한 값 오류: ' + p.role : '';
+      if (reason) return invalid.push({ row:p.row, reason:reason });
+      if (p.dname) fileUnits[p.code] = { name:p.dname, parentName:p.parent || (fileUnits[p.code] && fileUnits[p.code].parentName) || '' };
+      byId[p.id] = { row:p.row, empId:p.id, nameMask:maskName(p.name), orgCode:p.code, role:roleCode(p.role) };   /* 성명은 여기서 마스킹 — 원문은 전송하지 않음 */
     });
+    picked = null;
+    var units = resolveUnits(fileUnits), built = buildOrg(units), bc = {}; built.forEach(function(u){ bc[u.code] = u; });
     var valid = Object.keys(byId).map(function(k){ return byId[k]; });
-    DESK.imp = { valid:valid, invalid:invalid, name:file.name };
-    var bySite = {}; valid.forEach(function(v){ bySite[v.site] = (bySite[v.site] || 0) + 1; });
+    var lv = { 1:0, 2:0, 3:0, 4:0 }; built.forEach(function(u){ if (u.depth <= 4) lv[u.depth]++; });
+    var newUnits = units.filter(function(u){ return u.isNew; });
+    DESK.imp = { valid:valid, invalid:invalid, units:newUnits.map(function(u){ return { code:u.code, name:u.name, parent:u.parent }; }), name:file.name };
+    var bySite = {}; valid.forEach(function(v){ var u = bc[v.orgCode]; var k = u ? (u.team + ' › ' + (u.site || '(사업팀 직속)')) : '?'; bySite[k] = (bySite[k] || 0) + 1; });
     $('#impPreview').innerHTML =
-      '<div class="imp-sum"><div><b>'+valid.length.toLocaleString()+'</b><span>반영 대상</span></div><div class="'+(invalid.length ? 'bad' : '')+'"><b>'+invalid.length+'</b><span>오류 행 (제외)</span></div><div><b>'+Object.keys(bySite).length+'</b><span>그룹 수</span></div></div>' +
-      '<div class="dtable-wrap" style="max-height:260px"><table class="dtable"><thead><tr><th>행</th><th>사번</th><th>성명(마스킹)</th><th>그룹</th><th>팀</th><th>파트</th><th>권한</th></tr></thead><tbody>' +
-        valid.slice(0, 15).map(function(v){ return '<tr><td class="num">'+v.row+'</td><td class="mono">'+esc(v.empId.replace(/.(?=.{2})/g, '•'))+'</td><td>'+esc(v.nameMask || '-')+'</td><td>'+esc(v.site)+'</td><td>'+esc(v.dept || '-')+'</td><td>'+esc(v.part || '-')+'</td><td>'+(v.role ? ROLE[v.role].ko : '<span style="color:var(--ink-faint)">유지/근로자</span>')+'</td></tr>'; }).join('') +
+      '<div class="imp-sum"><div><b>'+valid.length.toLocaleString()+'</b><span>반영 대상 인원</span></div><div><b>'+built.length.toLocaleString()+'</b><span>조직 단위 (신규·변경 '+newUnits.length+')</span></div><div class="'+(invalid.length ? 'bad' : '')+'"><b>'+invalid.length+'</b><span>오류 행 (제외)</span></div>'+(retired ? '<div><b>'+retired+'</b><span>재직 외 (제외)</span></div>' : '')+'</div>' +
+      '<p class="note" style="margin:0 0 8px">사업팀 '+lv[1]+' · 그룹 '+lv[2]+' · 팀 '+lv[3]+' · 파트 '+lv[4]+' 단위로 정리됩니다. 읽은 열 '+usedCols+'개 · <b>나머지 '+ignored+'개 열은 읽지 않고 버렸습니다.</b></p>' +
+      '<div class="dtable-wrap" style="max-height:260px"><table class="dtable"><thead><tr><th>행</th><th>사번</th><th>성명(마스킹)</th><th>부서코드</th><th>소속 (사업팀 › 그룹 › 팀 › 파트)</th><th>권한</th></tr></thead><tbody>' +
+        valid.slice(0, 15).map(function(v){ var u = bc[v.orgCode]; return '<tr><td class="num">'+v.row+'</td><td class="mono">'+esc(v.empId.replace(/.(?=.{2})/g, '•'))+'</td><td>'+esc(v.nameMask || '-')+'</td><td class="mono">'+esc(v.orgCode)+'</td><td>'+(u ? '<i class="tdot" style="background:'+teamColor(u.team)+'"></i>'+esc(pathLabel(u)) : '-')+'</td><td>'+(v.role ? ROLE[v.role].ko : '<span style="color:var(--ink-faint)">유지/근로자</span>')+'</td></tr>'; }).join('') +
       '</tbody></table></div>' + (valid.length > 15 ? '<p class="note">미리보기는 15행까지 표시합니다. 사번은 화면에서 가려 표시됩니다.</p>' : '') +
       (invalid.length ? '<div class="notice warn" style="margin-top:10px"><b>오류 행</b> · ' + invalid.slice(0, 30).map(function(x){ return x.row + '행(' + esc(x.reason) + ')'; }).join(', ') + (invalid.length > 30 ? ' 외 ' + (invalid.length - 30) + '건' : '') + '</div>' : '');
-    $('#impRun').disabled = !valid.length; $('#impResult').innerHTML = '';
+    $('#impRun').disabled = !valid.length && !newUnits.length; $('#impResult').innerHTML = '';
   } catch(e){ DESK.imp = null; $('#impPreview').innerHTML = ''; $('#impRun').disabled = true; fail(e); }
   this.value = '';
 });
 $('#impRun').addEventListener('click', async function(){
-  if (!DESK.imp || !DESK.imp.valid.length) return;
-  var rows = DESK.imp.valid, btn = this, tot = { inserted:0, updated:0, skipped:0, invalid:[] }; btn.disabled = true;
+  if (!DESK.imp) return;
+  var rows = DESK.imp.valid, units = DESK.imp.units, btn = this, tot = { inserted:0, updated:0, units:0, invalid:[] }; btn.disabled = true;
   try {
-    for (var i = 0; i < rows.length; i += 500){
-      $('#impResult').innerHTML = '<div class="imp-prog"><div style="width:'+Math.round(i / rows.length * 100)+'%"></div></div><p class="note">반영 중… '+i.toLocaleString()+' / '+rows.length.toLocaleString()+'</p>';
-      var r = await api.importEmployees(rows.slice(i, i + 500));
-      tot.inserted += r.inserted || 0; tot.updated += r.updated || 0; tot.skipped += r.skipped || 0; tot.invalid = tot.invalid.concat(r.invalid || []);
-    }
-    $('#impResult').innerHTML = '<div class="imp-sum done"><div><b>'+tot.inserted.toLocaleString()+'</b><span>신규 등록</span></div><div><b>'+tot.updated.toLocaleString()+'</b><span>소속 갱신</span></div><div><b>'+tot.skipped+'</b><span>사업팀·본사 계정 (변경 안 함)</span></div>' +
-      (tot.invalid.length ? '<div class="bad"><b>'+tot.invalid.length+'</b><span>서버 검증 오류</span></div>' : '') + '</div><p class="note">신규 등록된 사번은 본인이 [최초 등록]으로 가입해야 사용할 수 있습니다.</p>';
+    var i = 0;
+    do {
+      $('#impResult').innerHTML = '<div class="imp-prog"><div style="width:'+(rows.length ? Math.round(i / rows.length * 100) : 50)+'%"></div></div><p class="note">반영 중… '+i.toLocaleString()+' / '+rows.length.toLocaleString()+'</p>';
+      var r = await api.importEmployees(i === 0 ? units : [], rows.slice(i, i + 500));
+      tot.inserted += r.inserted || 0; tot.updated += r.updated || 0; tot.units = Math.max(tot.units, r.units || 0); tot.invalid = tot.invalid.concat(r.invalid || []);
+      i += 500;
+    } while (i < rows.length);
+    $('#impResult').innerHTML = '<div class="imp-sum done"><div><b>'+tot.inserted.toLocaleString()+'</b><span>신규 등록</span></div><div><b>'+tot.updated.toLocaleString()+'</b><span>소속 갱신</span></div><div><b>'+tot.units.toLocaleString()+'</b><span>조직 단위 반영</span></div>' +
+      (tot.invalid.length ? '<div class="bad"><b>'+tot.invalid.length+'</b><span>서버 검증 오류</span></div>' : '') + '</div><p class="note">신규 등록된 사번은 본인이 [최초 등록]으로 가입해야 사용할 수 있습니다. 관리자·사업팀 권한은 [조직 · 인원]에서 지정하세요.</p>';
     DESK.imp = null; $('#impPreview').innerHTML = ''; $('#impFileName').textContent = '선택된 파일 없음';
-    toast('조직 백데이터가 반영되었습니다');
+    await deskReloadOrg(); state.employees = []; if (state.regPick) state.regPick.refresh();
+    toast('조직·인원 백데이터가 반영되었습니다');
   } catch(e){ fail(e); btn.disabled = false; }
 });
 
