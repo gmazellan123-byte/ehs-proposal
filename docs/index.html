@@ -140,6 +140,9 @@ input[type=datetime-local]{min-height:46px;}
 .cipher p b{color:var(--ink);}
 .demo-box{margin-top:12px;padding:11px 13px;border-radius:var(--r-sm);background:var(--amber-soft);border:1px solid #F4D9A1;font-size:12px;color:#7A4E06;line-height:1.65;}
 .demo-box b{color:#5C3A00;}
+.ver-tag{margin-top:6px;font-family:var(--mono, Consolas, monospace);font-size:11px;color:var(--ink-faint);opacity:.85;}
+.side-ver{text-align:center;font-size:11px;color:rgba(255,255,255,.6);font-family:Consolas,monospace;}
+.guide,.inst-steps li>div,.dpanel .note,.notice{word-break:keep-all;overflow-wrap:break-word;text-wrap:pretty;}
 .login-foot{margin-top:auto;padding-top:28px;text-align:center;font-size:11.5px;color:var(--ink-faint);line-height:1.7;}
 
 /* ---------- 상단바 ---------- */
@@ -979,6 +982,7 @@ span.rt-hi{background:#DC2626;} span.rt-md{background:#EA7A0C;} span.rt-lo{backg
     <div class="login-foot">
       최초 사용 시 <b>[최초 등록]</b>에서 비밀번호를 설정하세요.<br>
       비밀번호를 잊은 경우 소속 관리자에게 초기화를 요청하세요.
+      <div class="ver-tag">화면 버전 <span data-ver></span></div>
     </div>
   </section>
 
@@ -1164,6 +1168,7 @@ span.rt-hi{background:#DC2626;} span.rt-md{background:#EA7A0C;} span.rt-lo{backg
         <div class="side-foot">
           <div class="side-user"><span id="dRole"></span><span class="mono" id="dCode"></span><span class="role-chip demo-chip hidden" id="dDemo">DEMO</span></div>
           <button class="btn btn-ghost btn-block" id="dLogout">로그아웃</button>
+          <div class="side-ver">화면 버전 <span data-ver></span></div>
         </div>
       </aside>
       <main class="desk-main">
@@ -1245,19 +1250,19 @@ span.rt-hi{background:#DC2626;} span.rt-md{background:#EA7A0C;} span.rt-lo{backg
                 <div class="panel box guide">
                   <h3>사용 흐름 <span class="mono">FLOW</span></h3>
                   <ol class="inst-steps">
-                    <li><span class="n">1</span><div><b>본사</b> · 이 화면에서 사업장별 KEY 파일을 받으면 아래에 <b>메일 안내문 · 비밀번호 안내문</b>이 만들어집니다. KEY 파일은 메일로, <b>비밀번호는 문자·전화 등 다른 경로</b>로 보냅니다.</div></li>
-                    <li><span class="n">2</span><div><b>사업장 관리자</b> · 휴대폰 접수목록에서 <b>[내보내기]</b>로 받은 데이터 파일을 회사 메일 등으로 PC에 보냅니다. (식별코드 · 가린 성명만 들어 있음)</div></li>
-                    <li><span class="n">3</span><div><b>PC</b> · 메일에서 KEY 파일과 데이터 파일을 <b>PC에 저장</b>하고, <b>오프라인 정리 도구</b>를 Chrome·Edge로 엽니다. ① 칸에 데이터 파일, ② 칸에 KEY 파일을 넣고 비밀번호 입력 → [KEY 열기]. (두 파일을 창에 끌어다 놓아도 됩니다)</div></li>
-                    <li><span class="n">4</span><div>식별코드가 <b>사번 · 성명</b>으로 바뀐 화면을 보고, 필요하면 정리 엑셀로 저장합니다.</div></li>
+                    <li><span class="n">1</span><div><b>본사</b> · KEY 파일은 메일로, 비밀번호는 문자로 따로 보냅니다.</div></li>
+                    <li><span class="n">2</span><div><b>사업장</b> · 휴대폰 [내보내기] 데이터 파일을 PC로 보냅니다.</div></li>
+                    <li><span class="n">3</span><div><b>PC</b> · 정리 도구에 데이터 파일과 KEY를 넣고 비밀번호를 입력합니다.</div></li>
+                    <li><span class="n">4</span><div>식별코드가 <b>사번 · 성명</b>으로 바뀌면 엑셀로 저장합니다.</div></li>
                   </ol>
-                  <a class="btn btn-primary btn-block" href="ehs-offline.html" download="안전보건제안_오프라인정리도구.html" style="margin-top:12px">오프라인 정리 도구 받기 (HTML 1개)</a>
+                  <a class="btn btn-primary btn-block" href="ehs-offline.html" download="안전보건제안_오프라인정리도구.html" style="margin-top:12px">오프라인 정리 도구 받기</a>
                   <h3 style="margin-top:18px">보안 원칙 <span class="mono">SECURITY</span></h3>
                   <ul>
-                    <li><b>데이터 파일</b>에는 사번·실명이 없습니다(식별코드 · 홍*동). 휴대폰에서 보내도 실명이 새지 않습니다.</li>
-                    <li><b>KEY 파일</b>은 그 사업장 인원만 담고, 비밀번호로 암호화(AES-256)되어 비밀번호 없이는 열 수 없습니다.</li>
-                    <li>KEY에는 <b>사용 기한</b>이 있어 기한이 지나면 정리 도구가 열지 않습니다.</li>
-                    <li>정리 도구는 <b>인터넷 연결 없이</b> PC 안에서만 동작하며, 넣은 파일은 창을 닫으면 사라집니다.</li>
-                    <li>서버에는 <b>사번만</b> 보내 식별코드를 확인하며, 성명은 이 PC 밖으로 나가지 않습니다. KEY 발급 건수는 본사 확인용으로 기록됩니다.</li>
+                    <li><b>데이터 파일</b> · 식별코드와 가린 성명만 담깁니다.</li>
+                    <li><b>KEY</b> · 해당 사업장 인원만, 비밀번호로 암호화됩니다.</li>
+                    <li><b>사용 기한</b> · 기한이 지나면 열리지 않습니다.</li>
+                    <li><b>정리 도구</b> · 인터넷 없이 PC 안에서만 동작합니다.</li>
+                    <li><b>서버</b> · 사번만 받고, 성명은 PC 밖으로 나가지 않습니다.</li>
                   </ul>
                 </div>
               </div>
@@ -2614,7 +2619,8 @@ function saveCsv(filename, rows){
   a.href = url; a.download = filename; a.style.display = 'none'; document.body.appendChild(a); a.click();
   setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 4000); toast('CSV 파일을 저장했습니다');
 }
-var APP_VER = '2026.11.19-i';
+var APP_VER = '2026.11.19-j';
+$$('[data-ver]').forEach(function(el){ el.textContent = APP_VER; });
 function wideScreen(){ return window.matchMedia('(min-width: 900px)').matches; }
 async function openExportSheet(){
   var L = filtered(); if (!L.length) return toast('내보낼 데이터가 없습니다', true);
