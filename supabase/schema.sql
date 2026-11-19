@@ -223,14 +223,7 @@ begin
     from public.org_units o where e.org_code = o.code
      and (e.org_path is distinct from o.path or e.team is distinct from o.team or e.site is distinct from o.site
           or e.dept is distinct from o.dept or e.part is distinct from o.part);
-  -- 제출건은 제출 당시 부서코드에 귀속: 그 부서의 이름·상위 조직이 바뀌면 제출건 집계도 함께 따라감
-  --   (작성자 개인의 부서 이동·퇴직은 제출건에 영향 없음)
-  perform set_config('ehs.org_sync', '1', true);
-  update public.reports r set team = o.team, site = o.site, dept = o.dept, part = o.part, org_path = o.path
-    from public.org_units o where r.org_code = o.code
-     and (r.org_path is distinct from o.path or r.team is distinct from o.team or r.site is distinct from o.site
-          or r.dept is distinct from o.dept or r.part is distinct from o.part);
-  perform set_config('ehs.org_sync', '', true);
+  -- 제출건(reports)은 건드리지 않음: 제출 데이터는 최초 등록한 부서(제출 당시 조직)에 그대로 남음
   return jsonb_build_object('units', n);
 end $$;
 revoke all on function public.import_org(jsonb) from public, anon, authenticated;
@@ -386,8 +379,10 @@ create or replace function public.reports_before_update()
 returns trigger language plpgsql security definer set search_path = public as $$
 declare v_staff boolean; v_author boolean; v_content boolean; v_proc boolean;
 begin
-  -- 조직 개편 반영(서버 내부 import_org)만 소속 경로 갱신 허용 — 그 외 항목·수정시각은 그대로
+  -- 서버 내부 정리 작업(제출 당시 성명 채우기)만 허용 — 그 외 항목·수정시각은 그대로
   if auth.uid() is null and current_setting('ehs.org_sync', true) = '1' then
+    new.team := old.team; new.site := old.site; new.dept := old.dept; new.part := old.part;
+    new.org_code := old.org_code; new.org_path := old.org_path; new.emp_hash := old.emp_hash;
     return new;
   end if;
   -- 작성자 수정 / 관리자 처리 구분
@@ -422,7 +417,7 @@ begin
   if v_proc and not v_staff then raise exception '처리 권한이 없습니다'; end if;
   new.edited_at := old.edited_at;
 
-  -- 제출 당시 작성자·소속은 고정 (작성자의 퇴직·부서 이동과 관계없이 제출 당시 부서에 귀속. 부서 자체의 개편은 import_org 가 반영)
+  -- 제출 당시 작성자·소속은 고정: 작성자의 부서 이동·퇴직·삭제, 관리자 변경, 조직 개편과 관계없이 최초 등록한 부서에 남음
   new.type := old.type; new.created_at := old.created_at;
   if new.author_id is not null then new.author_id := old.author_id; end if; -- 계정 삭제 시 연결만 끊는 것은 허용
   new.team := old.team; new.site := old.site; new.dept := old.dept; new.part := old.part;
@@ -636,16 +631,11 @@ create policy photo_delete on storage.objects for delete to authenticated
 
 -- ---------------------------------------------------------------------
 -- 9. 기존 제출건 정리 (다시 실행해도 안전)
---    · 제출 당시 성명(마스킹)이 비어 있는 건은 현재 인원 정보로 채움
---    · 소속 부서코드의 조직 경로가 바뀐 건은 현재 조직도에 맞춤
+--    · 제출 당시 성명(마스킹)이 비어 있는 건만 현재 인원 정보로 채움 (소속·경로는 바꾸지 않음)
 -- ---------------------------------------------------------------------
 select set_config('ehs.org_sync', '1', false);
 update public.reports r set author_mask = e.name_mask
   from public.employees e where r.emp_hash = e.emp_hash and r.author_mask is null and e.name_mask is not null;
-update public.reports r set team = o.team, site = o.site, dept = o.dept, part = o.part, org_path = o.path
-  from public.org_units o where r.org_code = o.code
-   and (r.org_path is distinct from o.path or r.team is distinct from o.team or r.site is distinct from o.site
-        or r.dept is distinct from o.dept or r.part is distinct from o.part);
 select set_config('ehs.org_sync', '', false);
 
 -- 완료 확인: 4개 테이블이 보이면 정상 (org_units 는 본사 콘솔에서 인사 명단을 올리면 채워짐)

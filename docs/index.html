@@ -592,6 +592,18 @@ body.desk #app{display:none;}
 .imp-sum div{flex:1;padding:12px;border-radius:var(--r-sm);background:linear-gradient(160deg,#F4F8FF,#E0EAFF);border:1px solid #C6D7FA;}
 .imp-last{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;padding:12px 14px;border-radius:var(--r-sm);background:linear-gradient(160deg,#F2FBF5,#DDF3E6);border:1px solid #BFE5CD;margin-bottom:10px;font-size:13px;}
 .imp-last .t{font-weight:800;font-size:14px;color:#0E6B37;}
+.imp-top{display:flex;align-items:center;gap:14px 22px;flex-wrap:wrap;padding:14px 18px;margin-bottom:14px;border-radius:var(--r-md);background:linear-gradient(120deg,#0B4F96,#1E8BD8);color:#fff;box-shadow:0 6px 18px rgba(11,79,150,.22);}
+.imp-top .lb{font-size:12.5px;font-weight:700;opacity:.85;}
+.imp-top .dt{font-size:20px;font-weight:900;letter-spacing:-.3px;}
+.imp-top .sub{font-size:13px;opacity:.92;}
+.imp-top .sub b{font-weight:800;}
+.key-table td .btn{padding:6px 12px;font-size:12.5px;}
+.key-bar{display:flex;align-items:center;gap:10px;margin:8px 0 10px;}
+.key-bar label{display:flex;align-items:center;gap:6px;margin:0;font-size:13px;font-weight:700;color:var(--ink-soft);cursor:pointer;}
+.key-bar input[type=checkbox],.key-table input[type=checkbox]{width:18px;height:18px;padding:0;margin:0;flex:none;accent-color:var(--brand);}
+.key-bar .btn{margin-left:auto;width:auto;}
+a.btn{text-decoration:none;}
+.imp-top.none{background:linear-gradient(120deg,#64748B,#94A3B8);box-shadow:none;}
 .imp-last .t .mono{font-size:13px;}
 .imp-last span{color:var(--ink-soft);}
 .imp-last b{color:var(--ink);}
@@ -1147,6 +1159,7 @@ span.rt-hi{background:#DC2626;} span.rt-md{background:#EA7A0C;} span.rt-lo{backg
           <button data-dgo="dorg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>조직 · 인원</button>
           <button data-dgo="dpw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.8-9.8"/><path d="m16 6 3 3"/><path d="m19 3 2 2"/></svg>비밀번호 관리</button>
           <button data-dgo="dimport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>백데이터 업로드</button>
+          <button data-dgo="dkey"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r="1.6"/></svg>KEY 리스트</button>
         </nav>
         <div class="side-foot">
           <div class="side-user"><span id="dRole"></span><span class="mono" id="dCode"></span><span class="role-chip demo-chip hidden" id="dDemo">DEMO</span></div>
@@ -1208,6 +1221,50 @@ span.rt-hi{background:#DC2626;} span.rt-md{background:#EA7A0C;} span.rt-lo{backg
           </div>
         </section>
 
+        <section data-dscreen="dkey" class="hidden">
+          <div class="dpanel">
+            <div class="dpanel-h"><span class="dpanel-t">사업장별 KEY 리스트 <span class="mono">KEY</span></span><span class="dpanel-meta">식별코드 → 사번 · 성명 · 비밀번호로 잠근 파일 · 서버에는 사번만 전송</span></div>
+            <div class="dpanel-b pad">
+              <div class="dgrid g-2-1" style="margin-top:0">
+                <div class="panel box">
+                  <h3>1. 인사 명단 선택 <span class="mono">STEP 1</span></h3>
+                  <p class="note" style="margin-top:0">사원 명단 엑셀에서 <b>사원번호 · 성명 두 열만</b> 읽습니다. 퇴직자가 포함된 명단이면 퇴직자의 지난 제출건도 실명으로 바뀝니다.</p>
+                  <label class="drop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+                    <b>인사 명단 엑셀 선택 (.xlsx · .xls · .csv)</b><span id="keyFileName">선택된 파일 없음</span><input type="file" id="keyRoster" accept=".xlsx,.xls,.csv"></label>
+                  <div id="keyScan"></div>
+                  <h3 style="margin-top:18px">2. 비밀번호 · 사용 기한 <span class="mono">STEP 2</span></h3>
+                  <div class="frow" style="grid-template-columns:1fr auto 150px;margin-top:0">
+                    <input type="text" id="keyPwd" class="mono" placeholder="KEY 비밀번호 (8자 이상)" maxlength="40" autocomplete="off" spellcheck="false">
+                    <button class="btn btn-ghost btn-sm" id="keyPwdGen" type="button">자동 생성</button>
+                    <select id="keyDays"><option value="7">7일간 사용</option><option value="30" selected>30일간 사용</option><option value="90">90일간 사용</option><option value="180">180일간 사용</option></select>
+                  </div>
+                  <p class="note">모든 사업장 KEY에 같은 비밀번호가 걸립니다. 사업장마다 다르게 하려면 비밀번호를 바꿔 가며 받으세요.</p>
+                  <h3 style="margin-top:18px">3. 사업장별 KEY 받기 <span class="mono">STEP 3</span></h3>
+                  <div id="keyList"><div class="note">1단계에서 인사 명단을 선택하면 사업장 목록이 나옵니다.</div></div>
+                </div>
+                <div class="panel box guide">
+                  <h3>사용 흐름 <span class="mono">FLOW</span></h3>
+                  <ol class="inst-steps">
+                    <li><span class="n">1</span><div><b>본사</b> · 이 화면에서 사업장별 KEY 파일을 받아 해당 사업장 관리자에게 보냅니다. <b>비밀번호는 전화·문자 등 다른 경로</b>로 알려 줍니다.</div></li>
+                    <li><span class="n">2</span><div><b>사업장 관리자</b> · 휴대폰 접수목록에서 <b>[내보내기]</b>로 받은 데이터 파일을 회사 메일 등으로 PC에 보냅니다. (식별코드 · 가린 성명만 들어 있음)</div></li>
+                    <li><span class="n">3</span><div><b>PC</b> · <b>오프라인 정리 도구</b>를 열고 ① 데이터 파일 ② KEY 파일 + 비밀번호를 넣습니다.</div></li>
+                    <li><span class="n">4</span><div>식별코드가 <b>사번 · 성명</b>으로 바뀐 화면을 보고, 필요하면 정리 엑셀로 저장합니다.</div></li>
+                  </ol>
+                  <a class="btn btn-primary btn-block" href="ehs-offline.html" download="안전보건제안_오프라인정리도구.html" style="margin-top:12px">오프라인 정리 도구 받기 (HTML 1개)</a>
+                  <h3 style="margin-top:18px">보안 원칙 <span class="mono">SECURITY</span></h3>
+                  <ul>
+                    <li><b>데이터 파일</b>에는 사번·실명이 없습니다(식별코드 · 홍*동). 휴대폰에서 보내도 실명이 새지 않습니다.</li>
+                    <li><b>KEY 파일</b>은 그 사업장 인원만 담고, 비밀번호로 암호화(AES-256)되어 비밀번호 없이는 열 수 없습니다.</li>
+                    <li>KEY에는 <b>사용 기한</b>이 있어 기한이 지나면 정리 도구가 열지 않습니다.</li>
+                    <li>정리 도구는 <b>인터넷 연결 없이</b> PC 안에서만 동작하며, 넣은 파일은 창을 닫으면 사라집니다.</li>
+                    <li>서버에는 <b>사번만</b> 보내 식별코드를 확인하며, 성명은 이 PC 밖으로 나가지 않습니다. KEY 발급 건수는 본사 확인용으로 기록됩니다.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section data-dscreen="dpw" class="hidden">
           <div class="dpanel">
             <div class="dpanel-h dfilters">
@@ -1226,6 +1283,7 @@ span.rt-hi{background:#DC2626;} span.rt-md{background:#EA7A0C;} span.rt-lo{backg
           <div class="dpanel">
             <div class="dpanel-h"><span class="dpanel-t">조직 · 인원 백데이터 <span class="mono">UPLOAD</span></span><span class="dpanel-meta">사번(암호화) · 성명(마스킹) · 소속(부서코드)만 서버로 전송</span></div>
             <div class="dpanel-b pad">
+              <div id="impStampTop"></div>
               <div class="dgrid g-2-1" style="margin-top:0">
                 <div class="panel box">
                   <h3>1. 파일 준비 <span class="mono">STEP 1</span></h3>
@@ -1250,7 +1308,7 @@ span.rt-hi{background:#DC2626;} span.rt-md{background:#EA7A0C;} span.rt-lo{backg
                     <li><b>본사 권한</b>은 업로드로 부여·변경되지 않습니다. [조직 · 인원]에서 별도로 지정하세요.</li>
                     <li>새 사번은 <b>등록</b>되고, 이미 있는 인원은 <b>소속과 권한이 갱신</b>됩니다.</li>
                     <li>재직여부 열이 있으면 <b>재직</b> 인원만 반영합니다. 업로드 파일 자체는 서버에 저장되지 않습니다.</li>
-                    <li>인원이 다른 부서로 옮기거나 퇴직·삭제되어도 <b>이미 제출된 건은 제출 당시 소속 조직</b>에 남습니다. 부서 이름·상위 조직이 바뀌면 그 부서의 제출건도 새 조직도에 맞춰 집계됩니다.</li>
+                    <li>인원의 부서 이동·퇴직·삭제, 관리자 변경, 조직 개편이 있어도 <b>이미 제출된 건은 최초 등록한 부서(제출 당시 조직)</b>에 그대로 남아 그 조직의 집계에 포함됩니다.</li>
                   </ul>
                 </div>
               </div>
@@ -1414,7 +1472,7 @@ function makeRealApi(){
     signIn: async function(empId, pw){ var r = await fn('resolve', { empId:empId }); await signInWith(r.loginId, pw); return this.me(); },
     signUp: async function(empId, pw){ var r = await fn('signup', { empId:empId, password:pw }); await signInWith(r.loginId, pw); return this.me(); },
     signOut: async function(){ await sb.auth.signOut(); },
-    org: async function(){ return await pageAll(function(){ return sb.from('org_units').select('code, name, parent_code, path, depth, team, site, dept, part, sort, active').order('sort'); }); },
+    org: async function(){ return await pageAll(function(){ return sb.from('org_units').select('code, name, parent_code, path, depth, team, site, dept, part, sort, active, updated_at').order('sort'); }); },
     submit: async function(type, data, photo){
       var s = await session(); if (!s) throw new Error('로그인이 만료되었습니다. 다시 로그인해주세요.');
       var row = Object.assign({ type:type }, data);
@@ -1445,7 +1503,7 @@ function makeRealApi(){
     register: function(ids, unit){ return fn('admin_register', { empIds:ids, role:unit.role, orgCode:unit.orgCode }); },
     importEmployees: function(units, rows, batch, meta){ return fn('admin_import', { units:units || [], rows:rows || [], batch:batch || null, meta:meta || {} }); },
     importLogs: async function(){ var r = await sb.from('import_logs').select('*').order('created_at', { ascending:false }).limit(20); if (r.error) throw dbErr(r.error); return r.data || []; },
-    matchNames: function(ids, kind){ return fn('match_names', { empIds:ids, kind:kind }); },
+    matchNames: function(ids, kind, withPaths){ return fn('match_names', { empIds:ids, kind:kind, withPaths:!!withPaths }); },
     lookup:   function(empId){ return fn('admin_lookup', { empId:empId }); },
     updateEmployee: function(hash, patch){ return fn('admin_update', Object.assign({ empHash:hash }, patch)); },
     reset:    function(hash){ return fn('admin_reset', { empHash:hash }); },
@@ -1606,10 +1664,12 @@ function makeDemoApi(){
     removeEmployee: async function(h){ var a = staff(), e = emps[h];
       if (h === me) throw new Error('본인 계정은 삭제할 수 없습니다'); if (!canManage(a, e)) throw new Error('관리 범위 밖의 인원입니다');
       delete emps[h]; delete pw[h]; reports.forEach(function(r){ if (r.emp_hash === h){ r.author_mask = r.author_mask || e.name_mask || null; r.author_id = null; } }); return { ok:true }; },
-    matchNames: async function(ids, kind){ await wait(300); var a = staff(), px = scopePrefix(a), out = [];
+    matchNames: async function(ids, kind, withPaths){ await wait(300); var a = staff(), px = scopePrefix(a), out = [];
       ids.forEach(function(id, i){ id = normEmp(id); if (!EMP_RE.test(id)) return; var h = h64(id), e = emps[h];
         var ok = a.role === 'hq' ? !!(e || reports.some(function(r){ return r.emp_hash === h; })) : (e && within(e.org_path, px)) || reports.some(function(r){ return r.emp_hash === h && within(r.org_path, px); });
-        if (ok) out.push({ i:i, h:h }); });
+        if (!ok) return;
+        if (withPaths && a.role === 'hq'){ var ps = []; if (e && e.org_path) ps.push(e.org_path); reports.forEach(function(r){ if (r.emp_hash === h && r.org_path && ps.indexOf(r.org_path) < 0) ps.push(r.org_path); }); out.push({ i:i, h:h, p:ps }); }
+        else out.push({ i:i, h:h }); });
       return { matches:out }; },
     importLogs: async function(){ await wait(); if (actor().role !== 'hq') return []; return clone(impLogs.slice().sort(function(a,b){ return b.id - a.id; }).slice(0, 20)); },
     importEmployees: async function(units, rows, batch, meta){ await wait(300); var a = actor(); if (!a || a.role !== 'hq') throw new Error('조직 백데이터 업로드는 본사만 가능합니다');
@@ -1618,8 +1678,7 @@ function makeDemoApi(){
         var merged = {}; UNITS.forEach(function(u){ merged[u.code] = { code:u.code, name:u.name, parent:u.parent_code }; });
         units.forEach(function(u){ merged[u.code] = { code:u.code, name:u.name, parent:u.parent }; });
         UNITS = buildOrg(Object.keys(merged).map(function(k){ return merged[k]; })); nu = UNITS.length;
-        Object.keys(emps).forEach(function(k){ var e = emps[k]; if (e.org_code) applyOrg(e, e.role, e.org_code); });
-        reports.forEach(function(r){ var u = unitOfCode(r.org_code); if (u){ r.team = u.team; r.site = u.site; r.dept = u.dept; r.part = u.part; r.org_path = u.path; } }); }
+        Object.keys(emps).forEach(function(k){ var e = emps[k]; if (e.org_code) applyOrg(e, e.role, e.org_code); }); }
       var ins = 0, upd = 0, invalid = [];
       (rows || []).forEach(function(r){ var id = normEmp(r.empId);
         if (!EMP_RE.test(id)) return invalid.push({ row:r.row, reason:'사번 형식 오류' });
@@ -1783,7 +1842,7 @@ async function enterApp(user){
   go(isStaff() ? 'dash' : 'write');
 }
 function leaveApp(){
-  state.user = null; state.all = []; state.employees = []; state.filter.emp = null; DESK.impLast = undefined;
+  state.user = null; state.all = []; state.employees = []; state.filter.emp = null; DESK.impLast = undefined; KEYS.groups = null;
   closeSheet(); leaveDesk(); document.body.classList.add('login-mode');
   $('#view-main').classList.add('hidden'); $('#view-login').classList.remove('hidden');
   setAuthMode('login'); $('#empId').value = saveIdEl.checked ? (lsGet(PREF.savedId) || '') : '';
@@ -2555,7 +2614,7 @@ function saveCsv(filename, rows){
   a.href = url; a.download = filename; a.style.display = 'none'; document.body.appendChild(a); a.click();
   setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 4000); toast('CSV 파일을 저장했습니다');
 }
-var APP_VER = '2026.11.19-f';
+var APP_VER = '2026.11.19-g';
 function wideScreen(){ return window.matchMedia('(min-width: 900px)').matches; }
 async function openExportSheet(){
   var L = filtered(); if (!L.length) return toast('내보낼 데이터가 없습니다', true);
@@ -2569,7 +2628,7 @@ async function openExportSheet(){
     (IS_KAKAO ? '<div class="notice warn" style="margin-top:10px"><b>카카오톡 안에서는 파일을 저장·공유할 수 없습니다.</b> 아래 버튼으로 '+(IS_ANDROID?'Chrome':'기본 브라우저')+'에서 연 뒤 다시 로그인해서 내보내 주세요.<button class="btn btn-primary btn-block" data-x="ext" style="margin-top:8px">'+(IS_ANDROID?'Chrome으로 열기':'기본 브라우저(Safari)로 열기')+'</button></div>'
       : IN_APP ? '<div class="notice warn" style="margin-top:10px"><b>앱 안의 브라우저</b>에서는 파일 저장이 막힐 수 있습니다. 화면의 ⋮ 메뉴에서 <b>다른 브라우저로 열기</b> 후 다시 시도해 주세요.</div>' : '') +
     '<div class="notice warn" style="margin-top:12px">회사 업무 자료입니다. <b>회사 메일·사내 저장소로만</b> 보내고, 개인 메신저·개인 메일로는 보내지 마세요. 보낸 뒤 휴대폰에 남은 파일은 지워 주세요.</div>' +
-    (wideScreen() ? '<button class="btn btn-ghost btn-block" data-x="names" style="margin-top:10px">실명 포함 엑셀 만들기 (PC · 인사명단 대조)</button><button class="btn btn-ghost btn-block" data-x="key" style="margin-top:8px">오프라인 대조키 만들기 (PC)</button>' : '') +
+    '<p class="note" style="margin-top:10px">PC에서 <b>사번 · 실명</b>으로 보려면: 이 파일을 회사 메일로 PC에 보낸 뒤, 본사에서 받은 <b>KEY 파일</b>과 함께 <b>오프라인 정리 도구</b>에 넣으세요.</p>' +
     '<p class="note" style="text-align:right;margin-top:8px">화면 버전 '+APP_VER+'</p></div>');
   $('[data-close]', sheet).onclick = closeSheet;
   $('.exp-wrap', sheet).addEventListener('click', async function(e){ var b = e.target.closest('[data-x]'); if (!b) return;
@@ -2578,8 +2637,6 @@ async function openExportSheet(){
     if (b.dataset.x === 'ext'){ openExternal(); return; }
     if (b.dataset.x === 'csv'){ closeSheet(); saveCsv(name.replace(/\.xlsx$/, '.csv'), rows[0].rows); }
     if (b.dataset.x === 'share'){ b.disabled = true; try { await shareFile(name, rows); closeSheet(); } catch(err){ fail(err); } finally { b.disabled = false; } }
-    if (b.dataset.x === 'names'){ openNameExport('reports', L); }
-    if (b.dataset.x === 'key'){ openKeyExport(); }
   });
 }
 
@@ -2633,66 +2690,18 @@ function openNameExport(kind, list){
   });
 }
 
-/* ---- 오프라인 대조키 (.ehskey) ----
-   사원명부(사원번호만 사용)를 서버와 대조해, 내 관리 범위 안 인원의 '식별코드 ↔ 사번' 표를 만들고
-   직접 정한 비밀번호로 암호화(AES-256-GCM, PBKDF2 25만 회)해서 저장. 성명은 넣지 않음.
-   오프라인 정리 도구(ehs-offline.html)에서 비밀번호로 풀어 사원명부와 함께 사용 */
+/* ---- KEY 파일 암호화 (AES-256-GCM, PBKDF2-SHA256 25만 회) ----
+   본사 [KEY 리스트]에서 사업장별 '식별코드 → 사번 · 성명' 표를 비밀번호로 잠가 저장.
+   오프라인 정리 도구(ehs-offline.html)에서 비밀번호로 풀어 현장 데이터 파일의 식별코드를 치환 */
 function b64(buf){ var s = '', u = new Uint8Array(buf); for (var i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); }
 async function encryptKey(obj, password){
   var enc = new TextEncoder(), salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12)), iter = 250000;
   var base = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
   var key = await crypto.subtle.deriveKey({ name:'PBKDF2', hash:'SHA-256', salt:salt, iterations:iter }, base, { name:'AES-GCM', length:256 }, false, ['encrypt']);
   var ct = await crypto.subtle.encrypt({ name:'AES-GCM', iv:iv }, key, enc.encode(JSON.stringify(obj)));
-  return { format:'ehs-matchkey', v:1, kdf:{ name:'PBKDF2', hash:'SHA-256', iter:iter, salt:b64(salt) }, iv:b64(iv), ct:b64(ct),
-    meta:{ scope:obj.scope, created:obj.created, count:obj.count, by:obj.by } };
+  return { format:'ehs-key', v:2, kdf:{ name:'PBKDF2', hash:'SHA-256', iter:iter, salt:b64(salt) }, iv:b64(iv), ct:b64(ct),
+    meta:{ scope:obj.scope, created:obj.created, expires:obj.expires, count:obj.count } };
 }
-function openKeyExport(){
-  if (!wideScreen()) return toast('대조키는 PC에서만 만들 수 있습니다', true);
-  openSheet('<div class="sheet-head"><div class="h"><span class="kicker">OFFLINE KEY</span><h3>오프라인 대조키 만들기</h3></div><button class="icon-btn" data-close>✕</button></div>' +
-    '<p class="inst-lead">오프라인 정리 도구에서 <b>식별코드를 사번·성명으로 바꿔 볼 때</b> 필요한 열쇠 파일입니다. 사원명부와 서버를 대조해 <b>내 관리 범위 안 인원</b>의 식별코드↔사번 표를 만들고, <b>직접 정한 비밀번호로 암호화</b>해 저장합니다. 성명은 들어가지 않습니다.</p>' +
-    '<label class="label">대조키 비밀번호 <span class="req">*</span><span class="opt">8자 이상 · 오프라인 도구에서 입력</span></label>' +
-    '<div class="frow" style="margin-top:0"><input type="password" id="kpw1" placeholder="비밀번호" maxlength="64" autocomplete="new-password"><input type="password" id="kpw2" placeholder="비밀번호 확인" maxlength="64" autocomplete="new-password"></div>' +
-    '<label class="exp-agree"><input type="checkbox" id="kAgree"><span>대조키와 비밀번호는 <b>따로 전달·보관</b>하고, 업무 목적 외에는 쓰지 않겠습니다. (대조키+비밀번호+사원명부가 함께 있으면 제출자를 확인할 수 있습니다)</span></label>' +
-    '<label class="drop off" id="kDrop" style="margin-top:12px"><b>사원명부 엑셀 선택</b><span>사원번호 열만 읽습니다 · 비밀번호 입력과 확인란 체크 후 선택</span><input type="file" id="kFile" accept=".xlsx,.xls,.csv" disabled></label>' +
-    '<div id="kResult"></div>' +
-    '<p class="note" style="margin-top:10px">오프라인 정리 도구는 <a href="ehs-offline.html" download>여기서 내려받을 수 있습니다</a> (인터넷 없이 실행되는 HTML 파일 1개).</p>');
-  $('[data-close]', sheet).onclick = closeSheet;
-  function sync(){ var ok = $('#kAgree').checked && $('#kpw1').value.length >= 8 && $('#kpw1').value === $('#kpw2').value;
-    $('#kFile').disabled = !ok; $('#kDrop').classList.toggle('off', !ok); }
-  ['kAgree','kpw1','kpw2'].forEach(function(id){ $('#'+id).addEventListener('input', sync); $('#'+id).addEventListener('change', sync); });
-  $('#kFile').addEventListener('change', async function(){
-    var file = this.files && this.files[0]; if (!file) return; this.value = '';
-    var out = $('#kResult'), pw = $('#kpw1').value; out.innerHTML = '<div class="loading"><span class="spin"></span>대조 · 암호화 중</div>';
-    try {
-      var X = await loadXLSX(), wb = X.read(await file.arrayBuffer(), { type:'array' });
-      var aoa = X.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1, raw:false, defval:'' }); wb = null;
-      var low = function(c){ return String(c).trim().toLowerCase(); };
-      var hi = aoa.slice(0, 20).findIndex(function(r){ return r.some(function(c){ return IMP_COLS.empId.indexOf(low(c)) > -1; }); });
-      if (hi < 0) throw new Error('첫 시트에서 "사원번호" 열을 찾지 못했습니다');
-      var ci = aoa[hi].map(low).findIndex(function(h){ return IMP_COLS.empId.indexOf(h) > -1; });
-      var ids = []; aoa.slice(hi + 1).forEach(function(r){ var id = normEmp(r[ci]); if (EMP_RE.test(id) && ids.indexOf(id) < 0) ids.push(id); });
-      aoa = null;
-      if (!ids.length) throw new Error('대조할 사번이 없습니다');
-      var map = {}, n = 0;
-      for (var i = 0; i < ids.length; i += 1000){
-        var part = ids.slice(i, i + 1000), res = await api.matchNames(part, 'offline_key');
-        (res.matches || []).forEach(function(m){ var c = String(m.h).slice(0, 8).toUpperCase(); if (!map[c]){ map[c] = part[m.i]; n++; } });
-      }
-      ids = null;
-      if (!n) throw new Error('관리 범위 안에서 대조된 인원이 없습니다');
-      var u = state.user, now = new Date();
-      var payload = { scope: scopeLabel(u), created: fmt(now), by: u.code, count: n, map: map };
-      var pack = await encryptKey(payload, pw); map = null; payload = null;
-      var blob = new Blob([JSON.stringify(pack)], { type:'application/json' }), url = URL.createObjectURL(blob), a = document.createElement('a');
-      a.href = url; a.download = '대조키_' + scopeLabel(u).replace(/[\\/:*?"<>|\s]+/g, '') + '_' + stamp() + '.ehskey'; document.body.appendChild(a); a.click();
-      setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 4000);
-      $('#kpw1').value = ''; $('#kpw2').value = ''; sync();
-      out.innerHTML = '<div class="imp-sum done"><div><b>'+n.toLocaleString()+'</b><span>대조키에 담긴 인원</span></div></div>' +
-        '<p class="note">대조키 파일을 저장했습니다. 비밀번호는 파일과 <b>다른 경로</b>로 전달하세요. 생성 기록(인원 수)은 본사 확인용으로 남습니다.</p>';
-    } catch(e){ out.innerHTML = ''; fail(e); }
-  });
-}
-
 /* =====================================================================
    14. 본사 PC 콘솔 (화면 너비 900px 이상에서 본사 계정 로그인 시)
    ===================================================================== */
@@ -2703,7 +2712,7 @@ var DESK = { on:false, screen:'ddash', sel:newOrgSel(), f:{ type:'all', status:'
   dash:dashDefault(), empSel:newOrgSel(), empQ:'', empRole:'all', empPage:1, imp:null, home:null,
   pw:{ role:'all', join:'joined', q:'', sel:newOrgSel(), page:1, checked:{} } };
 var PAGE = 50;
-var DTITLE = { ddash:['대시보드','사업장 · 유형 · 기간별 개선제안 · 위험성평가 · 아차사고 접수 현황'], dlist:['접수 관리','전사 접수건 조회 · 처리 · 엑셀 다운로드'],
+var DTITLE = { dkey:['KEY 리스트','사업장별 KEY 파일 발급 · 현장 데이터의 식별코드를 오프라인에서 사번 · 성명으로 바꿀 때 사용'], ddash:['대시보드','사업장 · 유형 · 기간별 개선제안 · 위험성평가 · 아차사고 접수 현황'], dlist:['접수 관리','전사 접수건 조회 · 처리 · 엑셀 다운로드'],
   dorg:['조직 · 인원','본사 › 사업팀 › 그룹 › 팀 › 파트 별 인원과 권한 관리'], dpw:['비밀번호 관리','근로자 · 관리자 · 사업팀 계정의 비밀번호 초기화'], dimport:['조직 백데이터 업로드','인사 명단의 사번 · 성명 · 부서코드로 조직도와 인원을 일괄 반영'] };
 var WEEK = ['일','월','화','수','목','금','토'];
 function tickClock(){ var d = new Date(), a = $('#dClockD'), b = $('#dClockT'); if (!a) return;
@@ -2738,15 +2747,17 @@ function dgo(s){
   var act = $('#dActions');
   $('#dClock').classList.remove('hidden'); tickClock();
   if (s === 'ddash') act.innerHTML = '<button class="btn btn-ghost" data-da="refresh">새로고침</button>';
-  if (s === 'dlist') act.innerHTML = '<button class="btn btn-ghost" data-da="refresh">새로고침</button><button class="btn btn-ghost" data-da="nameList">실명 포함 엑셀</button><button class="btn btn-ghost" data-da="key">오프라인 대조키</button><button class="btn btn-primary dbtn" data-da="xlsList">조회 결과 엑셀</button>';
-  if (s === 'dorg') act.innerHTML = '<button class="btn btn-ghost" data-da="refresh">새로고침</button><button class="btn btn-ghost" data-da="nameEmp">실명 포함 엑셀</button><button class="btn btn-ghost" data-da="key">오프라인 대조키</button><button class="btn btn-primary dbtn" data-da="xlsEmp">인원 목록 엑셀</button>';
+  if (s === 'dlist') act.innerHTML = '<button class="btn btn-ghost" data-da="refresh">새로고침</button><button class="btn btn-ghost" data-da="nameList">실명 포함 엑셀</button><button class="btn btn-primary dbtn" data-da="xlsList">조회 결과 엑셀</button>';
+  if (s === 'dorg') act.innerHTML = '<button class="btn btn-ghost" data-da="refresh">새로고침</button><button class="btn btn-ghost" data-da="nameEmp">실명 포함 엑셀</button><button class="btn btn-primary dbtn" data-da="xlsEmp">인원 목록 엑셀</button>';
   if (s === 'dimport') act.innerHTML = '<button class="btn btn-primary dbtn" data-da="tpl">업로드 양식 다운로드</button>';
   if (s === 'dpw') act.innerHTML = '<button class="btn btn-ghost" data-da="refresh">새로고침</button>';
+  if (s === 'dkey') act.innerHTML = '<a class="btn btn-primary dbtn" href="ehs-offline.html" download="안전보건제안_오프라인정리도구.html">오프라인 정리 도구 받기</a>';
   if (s === 'ddash') deskLoadDash();
   if (s === 'dlist') deskLoadList();
   if (s === 'dorg') deskLoadOrg();
   if (s === 'dimport') deskRenderImport();
   if (s === 'dpw') deskLoadPw();
+  if (s === 'dkey') deskRenderKey();
 }
 async function deskReloadOrg(){ try { state.org = await api.org(); } catch(e){} }
 $('#dActions').addEventListener('click', async function(e){
@@ -2762,7 +2773,6 @@ $('#dActions').addEventListener('click', async function(e){
   if (k === 'xlsEmp'){ var E = deskEmpFiltered(); if (!E.length) return toast('내보낼 데이터가 없습니다', true);
     downloadXlsx('안전보건제안_인원목록_' + stamp() + '.xlsx', [{ name:'인원목록', rows:employeeRows(E) }]); }
   if (k === 'tpl') downloadTemplate();
-  if (k === 'key') openKeyExport();
   if (k === 'nameList'){ var NL = deskFiltered(); if (!NL.length) return toast('내보낼 데이터가 없습니다', true); openNameExport('reports', NL); }
   if (k === 'nameEmp'){ var NE = deskEmpFiltered(); if (!NE.length) return toast('내보낼 데이터가 없습니다', true); openNameExport('employees', NE); }
 });
@@ -3008,6 +3018,90 @@ function downloadTemplate(){
       ['직책','권한 자동 설정용 (직책 원문은 서버로 보내지 않음). 사업팀장 → 사업팀 권한 / 그룹장·SE팀장·SE파트장 → 관리자 권한(본인 소속 범위) / 그 외 → 근로자. 사업팀 소속 지원그룹(1~4지원그룹) 인원은 직책과 관계없이 사업팀 권한. 본사 권한은 화면에서 별도 지정'],
       ['참고','인사 시스템에서 내려받은 사원 명단을 그대로 올려도 됩니다. 위 열 외의 정보(주민번호·연락처·주소 등)는 읽지 않습니다.'], ['참고','다시 올리면 직책 기준으로 권한이 다시 맞춰집니다 (화면에서 바꾼 사업팀·관리자 권한도 직책 기준으로 돌아감, 본사 권한은 유지)']] } ]);
 }
+/* ---- 본사: 사업장별 KEY 리스트 ----
+   인사 명단(사원번호·성명)을 브라우저에서 읽음 → 서버에는 사번만 보내 식별코드·소속 경로를 받음
+   → 사업장(그룹)별로 '식별코드 → [사번, 성명]' 표를 만들어 비밀번호로 암호화한 .ehskey 로 저장
+   한 사람이 여러 사업장에서 제출했으면(부서 이동) 각 사업장 KEY에 모두 포함 */
+var KEYS = { people:null, groups:null, fileName:'' };
+function keyGroupOf(path){
+  var seg = String(path || '').split('/').filter(Boolean); if (!seg.length) return null;
+  var byCode = {}; (state.org || []).forEach(function(u){ byCode[u.code] = u; });
+  var root = byCode[seg[0]];
+  if (!root || !root.team || root.team === '본사') return { key:'HQ', team:'본사', site:'' };
+  if (seg.length < 2) return { key:seg[0], team:root.team, site:'(사업팀 직속)' };
+  var g = byCode[seg[1]]; return { key:seg[0] + '/' + seg[1], team:root.team, site:g ? g.name : seg[1] };
+}
+function deskRenderKey(){ renderKeyList(); }
+function genKeyPwd(){
+  var A = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789', r = crypto.getRandomValues(new Uint32Array(12)), o = '';
+  for (var i = 0; i < 12; i++){ o += A[r[i] % A.length]; if (i === 3 || i === 7) o += '-'; } return o;
+}
+function renderKeyList(){
+  var box = $('#keyList'), G = KEYS.groups; if (!box) return;
+  if (!G){ box.innerHTML = '<div class="note">1단계에서 인사 명단을 선택하면 사업장 목록이 나옵니다.</div>'; return; }
+  var keys = Object.keys(G).sort(function(a, b){ var x = G[a], y = G[b]; return (x.team === '본사') - (y.team === '본사') || x.team.localeCompare(y.team, 'ko', { numeric:true }) || x.site.localeCompare(y.site, 'ko', { numeric:true }); });
+  if (!keys.length){ box.innerHTML = '<div class="notice warn">시스템에 등록된 인원과 일치하는 사번이 없습니다. 명단과 백데이터 반영 상태를 확인해 주세요.</div>'; return; }
+  box.innerHTML = '<div class="key-bar"><label class="note"><input type="checkbox" id="keyAll"> 전체 선택</label><button class="btn btn-primary btn-sm" id="keySel" type="button">선택한 사업장 KEY 받기</button></div>' +
+    '<div class="dtable-wrap" style="max-height:420px"><table class="dtable key-table"><thead><tr><th></th><th>사업팀</th><th>그룹(사업장)</th><th class="num">KEY 인원</th><th></th></tr></thead><tbody>' +
+    keys.map(function(k){ var g = G[k]; return '<tr><td><input type="checkbox" data-kchk="'+esc(k)+'"></td><td>'+esc(g.team)+'</td><td><b>'+esc(g.site || '-')+'</b></td><td class="num">'+Object.keys(g.map).length.toLocaleString()+'</td><td><button class="btn btn-ghost" data-kget="'+esc(k)+'">KEY 받기</button></td></tr>'; }).join('') +
+    '</tbody></table></div><p class="note">여러 개를 한 번에 받으면 브라우저가 "여러 파일 다운로드"를 물을 수 있습니다. [허용]을 눌러 주세요.</p>';
+}
+async function makeKeyFile(k){
+  var g = KEYS.groups && KEYS.groups[k]; if (!g) return;
+  var pw = $('#keyPwd').value.trim();
+  if (pw.length < 8) throw new Error('KEY 비밀번호를 8자 이상 입력하거나 [자동 생성]을 눌러 주세요');
+  var days = +$('#keyDays').value || 30, now = new Date(), exp = new Date(now.getTime() + days * 86400000);
+  var scope = g.team === '본사' ? '본사' : g.team + ' ' + g.site;
+  var payload = { scope:scope, created:fmt(now), expires:exp.getFullYear() + '-' + pad(exp.getMonth() + 1) + '-' + pad(exp.getDate()), by:state.user.code, count:Object.keys(g.map).length, map:g.map };
+  var pack = await encryptKey(payload, pw); payload = null;
+  var blob = new Blob([JSON.stringify(pack)], { type:'application/octet-stream' }), url = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href = url; a.download = 'KEY_' + scope.replace(/[\\/:*?"<>|\s]+/g, '_') + '_' + stamp() + '.ehskey'; document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 4000);
+}
+$('#keyPwdGen').addEventListener('click', function(){ $('#keyPwd').value = genKeyPwd(); toast('비밀번호를 만들었습니다. 받는 사람에게 파일과 다른 경로로 알려 주세요'); });
+$('#keyRoster').addEventListener('change', async function(){
+  var file = this.files && this.files[0]; if (!file) return; this.value = '';
+  var out = $('#keyScan'); KEYS.groups = null; renderKeyList();
+  $('#keyFileName').textContent = file.name; out.innerHTML = '<div class="loading"><span class="spin"></span>명단 확인 중</div>';
+  try {
+    if (!state.org || !state.org.length) await deskReloadOrg();
+    var X = await loadXLSX(), wb = X.read(await file.arrayBuffer(), { type:'array' });
+    var aoa = X.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1, raw:false, defval:'' }); wb = null;
+    var low = function(c){ return String(c).trim().toLowerCase(); };
+    var hi = aoa.slice(0, 20).findIndex(function(r){ return r.some(function(c){ return IMP_COLS.empId.indexOf(low(c)) > -1; }); });
+    if (hi < 0) throw new Error('첫 시트에서 "사원번호" 열을 찾지 못했습니다');
+    var head = aoa[hi].map(low), ci = head.findIndex(function(h){ return IMP_COLS.empId.indexOf(h) > -1; }), ni = head.findIndex(function(h){ return IMP_COLS.name.indexOf(h) > -1; });
+    if (ni < 0) throw new Error('"성명" 열을 찾지 못했습니다');
+    var people = [], seen = {};
+    aoa.slice(hi + 1).forEach(function(r){ var id = normEmp(r[ci]); if (EMP_RE.test(id) && !seen[id]){ seen[id] = 1; people.push({ id:id, name:String(r[ni] || '').trim() }); } });
+    aoa = null;   /* 원본 행(다른 개인정보 열 포함)은 바로 버림 */
+    if (!people.length) throw new Error('사번이 있는 행이 없습니다');
+    var groups = {}, matched = 0;
+    for (var i = 0; i < people.length; i += 1000){
+      out.innerHTML = '<div class="loading"><span class="spin"></span>서버 확인 중 '+i.toLocaleString()+' / '+people.length.toLocaleString()+'</div>';
+      var part = people.slice(i, i + 1000), res = await api.matchNames(part.map(function(p){ return p.id; }), 'keylist', true);
+      (res.matches || []).forEach(function(m){ var p = part[m.i]; if (!p) return; matched++;
+        var code = codeOf(m.h), done = {};
+        (m.p || []).forEach(function(path){ var g = keyGroupOf(path); if (!g || done[g.key]) return; done[g.key] = 1;
+          var G = groups[g.key] = groups[g.key] || { team:g.team, site:g.site, map:{} }; G.map[code] = [p.id, p.name]; }); });
+    }
+    var total = people.length; people = null;
+    KEYS.groups = groups; KEYS.fileName = file.name;
+    out.innerHTML = '<div class="imp-sum"><div><b>'+total.toLocaleString()+'</b><span>명단 인원</span></div><div><b>'+matched.toLocaleString()+'</b><span>시스템 등록 인원</span></div><div><b>'+Object.keys(groups).length+'</b><span>사업장</span></div></div>' +
+      '<p class="note" style="margin:0">사원번호 · 성명 외의 열은 읽지 않고 버렸습니다. 시스템에 없는 사번은 KEY에 넣지 않습니다.</p>';
+    renderKeyList();
+  } catch(e){ out.innerHTML = ''; KEYS.groups = null; renderKeyList(); fail(e); }
+});
+$('#keyList').addEventListener('click', async function(e){
+  var t = e.target;
+  if (t.id === 'keyAll'){ $$('[data-kchk]', this).forEach(function(c){ c.checked = t.checked; }); return; }
+  var one = t.closest('[data-kget]'), sel = t.closest('#keySel'); if (!one && !sel) return;
+  var list = one ? [one.dataset.kget] : $$('[data-kchk]', this).filter(function(c){ return c.checked; }).map(function(c){ return c.dataset.kchk; });
+  if (!list.length) return toast('KEY를 받을 사업장을 선택해 주세요', true);
+  try { for (var i = 0; i < list.length; i++){ await makeKeyFile(list[i]); if (list.length > 1) await new Promise(function(r){ setTimeout(r, 450); }); }
+    toast(list.length + '개 사업장 KEY를 저장했습니다. 비밀번호는 파일과 다른 경로로 전달하세요'); }
+  catch(err){ fail(err); }
+});
 function deskRenderImport(){ if (!DESK.imp) $('#impPreview').innerHTML = ''; $('#impRun').disabled = !DESK.imp || !DESK.imp.valid.length; loadImportHist(); }
 /* ---- 백데이터 반영 이력 (최근 20회) ---- */
 function impLastLine(l){
@@ -3016,13 +3110,27 @@ function impLastLine(l){
     '<span>오류 <b>'+((l.client_invalid || 0) + (l.server_invalid || 0)).toLocaleString()+'</b>행</span><span>반영 후 인원 <b>'+(l.emp_total || 0).toLocaleString()+'</b>명 · 조직 <b>'+(l.units_total || 0).toLocaleString()+'</b>개</span>' +
     '<span>반영자 <b class="mono">'+esc(l.actor_code || '-')+'</b></span></div>';
 }
+function fmtDay(d){ d = new Date(d); if (isNaN(d)) return '-'; return d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일(' + WEEK[d.getDay()] + ') ' + pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+/* 백데이터 화면 맨 위: 마지막 반영 일자 (이력이 없으면 조직도 갱신 시각으로 표시) */
+function impTopHtml(l){
+  if (l) return '<div class="imp-top"><div><div class="lb">백데이터 마지막 반영일</div><div class="dt">'+esc(fmtDay(l.finished_at || l.created_at))+'</div></div>' +
+    '<div class="sub">반영 대상 <b>'+(l.file_rows || 0).toLocaleString()+'</b>명 (신규 '+(l.emp_inserted || 0).toLocaleString()+' · 갱신 '+(l.emp_updated || 0).toLocaleString()+') · 반영 후 인원 <b>'+(l.emp_total || 0).toLocaleString()+'</b>명 · 조직 <b>'+(l.units_total || 0).toLocaleString()+'</b>개 · 반영자 '+esc(l.actor_code || '-')+'</div></div>';
+  var t = 0; (state.org || []).forEach(function(u){ var v = u.updated_at ? new Date(u.updated_at).getTime() : 0; if (v > t) t = v; });
+  if (t) return '<div class="imp-top"><div><div class="lb">백데이터 마지막 반영일</div><div class="dt">'+esc(fmtDay(t))+'</div></div><div class="sub">조직도 기준 · 인원·건수 기록은 다음 반영부터 남습니다</div></div>';
+  return '<div class="imp-top none"><div><div class="lb">백데이터 마지막 반영일</div><div class="dt">반영 기록 없음</div></div><div class="sub">인사 명단을 올려 반영하면 날짜가 표시됩니다</div></div>';
+}
 async function loadImportHist(){
   var box = $('#impHistBody'); if (!box) return;
   try {
-    var L = await api.importLogs(); DESK.impLast = L[0] || null; deskOrgMeta();
+    var L = [];
+    try { L = await api.importLogs(); } catch(e){ L = null; }
+    if (!state.org || !state.org.length) await deskReloadOrg();
+    $('#impStampTop').innerHTML = impTopHtml(L && L[0]);
+    if (L === null) throw new Error('no-log');
+    DESK.impLast = L[0] || null; deskOrgMeta();
     if (!L.length){ box.innerHTML = '<div class="note">아직 반영 이력이 없습니다. 백데이터를 반영하면 날짜·인원·반영자가 여기에 남습니다.</div>'; return; }
     box.innerHTML = impLastLine(L[0]) +
-      '<div class="dtable-wrap" style="max-height:300px"><table class="dtable"><thead><tr><th>반영 일시</th><th>파일</th><th class="num">반영 대상</th><th class="num">신규</th><th class="num">갱신</th><th class="num">오류</th><th class="num">신규·변경 조직</th><th class="num">반영 후 인원</th><th>반영자</th></tr></thead><tbody>' +
+      '<div class="dtable-wrap" style="max-height:300px"><table class="dtable"><thead><tr><th>반영 일자</th><th>파일</th><th class="num">반영 대상</th><th class="num">신규</th><th class="num">갱신</th><th class="num">오류</th><th class="num">신규·변경 조직</th><th class="num">반영 후 인원</th><th>반영자</th></tr></thead><tbody>' +
       L.map(function(l){ return '<tr><td class="mono">'+esc(fmt(l.finished_at || l.created_at))+'</td><td>'+esc(l.file_name || '-')+'</td><td class="num">'+(l.file_rows || 0).toLocaleString()+'</td><td class="num">'+(l.emp_inserted || 0).toLocaleString()+'</td><td class="num">'+(l.emp_updated || 0).toLocaleString()+'</td>' +
         '<td class="num">'+((l.client_invalid || 0) + (l.server_invalid || 0)).toLocaleString()+'</td><td class="num">'+(l.units_sent || 0).toLocaleString()+'</td><td class="num">'+(l.emp_total || 0).toLocaleString()+'</td><td class="mono">'+esc(l.actor_code || '-')+'</td></tr>'; }).join('') +
       '</tbody></table></div><p class="note">최근 20회까지 표시합니다. 업로드 파일과 사번·성명 원문은 이력에 남지 않습니다.</p>';
@@ -3125,7 +3233,7 @@ $('#impFile').addEventListener('change', async function(){
 $('#impRun').addEventListener('click', async function(){
   if (!DESK.imp) return;
   var rows = DESK.imp.valid, units = DESK.imp.units, btn = this, tot = { inserted:0, updated:0, units:0, invalid:[] }; btn.disabled = true;
-  var batch = uuid(), meta = { fileName:DESK.imp.name || '', fileRows:rows.length, clientInvalid:(DESK.imp.invalid || []).length };
+  var batch = uuid(), meta = { fileName:DESK.imp.name || '', fileRows:rows.length, clientInvalid:(DESK.imp.invalid || []).length }, doneAt;
   try {
     var i = 0;
     do {
@@ -3134,7 +3242,8 @@ $('#impRun').addEventListener('click', async function(){
       tot.inserted += r.inserted || 0; tot.updated += r.updated || 0; tot.units = Math.max(tot.units, r.units || 0); tot.invalid = tot.invalid.concat(r.invalid || []);
       i += 500;
     } while (i < rows.length);
-    $('#impResult').innerHTML = '<div class="imp-sum done"><div><b>'+tot.inserted.toLocaleString()+'</b><span>신규 등록</span></div><div><b>'+tot.updated.toLocaleString()+'</b><span>소속 갱신</span></div><div><b>'+tot.units.toLocaleString()+'</b><span>조직 단위 반영</span></div>' +
+    doneAt = new Date();
+    $('#impResult').innerHTML = '<p class="note" style="margin:12px 0 0;font-weight:700;color:#0E6B37">✓ '+esc(fmtDay(doneAt))+' 반영 완료</p><div class="imp-sum done"><div><b>'+tot.inserted.toLocaleString()+'</b><span>신규 등록</span></div><div><b>'+tot.updated.toLocaleString()+'</b><span>소속 갱신</span></div><div><b>'+tot.units.toLocaleString()+'</b><span>조직 단위 반영</span></div>' +
       (tot.invalid.length ? '<div class="bad"><b>'+tot.invalid.length+'</b><span>서버 검증 오류</span></div>' : '') + '</div><p class="note">신규 등록된 사번은 본인이 [최초 등록]으로 가입해야 사용할 수 있습니다. 관리자·사업팀 권한은 [조직 · 인원]에서 지정하세요.</p>';
     DESK.imp = null; $('#impPreview').innerHTML = ''; $('#impFileName').textContent = '선택된 파일 없음';
     await deskReloadOrg(); state.employees = []; if (state.regPick) state.regPick.refresh();

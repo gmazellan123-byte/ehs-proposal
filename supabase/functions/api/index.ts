@@ -320,20 +320,29 @@ async function actMatch(req: Request, body: any) {
   }
   const hashes = [...byHash.keys()];
   const ok = new Set<string>();
+  const paths = new Map<string, Set<string>>();   // [본사 KEY 리스트] 사람별 소속 경로(현재 소속 + 제출했던 부서)
+  const addPath = (h: string, p: string | null) => { if (!p) return; if (!paths.has(h)) paths.set(h, new Set()); paths.get(h)!.add(p); };
+  const withPaths = actor.role === "hq" && body.withPaths === true;
   if (hashes.length) {
     const { data: emps } = await db.from("employees").select("emp_hash, org_path").in("emp_hash", hashes);
     const prefix = actor.role === "team" ? teamPrefix(actor.org_path) : actor.org_path;
-    for (const e of emps ?? []) if (actor.role === "hq" || within(e.org_path, prefix)) ok.add(e.emp_hash);
-    if (actor.role !== "hq") {
-      const rest = hashes.filter((h) => !ok.has(h));
-      if (rest.length) {
-        const { data: reps } = await db.from("reports").select("emp_hash, org_path").in("emp_hash", rest);
-        for (const r of reps ?? []) if (within(r.org_path, prefix)) ok.add(r.emp_hash);
+    for (const e of emps ?? []) {
+      if (actor.role === "hq" || within(e.org_path, prefix)) ok.add(e.emp_hash);
+      if (withPaths) addPath(e.emp_hash, e.org_path);
+    }
+    // 퇴직·삭제된 인원도 제출 기록이 있으면 대조 (제출 당시 부서 기준)
+    const rest = withPaths ? hashes : hashes.filter((h) => !ok.has(h));
+    for (let from = 0; rest.length; from += 1000) {
+      const { data: reps } = await db.from("reports").select("emp_hash, org_path").in("emp_hash", rest).order("id").range(from, from + 999);
+      for (const r of reps ?? []) {
+        if (actor.role === "hq" || within(r.org_path, prefix)) ok.add(r.emp_hash);
+        if (withPaths) addPath(r.emp_hash, r.org_path);
       }
+      if (!reps || reps.length < 1000) break;
     }
   }
-  const matches: { i: number; h: string }[] = [];
-  for (const h of ok) for (const i of byHash.get(h) ?? []) matches.push({ i, h });
+  const matches: { i: number; h: string; p?: string[] }[] = [];
+  for (const h of ok) for (const i of byHash.get(h) ?? []) matches.push(withPaths ? { i, h, p: [...(paths.get(h) ?? [])] } : { i, h });
   const { data: me } = await db.from("employees").select("emp_code").eq("emp_hash", actor.empHash).maybeSingle();
   await db.from("export_logs").insert({ actor_code: me?.emp_code ?? null, actor_role: actor.role, kind: String(body.kind ?? "").slice(0, 20) || null,
     requested: list.length, matched: matches.length });
