@@ -826,6 +826,13 @@ body.desk .desk-head p{margin-left:15px;color:#4A6A8F;}
 .rt{display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:6px;font-size:11.5px;font-weight:800;color:#fff;white-space:nowrap;}
 .rt small{font-size:9.5px;font-weight:700;opacity:.9;}
 span.rt-hi{background:#DC2626;} span.rt-md{background:#EA7A0C;} span.rt-lo{background:#16A34A;}
+
+/* ===== v4.5: 상단 날짜·시각 ===== */
+.desk-right{display:flex;align-items:center;gap:14px;}
+.dclock{display:flex;flex-direction:column;align-items:flex-end;line-height:1.2;padding-right:14px;border-right:1px solid #D3E2F2;}
+.dclock b{font-size:13px;font-weight:700;color:#4A6A8F;letter-spacing:-.1px;}
+.dclock span{font-family:var(--mono);font-size:22px;font-weight:700;color:#0B2E5C;letter-spacing:.02em;}
+#ddType{min-width:118px;width:auto;padding:9px 30px 9px 11px;font-size:13px;}
 </style>
 </head>
 <body>
@@ -1093,13 +1100,14 @@ span.rt-hi{background:#DC2626;} span.rt-md{background:#EA7A0C;} span.rt-lo{backg
       <main class="desk-main">
         <header class="desk-head">
           <div><h1 id="dTitle">대시보드</h1><p id="dSub"></p></div>
-          <div class="desk-actions" id="dActions"></div>
+          <div class="desk-right"><div class="dclock hidden" id="dClock"><b id="dClockD"></b><span id="dClockT"></span></div><div class="desk-actions" id="dActions"></div></div>
         </header>
 
         <section data-dscreen="ddash">
           <div class="dpanel">
             <div class="dpanel-h">
               <span class="dpanel-t">조회 조건 <span class="mono">FILTER</span></span>
+              <select id="ddType"><option value="all">유형 전체</option><option value="proposal">개선제안</option><option value="risk">위험성평가</option><option value="nearmiss">아차사고</option></select>
               <div class="dorg" id="ddOrg"></div>
               <div class="drange"><input type="month" id="ddFrom" title="시작 월"><span>~</span><input type="month" id="ddTo" title="종료 월"></div>
               <div class="dpreset" id="ddPreset"><button data-p="m1">이번 달</button><button data-p="m3">최근 3개월</button><button data-p="ytd">올해</button><button data-p="m12">최근 12개월</button><button data-p="all">전체</button></div>
@@ -2341,13 +2349,18 @@ function monthlyData(A, n){
    ===================================================================== */
 function ym(d){ return d.getFullYear() + '-' + pad(d.getMonth() + 1); }
 function ymAdd(k, n){ var p = k.split('-'), d = new Date(+p[0], +p[1] - 1 + n, 1); return ym(d); }
-function dashDefault(){ var now = ym(new Date()); return { team:'all', site:'all', from:ymAdd(now, -11), to:now }; }
+function dashDefault(){ var now = ym(new Date()); return { type:'all', team:'all', site:'all', from:ymAdd(now, -11), to:now }; }
 var DESK = { on:false, screen:'ddash', sel:newOrgSel(), f:{ type:'all', status:'all', grade:'all', from:'', to:'', q:'' }, page:1, emp:null,
   dash:dashDefault(), empSel:newOrgSel(), empQ:'', empRole:'all', empPage:1, imp:null, home:null,
   pw:{ role:'all', join:'joined', q:'', sel:newOrgSel(), page:1, checked:{} } };
 var PAGE = 50;
-var DTITLE = { ddash:['대시보드','사업장 · 기간별 안전 개선제안 · 아차사고 접수 현황'], dlist:['접수 관리','전사 접수건 조회 · 처리 · 엑셀 다운로드'],
+var DTITLE = { ddash:['대시보드','사업장 · 유형 · 기간별 개선제안 · 위험성평가 · 아차사고 접수 현황'], dlist:['접수 관리','전사 접수건 조회 · 처리 · 엑셀 다운로드'],
   dorg:['조직 · 인원','본사 › 사업팀 › 그룹 › 팀 › 파트 별 인원과 권한 관리'], dpw:['비밀번호 관리','근로자 · 관리자 · 사업팀 계정의 비밀번호 초기화'], dimport:['조직 백데이터 업로드','인사 명단의 사번 · 성명 · 부서코드로 조직도와 인원을 일괄 반영'] };
+var WEEK = ['일','월','화','수','목','금','토'];
+function tickClock(){ var d = new Date(), a = $('#dClockD'), b = $('#dClockT'); if (!a) return;
+  a.textContent = d.getFullYear() + '.' + pad(d.getMonth()+1) + '.' + pad(d.getDate()) + ' (' + WEEK[d.getDay()] + ')';
+  b.textContent = pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+setInterval(function(){ if (DESK.on) tickClock(); }, 15000);
 function deskEligible(u){ return u.role === 'hq' && window.matchMedia('(min-width: 900px)').matches; }
 function enterDesk(user){
   DESK.on = true; document.body.classList.add('desk');
@@ -2374,7 +2387,8 @@ function dgo(s){
   $$('.side-nav button').forEach(function(b){ b.classList.toggle('on', b.dataset.dgo === s); });
   $('#dTitle').textContent = DTITLE[s][0]; $('#dSub').textContent = DTITLE[s][1];
   var act = $('#dActions');
-  if (s === 'ddash') act.innerHTML = '<button class="btn btn-ghost" data-da="refresh">새로고침</button><button class="btn btn-primary dbtn" data-da="xlsAll">조회 조건 엑셀</button>';
+  $('#dClock').classList.remove('hidden'); tickClock();
+  if (s === 'ddash') act.innerHTML = '<button class="btn btn-ghost" data-da="refresh">새로고침</button>';
   if (s === 'dlist') act.innerHTML = '<button class="btn btn-ghost" data-da="refresh">새로고침</button><button class="btn btn-primary dbtn" data-da="xlsList">조회 결과 엑셀</button>';
   if (s === 'dorg') act.innerHTML = '<button class="btn btn-ghost" data-da="refresh">새로고침</button><button class="btn btn-primary dbtn" data-da="xlsEmp">인원 목록 엑셀</button>';
   if (s === 'dimport') act.innerHTML = '<button class="btn btn-primary dbtn" data-da="tpl">업로드 양식 다운로드</button>';
@@ -2409,9 +2423,11 @@ function monthlyRange(A, from, to){
   return keys.map(function(k){ return { k:k, p:m[k].p, n:m[k].n, r:m[k].r }; });
 }
 function dashScopeName(){ var D = DESK.dash; return D.site !== 'all' ? D.team + ' › ' + D.site : D.team !== 'all' ? D.team : '전사'; }
+function dashTypeName(){ var t = DESK.dash.type; return t && t !== 'all' ? TYPE[t].short : '전체 유형'; }
 function dashFiltered(){
   var D = DESK.dash, from = D.from ? new Date(D.from + '-01T00:00:00') : null, to = D.to ? new Date(ymAdd(D.to, 1) + '-01T00:00:00') : null;
   return state.all.filter(function(r){
+    if (D.type && D.type !== 'all' && r.type !== D.type) return false;
     if (D.team !== 'all' && (r.team || '본사') !== D.team) return false;
     if (D.site !== 'all' && r.site !== D.site) return false;
     var c = new Date(r.created_at); if (from && c < from) return false; if (to && c >= to) return false;
@@ -2425,12 +2441,12 @@ function dashOrgRows(){ return state.org.filter(function(o){ return o.depth <= 2
 function deskRenderDash(){
   var D = DESK.dash;
   renderOrgSelects($('#ddOrg'), dashOrgRows(), ['team','site'], D, deskRenderDash);
-  $('#ddFrom').value = D.from; $('#ddTo').value = D.to;
+  $('#ddFrom').value = D.from; $('#ddTo').value = D.to; $('#ddType').value = D.type || 'all';
   $$('#ddPreset button').forEach(function(b){ b.classList.toggle('on', presetRange(b.dataset.p).from === D.from && presetRange(b.dataset.p).to === D.to); });
   var A = dashFiltered(), M = metrics(A), months = monthRangeKeys(D.from, D.to).length || 1;
   var high = A.filter(function(r){ return r.type === 'proposal' && OPEN.indexOf(r.status) > -1 && (r.proposed_grade === '가' || r.proposed_grade === '나'); }).length;
   updateOpenBadges(state.all);
-  $('#ddMeta').innerHTML = '<b>'+esc(dashScopeName())+'</b> · '+esc(D.from)+' ~ '+esc(D.to)+' · '+A.length.toLocaleString()+'건';
+  $('#ddMeta').innerHTML = '<b>'+esc(dashScopeName())+'</b> · '+esc(dashTypeName())+' · '+esc(D.from)+' ~ '+esc(D.to)+' · '+A.length.toLocaleString()+'건';
   var md = monthlyRange(A, D.from, D.to), maxM = Math.max.apply(null, md.map(function(m){ return m.p + m.n + m.r; }).concat([1]));
   var org = orgSummary(A, D), lvName = D.site !== 'all' ? '그룹 / 팀' : D.team !== 'all' ? '사업팀 / 그룹' : '사업팀 / 그룹';
   $('#dDash').innerHTML =
@@ -2465,6 +2481,7 @@ function presetRange(p){ var now = ym(new Date());
   if (p === 'ytd') return { from:now.slice(0, 4) + '-01', to:now }; if (p === 'm12') return { from:ymAdd(now, -11), to:now };
   var first = state.all.reduce(function(m, r){ var k = ym(new Date(r.created_at)); return !m || k < m ? k : m; }, null);
   return { from:first || ymAdd(now, -11), to:now }; }
+$('#ddType').addEventListener('change', function(){ DESK.dash.type = this.value; deskRenderDash(); });
 $('#ddPreset').addEventListener('click', function(e){ var b = e.target.closest('[data-p]'); if (!b) return; var r = presetRange(b.dataset.p); DESK.dash.from = r.from; DESK.dash.to = r.to; deskRenderDash(); });
 ['ddFrom','ddTo'].forEach(function(id){ $('#'+id).addEventListener('change', function(){
   var D = DESK.dash, v = this.value; if (!v) return;
@@ -2474,7 +2491,7 @@ function kpiCard(cls, k, tag, v, s){ return '<div class="panel kpi '+cls+'"><div
 $('#dDash').addEventListener('click', function(e){
   var tr = e.target.closest('tr[data-sel]');
   if (tr){ var sel = JSON.parse(tr.dataset.sel), D = DESK.dash; DESK.sel = Object.assign(newOrgSel(), sel); DESK.emp = null;
-    DESK.f = { type:'all', status:'all', grade:'all', from: D.from + '-01', to: (function(){ var d = new Date(ymAdd(D.to, 1) + '-01T00:00:00'); d.setDate(0); return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); })(), q:'' };
+    DESK.f = { type:D.type || 'all', status:'all', grade:'all', from: D.from + '-01', to: (function(){ var d = new Date(ymAdd(D.to, 1) + '-01T00:00:00'); d.setDate(0); return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); })(), q:'' };
     dgo('dlist'); return; }
   var row = e.target.closest('tr[data-id]'); if (row){ var r = state.all.find(function(x){ return x.id === row.dataset.id; }); if (r) openDetail(r, true); }
 });
