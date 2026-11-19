@@ -299,6 +299,12 @@ create trigger trg_reports_before_insert
 create or replace function public.reports_before_update()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
+  -- 제출 당시 작성자·소속은 고정 (인원의 퇴직·부서 이동·조직 개편과 관계없이 원래 부서 집계에 남음)
+  new.type := old.type; new.created_at := old.created_at;
+  if new.author_id is not null then new.author_id := old.author_id; end if; -- 계정 삭제 시 연결만 끊는 것은 허용
+  new.team := old.team; new.site := old.site; new.dept := old.dept; new.part := old.part;
+  new.org_code := old.org_code; new.org_path := old.org_path;
+  if new.emp_hash is not null then new.emp_hash := old.emp_hash; end if;   -- 사번 삭제 시 연결만 끊는 것은 허용
   if new.type = 'nearmiss' then
     if new.status not in ('received','reviewing','done') then
       raise exception '아차사고는 접수/검토중/조치완료 상태만 사용할 수 있습니다';
