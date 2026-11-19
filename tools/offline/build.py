@@ -13,7 +13,7 @@ html = """<!doctype html>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--ink:#13233F;--soft:#4A6A8F;--faint:#8A9BB3;--line:#DCE5F0;--brand:#0B5FA8;--bg:#EEF3F9;--r:14px}
-body{font-family:'Pretendard','Noto Sans KR','Malgun Gothic','맑은 고딕',sans-serif;color:var(--ink);background:var(--bg);font-size:14px;min-width:1100px}
+body{font-family:'Pretendard','Noto Sans KR','Malgun Gothic','맑은 고딕',sans-serif;color:var(--ink);background:var(--bg);font-size:14px;min-width:1180px}
 .hidden{display:none!important}
 .top{display:flex;align-items:center;gap:16px;padding:0 28px;height:78px;background:linear-gradient(180deg,#fff,#EDF5FD);border-bottom:3px solid transparent;border-image:linear-gradient(90deg,#0B4F96,#1E8BD8,#38BDF8) 1}
 .top img{height:46px}
@@ -21,7 +21,7 @@ body{font-family:'Pretendard','Noto Sans KR','Malgun Gothic','맑은 고딕',san
 .top p{font-size:12.5px;color:var(--soft);margin-top:2px}
 .top .badge{margin-left:auto;display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:10px;background:#E8F7EE;color:#13693A;font-weight:700;font-size:12.5px;border:1px solid #BFE6CD}
 .top .badge i{width:8px;height:8px;border-radius:50%;background:#16A34A}
-.wrap{padding:18px 28px 30px}
+.wrap{padding:18px 24px 30px}
 .steps{display:grid;grid-template-columns:1fr 1.15fr;gap:12px}
 .step{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;position:relative;box-shadow:0 4px 12px rgba(20,40,80,.05)}
 .step h3{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:800;margin-bottom:8px}
@@ -124,35 +124,92 @@ tr.tot td{font-weight:800;background:#EEF6FD;color:var(--brand);position:sticky;
 .lg{font-size:12px;color:var(--soft);display:flex;align-items:center;gap:4px;margin-left:auto}.lg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-left:6px}
 ol.how{margin:8px 0 6px 18px;font-size:12.5px;line-height:1.7;color:var(--soft)}
 details.paste .btn{margin-top:6px}
+.shell{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+.side{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;padding:18px 14px;color:#fff;background:linear-gradient(185deg,#0A2F63 0%,#0B4F96 55%,#1673C4 100%)}
+.brand{display:flex;align-items:center;gap:10px;padding:2px 6px 18px;border-bottom:1px solid rgba(255,255,255,.16)}
+.brand img{height:40px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.25))}.brand b{display:block;font-size:17px;font-weight:900;letter-spacing:-.4px}.brand span{font-size:11.5px;opacity:.8}
+.snav{display:flex;flex-direction:column;gap:8px;margin-top:18px}
+.apptab{display:flex;align-items:center;gap:10px;width:100%;border:0;text-align:left;padding:12px 12px;border-radius:12px;background:rgba(255,255,255,.07);color:#fff;font-weight:800;font-size:15px}
+.apptab:hover{background:rgba(255,255,255,.14)}
+.apptab .n{width:26px;height:26px;flex:none;border-radius:8px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:13px}
+.apptab .tx small{display:block;font-size:11px;font-weight:600;opacity:.75;margin-top:1px}
+.apptab.on{background:#fff;color:#0B4F96;box-shadow:0 6px 16px rgba(0,0,0,.18)}.apptab.on .n{background:#1E8BD8;color:#fff}
+.sfoot{margin-top:auto;display:flex;flex-direction:column;gap:8px}
+.sfoot .badge{display:flex;align-items:center;gap:7px;padding:8px 10px;border-radius:9px;background:rgba(255,255,255,.1);font-size:12px;font-weight:700}
+.sfoot .badge i{width:8px;height:8px;border-radius:50%;background:#4ADE80}
+.sfoot .btn.ghost{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);color:#fff}
+.sfoot p{font-size:11px;opacity:.7;line-height:1.5}
+.mainc{min-width:0}
+.ph{display:flex;align-items:baseline;gap:12px;margin-bottom:12px}.ph h1{font-size:21px;font-weight:900;color:#0B2E5C;letter-spacing:-.5px}.ph p{color:var(--soft);font-size:13px}
+.decgrid{display:grid;grid-template-columns:1.55fr 1fr;gap:14px;align-items:stretch}
+.decgrid .steps{display:flex;flex-direction:column;gap:12px}
+.decgrid .steps .step{flex:1;display:flex;flex-direction:column}.decgrid .steps .dz{flex:1}
+.step h3 em{font-style:normal;font-size:12px;font-weight:600;color:var(--faint);margin-left:4px}
+.dz{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:96px;padding:14px;border:2px dashed #A9C3E3;border-radius:12px;background:linear-gradient(180deg,#F7FBFF,#EDF5FD);cursor:pointer;text-align:center;transition:.15s}
+.dz:hover,.dz.over{border-color:#1E8BD8;background:#E6F1FC}
+.dz b{font-size:15px;color:#0B4F96}.dz span{font-size:12px;color:var(--soft)}
+.dz input{display:none}
+.step.done .dz{min-height:64px;border-color:#9ED8B4;background:#F4FBF6}
+.guidep{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;box-shadow:0 4px 12px rgba(20,40,80,.05);word-break:keep-all}
+.guidep h3{font-size:14.5px;font-weight:800;margin-bottom:10px}.guidep h3+*{margin-bottom:14px}
+.flow{list-style:none;display:flex;flex-direction:column;gap:8px}
+.flow li{display:flex;gap:10px;align-items:flex-start;padding:9px 10px;border-radius:10px;background:#F4F8FC;border:1px solid #E1EAF4}
+.flow li>span{width:22px;height:22px;flex:none;border-radius:50%;background:linear-gradient(180deg,#1E9BEA,#0B5FA8);color:#fff;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+.flow b{font-size:13.5px}.flow p{font-size:12.5px;color:var(--soft);margin-top:1px;line-height:1.5}
+.ways{list-style:none;display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--soft)}.ways b{color:var(--ink);margin-right:6px}
+.guidep .notice{margin-top:0}
+.warnbar{margin-bottom:12px;padding:10px 14px;border-radius:11px;background:#FFF7ED;border:1px solid #FCD9B6;color:#7A4A12;font-size:13px;display:flex;align-items:center;gap:10px}
+.warnbar .btn{margin-left:auto}
+#saveBtn:disabled{opacity:.45;cursor:not-allowed}
 .toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);opacity:0;transition:all .2s;background:#13233F;color:#fff;padding:11px 18px;border-radius:12px;font-weight:700;font-size:13.5px;z-index:60;pointer-events:none;max-width:80vw}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .toast.err{background:#C62828}
-@media print{.top .badge,.steps,.bar,.notice,#pager,.foot{display:none!important}.tw{max-height:none}body{min-width:0;background:#fff}}
+@media print{.side,.steps,.guidep,.bar,.notice,.pagerx,.foot{display:none!important}.shell{display:block}.tw{max-height:none}body{min-width:0;background:#fff}}
 </style></head><body>
-<div class="top"><img src="__LOGO__" alt="로고"><div><h1>안전보건 제안 · 오프라인 정리 도구</h1><p>현장 데이터의 식별코드를 본사 KEY로 사번 · 성명으로 바꿔 조회 · 정리합니다</p></div>
-<nav class="apptabs"><button class="apptab on" data-view="dec"><span class="n">1</span>복호화</button><button class="apptab locked" id="tabStat" data-view="stat"><span class="n">2</span>데이터 현황 · 저장<i class="lk">🔒</i></button></nav>
-<div class="badge"><i></i>인터넷 연결 없이 동작</div><button class="btn" id="clearBtn" title="불러온 내용을 모두 지움">모두 지우기</button></div>
+<div class="shell">
+<aside class="side">
+ <div class="brand"><img src="__LOGO__" alt="로고"><div><b>안전보건 제안</b><span>오프라인 정리 도구</span></div></div>
+ <nav class="snav">
+  <button class="apptab on" data-view="dec"><span class="n">1</span><span class="tx">복호화<small>데이터 · KEY 넣기</small></span></button>
+  <button class="apptab" id="tabStat" data-view="stat"><span class="n">2</span><span class="tx">데이터 현황<small>조회 · 정렬 · 저장</small></span></button>
+ </nav>
+ <div class="sfoot"><div class="badge"><i></i>인터넷 연결 없이 동작</div><button class="btn ghost" id="clearBtn" title="불러온 내용을 모두 지움">모두 지우기</button>
+  <p>넣은 파일은 이 창의 메모리에만 있고, 창을 닫으면 사라집니다.</p></div>
+</aside>
+<main class="mainc">
 <div class="wrap">
 <section id="vDec">
- <div class="steps">
-  <div class="step" id="c-data"><h3><span class="n">1</span>데이터 넣기</h3>
-   <input type="file" id="dataFile" accept=".xlsx,.xls,.csv,.txt,.tsv" multiple>
-   <details class="paste"><summary>파일을 올릴 수 없나요? → 엑셀/메모장에서 복사해 붙여넣기</summary>
-    <ol class="how"><li>받은 파일을 <b>엑셀</b>로 엽니다 (엑셀이 없으면 <b>메모장</b>으로 열어도 됩니다)</li><li><b>Ctrl+A</b>(전체 선택) → <b>Ctrl+C</b>(복사)</li><li>아래 칸에 <b>Ctrl+V</b>(붙여넣기) → [붙여넣은 내용 넣기]</li></ol>
-    <textarea id="dataText" placeholder="접수번호 · 유형 · 상태 … 머리글부터 끝까지 붙여넣기" spellcheck="false"></textarea>
-    <button class="btn pri" id="dataPasteBtn" type="button">붙여넣은 내용 넣기</button></details>
-   <div class="st">휴대폰·PC <b>[내보내기]</b>로 받은 접수목록 (엑셀 · CSV · 여러 개 가능) · 파일을 이 창에 <b>끌어다 놓아도</b> 됩니다</div></div>
-  <div class="step" id="c-key"><h3><span class="n">2</span>KEY 넣기</h3>
-   <input type="file" id="keyFile">
-   <div class="pick" id="keyPick"></div>
-   <div class="row" style="margin-top:7px"><input type="password" id="keyPw" placeholder="KEY 비밀번호 (본사에서 따로 안내)" autocomplete="off"><button class="btn pri" id="keyBtn">KEY 열기</button></div>
-   <details class="paste"><summary>파일을 올릴 수 없나요? → KEY를 메모장으로 열어 붙여넣기</summary>
-    <ol class="how"><li>KEY 파일(.ehskey)을 <b>메모장</b>으로 엽니다 (마우스 오른쪽 → 연결 프로그램 → 메모장). 메일 본문으로 받았으면 그 내용을 씁니다</li><li><b>Ctrl+A</b> → <b>Ctrl+C</b> → 아래 칸에 <b>Ctrl+V</b></li><li>비밀번호 입력 → [KEY 열기]</li></ol>
-    <textarea id="keyText" placeholder='{"format":"ehs-key … 로 시작하는 내용을 처음부터 끝까지 붙여넣기' spellcheck="false"></textarea></details>
-   <div class="st">본사에서 받은 <b>KEY 파일</b> + 따로 받은 비밀번호 → 식별코드를 사번 · 성명으로 바꿉니다</div></div>
+ <div class="ph"><h1>① 복호화</h1><p>현장 데이터의 식별코드를 본사 KEY로 사번 · 성명으로 바꿉니다</p></div>
+ <div class="decgrid">
+  <div class="steps">
+   <div class="step" id="c-data"><h3><span class="n">1</span>데이터 넣기 <em>휴대폰 · PC [내보내기] 접수목록 파일</em></h3>
+    <label class="dz" id="dzData"><input type="file" id="dataFile" accept=".xlsx,.xls,.csv,.txt,.tsv" multiple><b>📄 데이터 파일을 끌어다 놓거나 눌러서 선택</b><span>엑셀 · CSV · 여러 개 가능 (접수번호 기준 중복 제거)</span></label>
+    <details class="paste"><summary>파일을 올릴 수 없나요? → 엑셀·메모장에서 복사해 붙여넣기</summary>
+     <textarea id="dataText" placeholder="파일을 엑셀(또는 메모장)로 열고 Ctrl+A → Ctrl+C 한 뒤, 여기에 Ctrl+V" spellcheck="false"></textarea>
+     <button class="btn pri" id="dataPasteBtn" type="button">붙여넣은 내용 넣기</button></details>
+    <div class="st">아직 넣지 않았습니다</div></div>
+   <div class="step" id="c-key"><h3><span class="n">2</span>KEY 넣기 <em>본사에서 받은 KEY 파일 + 비밀번호</em></h3>
+    <label class="dz" id="dzKey"><input type="file" id="keyFile"><b>🔑 KEY 파일을 끌어다 놓거나 눌러서 선택</b><span>KEY_….ehskey (이름이 바뀌어도 내용으로 확인)</span></label>
+    <div class="pick" id="keyPick"></div>
+    <div class="row" style="margin-top:8px"><input type="password" id="keyPw" placeholder="KEY 비밀번호 (본사에서 문자 등으로 따로 안내)" autocomplete="off"><button class="btn pri" id="keyBtn">KEY 열기</button></div>
+    <details class="paste"><summary>파일을 올릴 수 없나요? → KEY를 메모장으로 열어 붙여넣기</summary>
+     <textarea id="keyText" placeholder='KEY 파일을 메모장으로 열고(오른쪽 클릭 → 연결 프로그램 → 메모장) Ctrl+A → Ctrl+C 한 뒤, 여기에 Ctrl+V' spellcheck="false"></textarea></details>
+    <div class="st">아직 넣지 않았습니다</div></div>
+  </div>
+  <div class="guidep">
+   <h3>사용 방법</h3>
+   <ol class="flow">
+    <li><span>1</span><div><b>데이터 넣기</b><p>휴대폰 접수목록 [내보내기]로 받은 파일을 1번 칸에 넣습니다.</p></div></li>
+    <li><span>2</span><div><b>KEY 넣기</b><p>본사 KEY 파일을 2번 칸에 넣고, 따로 받은 비밀번호를 입력합니다.</p></div></li>
+    <li><span>3</span><div><b>복호화 확인</b><p>식별코드가 사번 · 성명으로 바뀌었는지 아래 표에서 확인합니다.</p></div></li>
+    <li><span>4</span><div><b>데이터 현황 · 저장</b><p>왼쪽 [데이터 현황]에서 조회하고 엑셀로 저장합니다.</p></div></li>
+   </ol>
+   <h3>넣는 방법 3가지</h3>
+   <ul class="ways"><li><b>파일 선택</b> 칸을 눌러 고르기</li><li><b>끌어다 놓기</b> 창 어디에 놓아도 자동 구분</li><li><b>붙여넣기</b> 파일 업로드가 막혔을 때</li></ul>
+   <div class="notice"><b>개인정보 안내</b> · 이 화면에는 사번과 실명이 표시됩니다. 저장한 엑셀은 업무 목적으로만 쓰고 사내 PC에만 보관하세요. KEY 파일과 비밀번호는 함께 보관하거나 함께 보내지 마세요.</div>
+  </div>
  </div>
- <div class="notice"><b>개인정보 안내</b> · 이 화면에는 사번과 실명이 표시됩니다. 불러온 내용은 <b>이 창의 메모리에만</b> 있고, 창을 닫으면 사라집니다. 저장한 엑셀은 업무 목적으로만 쓰고 사내 PC에만 보관하세요. <b>KEY 파일과 비밀번호는 함께 보관하거나 함께 보내지 마세요.</b></div>
- <div id="empty"><b>1 · 2 단계를 넣으면</b> 여기에 내용이 표시됩니다. 순서는 상관없습니다.<br>KEY로 복호화한 뒤 <b>② 데이터 현황</b>에서 유형 · 소속 · 기간별 조회와 엑셀 저장을 할 수 있습니다.</div>
+ <div id="empty"><b>1 · 2번 칸에 넣으면</b> 여기에 내용이 표시됩니다. 순서는 상관없습니다.</div>
  <div id="decMain" class="hidden">
   <div class="kpis k3" id="decKpis"></div>
   <div id="decCta"></div>
@@ -163,8 +220,10 @@ details.paste .btn{margin-top:6px}
  </div>
 </section>
 <section id="vStat" class="hidden">
- <div id="statLock" class="lock"><b>🔒 아직 복호화 전입니다</b><p>① 복호화 탭에서 데이터와 KEY를 넣어 사번 · 성명으로 바꾼 뒤에 조회 · 저장할 수 있습니다.</p><button class="btn pri" data-go="dec">① 복호화로 가기</button></div>
+ <div class="ph"><h1>② 데이터 현황</h1><p>유형 · 소속 · 기간별 조회와 현황 · 엑셀 저장</p></div>
+ <div id="statLock" class="lock"><b>아직 넣은 데이터가 없습니다</b><p>① 복호화 탭에서 데이터 파일을 넣으면 여기에서 유형 · 소속 · 기간별 현황을 볼 수 있습니다.</p><button class="btn pri" data-go="dec">① 복호화로 가기</button></div>
  <div id="statMain" class="hidden">
+  <div id="statWarn"></div>
   <div class="panel filt">
    <div class="bar">
     <select id="sType"><option value="all">유형 전체</option><option>개선제안</option><option>위험성평가</option><option>아차사고</option></select>
@@ -192,6 +251,9 @@ details.paste .btn{margin-top:6px}
   <p class="foot">소속은 제출 당시(최초 등록 부서) 기준입니다. 완료 = 조치완료 · 반영 완료 · 위원회 의결. 미확인 = KEY 범위 밖 인원(KEY 발급 이후 신규 인원 등).</p>
  </div>
 </section>
+</div>
+</div>
+</main>
 </div>
 <div id="modal"><div class="mbox"><div class="mh"><span id="mTitle"></span><button data-close>✕</button></div><div id="mBody"></div></div></div>
 <div class="toast" id="toast"></div>

@@ -212,7 +212,6 @@ function setSort(t, k){ var cur = sortState(t), nx = cur && cur.k === k ? (cur.d
 function render(){
   var dec = decrypted();
   $$('.apptab').forEach(function(b){ b.classList.toggle('on', b.dataset.view === S.view); });
-  $('#tabStat').classList.toggle('locked', !dec);
   $('#vDec').classList.toggle('hidden', S.view !== 'dec'); $('#vStat').classList.toggle('hidden', S.view !== 'stat');
   if (S.view === 'dec') renderDec(); else renderStat();
 }
@@ -291,9 +290,11 @@ function setPeriod(kind){ var d = new Date(), y = d.getFullYear(), f = S.st.f;
   if (kind === '12m'){ var s = new Date(y, d.getMonth() - 11, 1); f.from = s.getFullYear() + '-' + pad(s.getMonth() + 1); f.to = y + '-' + pad(d.getMonth() + 1); }
   S.st.page = 1; render(); }
 function renderStat(){
-  var dec = decrypted();
-  $('#statLock').classList.toggle('hidden', dec); $('#statMain').classList.toggle('hidden', !dec);
-  if (!dec) return;
+  var dec = decrypted(), has = S.rows.length > 0;
+  $('#statLock').classList.toggle('hidden', has); $('#statMain').classList.toggle('hidden', !has);
+  if (!has) return;
+  $('#statWarn').innerHTML = dec ? '' : '<div class="warnbar"><span><b>복호화 전</b> · 제출자는 식별코드 · 가린 성명으로 표시됩니다. <b>엑셀 저장은 KEY로 복호화한 뒤</b>에 할 수 있습니다.</span><button class="btn pri" data-go="dec">KEY 넣으러 가기</button></div>';
+  $('#saveBtn').disabled = !dec; $('#saveBtn').title = dec ? '' : 'KEY로 복호화한 뒤 저장할 수 있습니다';
   var f = S.st.f, R = S.rows;
   opts($('#sTeam'), uniq(R, 'team'), '사업팀', f.team);
   var R1 = R.filter(function(r){ return f.team === 'all' || r.team === f.team; }); opts($('#sSite'), uniq(R1, 'site'), '그룹', f.site);
@@ -354,7 +355,8 @@ function openDetail(r){
 
 /* ---------- 저장 (복호화 후에만) ---------- */
 function sheet(rows){ var ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = rows[0].map(function(h, i){ var w = 8; rows.slice(0, 200).forEach(function(r){ var v = String(r[i] == null ? '' : r[i]); var l = 0; for (var k = 0; k < v.length; k++) l += v.charCodeAt(k) > 255 ? 2 : 1; w = Math.max(w, Math.min(60, l + 2)); }); return { wch:w }; });
+  var nc = Math.max.apply(null, rows.map(function(r){ return r.length; }));
+  ws['!cols'] = Array.apply(null, Array(nc)).map(function(h, i){ var w = 8; rows.slice(0, 200).forEach(function(r){ var v = String(r[i] == null ? '' : r[i]); var l = 0; for (var k = 0; k < v.length; k++) l += v.charCodeAt(k) > 255 ? 2 : 1; w = Math.max(w, Math.min(60, l + 2)); }); return { wch:w }; });
   if (rows.length > 1) ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s:{ r:0, c:0 }, e:{ r:rows.length - 1, c:rows[0].length - 1 } }) };
   return ws; }
 function saveXlsx(){
@@ -362,16 +364,19 @@ function saveXlsx(){
   var L = sorted(statRows(), S.st.sort.list); if (!L.length) return toast('저장할 데이터가 없습니다', true);
   var m = agg(L), lv = autoLevel(L), O = sorted(orgRows(L, lv), S.st.sort.org || { k:'t', dir:-1 }, mGet), MR = monthRows(L), P = sorted(peopleOf(L), S.st.sort.people, pGet);
   var mHead = ['개선제안','위험성평가','아차사고','합계','처리대기','완료','반려','완료율(%)','제출인원'], mVals = function(x){ return [x.p, x.r, x.n, x.t, x.open, x.done, x.rej, x.rate, x.people]; };
-  var wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, sheet([['항목','값'], ['조회 조건', condText()], ['조회 건수', m.t], ['개선제안', m.p], ['위험성평가', m.r], ['아차사고', m.n], ['처리 완료율(%)', m.rate], ['제출 인원', m.people],
-    ['KEY', S.keyMeta ? S.keyMeta.scope + ' (' + (S.keyMeta.created || '') + ' 발급)' : ''], ['저장 시각', new Date().toLocaleString('ko-KR')]]), '조회조건·요약');
+  var wb = XLSX.utils.book_new(), TITLE = '안전보건 개선제안 현황';
+  wb.Props = { Title:TITLE, Subject:TITLE, CreatedDate:new Date() };
+  var sum = sheet([[TITLE], [], ['항목','값'], ['조회 조건', condText()], ['조회 건수', m.t], ['개선제안', m.p], ['위험성평가', m.r], ['아차사고', m.n], ['처리 완료율(%)', m.rate], ['제출 인원', m.people],
+    ['KEY', S.keyMeta ? S.keyMeta.scope + ' (' + (S.keyMeta.created || '') + ' 발급)' : ''], ['저장 시각', new Date().toLocaleString('ko-KR')]]);
+  sum['!merges'] = [{ s:{ r:0, c:0 }, e:{ r:0, c:1 } }]; delete sum['!autofilter'];
+  XLSX.utils.book_append_sheet(wb, sum, '현황 요약');
   XLSX.utils.book_append_sheet(wb, sheet([[LV[lv]].concat(mHead)].concat(O.map(function(x){ return [x.name].concat(mVals(x)); })).concat([['합계'].concat(mVals(m))])), LV[lv] + '별현황');
   XLSX.utils.book_append_sheet(wb, sheet([['월','개선제안','위험성평가','아차사고','합계']].concat(MR.map(function(x){ return [x.name, x.p, x.r, x.n, x.t]; }))), '월별현황');
   XLSX.utils.book_append_sheet(wb, sheet([['접수번호','유형','상태','사업팀','그룹','팀','파트','장소','사고유형/위험요인','발생일시','제안등급','결정등급','위험정도(제출)','위험정도(반영)','상세내용/상황설명','조치요청사항','재발방지의견','처리의견','식별코드','사번','성명','제출일시','종료일시']]
     .concat(L.map(function(r){ return [r.no, r.type, r.status, r.team, r.site, r.dept, r.part, r.loc, r.cat, r.occ, r.pg, r.fg, r.rl, r.fr, r.detail, r.req, r.prev, r.cmt, r.code, r.empId, r.name, r.at, r.closed]; }))), '접수내역(실명)');
   XLSX.utils.book_append_sheet(wb, sheet([['순위','사번','성명','소속(제출 당시)','개선제안','위험성평가','아차사고','합계','위원회의결','조치·반영완료']]
     .concat(P.map(function(p, i){ return [i + 1, p.empId || '', p.name || p.mask || '', p.unit, p.p, p.r, p.n, p.t, p.comm, p.done]; }))), '제출자별집계');
-  XLSX.writeFile(wb, '안전보건제안_데이터현황(실명)_' + today() + '.xlsx');
+  XLSX.writeFile(wb, TITLE + '_' + today() + '.xlsx');
   toast('데이터 현황 엑셀을 저장했습니다 (시트 5개)');
 }
 function clearAll(){ S.key = null; S.keyMeta = null; KEYSRC = null; SHARED = null; DUP = 0; $('#keyPick').innerHTML = ''; S.rows = []; S.files = []; S.dec.page = 1; S.st.page = 1; S.view = 'dec';
@@ -386,8 +391,11 @@ $('#keyFile').addEventListener('change', async function(){ var f = this.files &&
 /* 파일을 창 아무 곳에나 끌어다 놓으면 KEY / 데이터를 알아서 구분 */
 ['dragover','drop'].forEach(function(ev){ document.addEventListener(ev, function(e){ e.preventDefault(); }); });
 document.addEventListener('drop', function(e){ var fs = e.dataTransfer && e.dataTransfer.files; if (fs && fs.length) openData(fs); });
+[['dzData', function(fs){ openData(fs); }], ['dzKey', function(fs){ setKeySource(fs[0]); }]].forEach(function(z){ var el = $('#' + z[0]);
+  el.addEventListener('dragover', function(e){ e.preventDefault(); el.classList.add('over'); });
+  el.addEventListener('dragleave', function(){ el.classList.remove('over'); });
+  el.addEventListener('drop', function(e){ e.preventDefault(); e.stopPropagation(); el.classList.remove('over'); var fs = e.dataTransfer && e.dataTransfer.files; if (fs && fs.length) z[1](fs); }); });
 $$('.apptab').forEach(function(b){ b.addEventListener('click', function(){
-  if (b.dataset.view === 'stat' && !decrypted()) return toast('먼저 ① 복호화에서 데이터와 KEY를 넣어 주세요. 복호화 후에 조회 · 저장할 수 있습니다', true);
   S.view = b.dataset.view; render(); window.scrollTo(0, 0); }); });
 document.addEventListener('click', function(e){
   var go = e.target.closest('[data-go]'); if (go){ S.view = go.dataset.go; render(); window.scrollTo(0, 0); return; }
