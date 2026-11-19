@@ -31,6 +31,10 @@ body{font-family:'Pretendard','Noto Sans KR','Malgun Gothic','맑은 고딕',san
 .step.done h3::after{content:"완료";margin-left:auto;font-size:11.5px;font-weight:800;color:#16A34A;background:#E3F5EA;padding:2px 8px;border-radius:6px}
 .step .st{font-size:12.5px;color:var(--soft);margin-top:8px;line-height:1.5}
 .step .row{display:flex;gap:6px}
+.pick{font-size:12.5px;color:#0E6B37;margin-top:6px}.pick:empty{display:none}
+details.paste{margin-top:8px;font-size:12.5px;color:var(--soft)}
+details.paste summary{cursor:pointer;font-weight:700}
+details.paste textarea{width:100%;height:70px;margin-top:6px;font:12px Consolas,monospace;padding:8px;border:1px solid #C9D6E5;border-radius:9px;resize:vertical}
 .dim{color:var(--faint)}
 input[type=file]{font-size:12.5px;width:100%;padding:7px;border:1px dashed #B9C6D8;border-radius:9px;background:#F7FAFD}
 input[type=password],input[type=search],input[type=date],select{font:inherit;font-size:13px;padding:8px 10px;border:1px solid #C9D6E5;border-radius:9px;background:#fff;color:var(--ink)}
@@ -102,12 +106,14 @@ td.num{text-align:right;font-family:Consolas,monospace}
    <input type="file" id="dataFile" accept=".xlsx,.xls,.csv" multiple>
    <div class="st">휴대폰·PC에서 <b>[내보내기]</b>로 받은 접수목록 엑셀 · CSV (여러 개 선택 가능, 접수번호 기준 중복 제거)</div></div>
   <div class="step" id="c-key"><h3><span class="n">2</span>KEY 넣기</h3>
-   <input type="file" id="keyFile" accept=".ehskey,application/json">
+   <input type="file" id="keyFile">
+   <div class="pick" id="keyPick"></div>
    <div class="row" style="margin-top:7px"><input type="password" id="keyPw" placeholder="KEY 비밀번호 (본사에서 따로 안내)" autocomplete="off"><button class="btn pri" id="keyBtn">KEY 열기</button></div>
-   <div class="st">본사에서 받은 <b>KEY 파일(.ehskey)</b>과 비밀번호 · 식별코드를 사번 · 성명으로 바꿉니다</div></div>
+   <details class="paste"><summary>KEY 파일 대신 KEY 내용을 받았나요? (메일 본문 등)</summary><textarea id="keyText" placeholder='{"format":"ehs-key", … 로 시작하는 내용을 처음부터 끝까지 붙여넣기' spellcheck="false"></textarea></details>
+   <div class="st">본사에서 받은 <b>KEY_….ehskey 파일</b> + 따로 받은 비밀번호 → 식별코드를 사번 · 성명으로 바꿉니다</div></div>
  </div>
  <div class="notice"><b>개인정보 안내</b> · 이 화면에는 사번과 실명이 표시됩니다. 불러온 내용은 <b>이 창의 메모리에만</b> 있고, 창을 닫으면 사라집니다. 정리 엑셀은 업무 목적으로만 쓰고 사내 PC에만 보관하세요. <b>KEY 파일과 비밀번호는 같은 곳에 적어 두거나 함께 보내지 마세요.</b></div>
- <div id="empty"><b>1 · 2 단계의 파일을 넣으면</b> 여기에 전체 내용이 표시됩니다.<br>순서는 상관없으며, KEY 없이 데이터만 넣어도 내용을 볼 수 있습니다(이 경우 제출자는 식별코드·가린 성명으로 표시).</div>
+ <div id="empty"><b>1 · 2 단계의 파일을 넣으면</b> 여기에 전체 내용이 표시됩니다. 파일을 이 창에 <b>끌어다 놓아도</b> 데이터/KEY를 알아서 구분합니다.<br>순서는 상관없으며, KEY 없이 데이터만 넣어도 내용을 볼 수 있습니다(이 경우 제출자는 식별코드·가린 성명으로 표시).</div>
  <div id="main" class="hidden">
   <div class="kpis" id="kpis"></div>
   <div class="panel">

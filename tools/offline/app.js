@@ -16,14 +16,26 @@ var TYPES = ['개선제안','위험성평가','아차사고'];
 
 /* ---------- 2. KEY 열기 (본사에서 받은 .ehskey + 비밀번호 · 이 PC 메모리에서만 풂) ---------- */
 function ub64(s){ var b = atob(s), u = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
+/* KEY 원본: 파일 선택 · 끌어다 놓기 · 1번 칸에 잘못 넣은 파일 · 붙여넣은 내용 중 하나 */
+var KEYSRC = null;   // { name, text }
+function isKeyText(t){ try { var o = JSON.parse(t); return !!o && (o.format === 'ehs-key' || o.format === 'ehs-matchkey'); } catch(e){ return false; } }
+async function setKeySource(file){
+  var t = ''; try { t = await file.text(); } catch(e){}
+  if (!isKeyText(t)){ toast('"' + file.name + '"은(는) KEY 파일이 아닙니다. 본사에서 받은 KEY_….ehskey 파일을 넣어 주세요', true); return false; }
+  KEYSRC = { name:file.name, text:t };
+  $('#keyPick').innerHTML = '선택한 KEY: <b>' + esc(file.name) + '</b>';
+  if ($('#keyPw').value) openKey(); else { $('#keyPw').focus(); toast('KEY 파일을 넣었습니다. 비밀번호를 입력하고 [KEY 열기]를 누르세요'); }
+  return true;
+}
 async function openKey(){
-  var file = $('#keyFile').files[0], pw = $('#keyPw').value;
-  if (!file) return toast('본사에서 받은 KEY 파일(.ehskey)을 선택해주세요', true);
+  var pw = $('#keyPw').value, pasted = ($('#keyText') && $('#keyText').value || '').trim();
+  if (!KEYSRC && pasted){ if (!isKeyText(pasted)) return toast('붙여넣은 내용이 KEY가 아닙니다. 본사에서 받은 KEY 내용을 처음부터 끝까지 그대로 붙여넣어 주세요', true); KEYSRC = { name:'붙여넣은 KEY', text:pasted }; }
+  if (!KEYSRC) return toast('KEY 파일을 아직 넣지 않았습니다. 2번 칸의 [파일 선택]으로 KEY_….ehskey를 고르거나, 파일을 이 창에 끌어다 놓으세요', true);
   if (!pw) return toast('KEY 비밀번호를 입력해주세요', true);
   if (!window.crypto || !crypto.subtle) return toast('이 브라우저는 암호 해제를 지원하지 않습니다. Chrome 또는 Edge로 열어주세요', true);
   var btn = $('#keyBtn'); btn.disabled = true; btn.textContent = '여는 중…';
   try {
-    var pack = JSON.parse(await file.text());
+    var pack = JSON.parse(KEYSRC.text);
     if (pack.format !== 'ehs-key' && pack.format !== 'ehs-matchkey') throw new Error('KEY 파일이 아닙니다');
     var enc = new TextEncoder();
     var base = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveKey']);
@@ -35,7 +47,7 @@ async function openKey(){
     if (obj.expires && new Date(obj.expires + 'T23:59:59') < new Date()) throw new Error('유효기간(' + obj.expires + ')이 지난 KEY입니다. 본사에 새 KEY를 요청하세요');
     var m = {}; Object.keys(obj.map || {}).forEach(function(c){ var v = obj.map[c]; m[c] = Array.isArray(v) ? { id:v[0], name:v[1] || '' } : { id:v, name:'' }; });
     S.key = m; S.keyMeta = { scope:obj.scope, created:obj.created, count:obj.count, expires:obj.expires };
-    $('#keyPw').value = ''; obj = null;
+    $('#keyPw').value = ''; obj = null; KEYSRC = null; if ($('#keyText')) $('#keyText').value = '';
     setDone('key', '<b>' + esc(S.keyMeta.scope) + '</b> · ' + Number(S.keyMeta.count).toLocaleString() + '명 · ' + esc(S.keyMeta.created) + ' 발급' + (S.keyMeta.expires ? ' · <b>' + esc(S.keyMeta.expires) + '</b>까지 사용' : ''));
     rematch();
   } catch(e){ toast(e.message || 'KEY를 열 수 없습니다', true); }
@@ -54,8 +66,11 @@ function colOf(head, names){ return head.findIndex(function(h){ return names.ind
 var D_COLS = { no:['접수번호'], type:['유형'], status:['상태'], team:['사업팀'], site:['그룹'], dept:['팀'], part:['파트'], loc:['장소'], pg:['제안등급'], fg:['결정등급'],
   rl:['위험정도(제출)'], fr:['위험정도(반영)'], cat:['사고유형/위험요인','사고유형'], occ:['발생일시'], detail:['상세내용/상황설명','상세내용'], req:['조치요청사항'], prev:['재발방지의견'],
   cmt:['처리의견'], code:['제출자식별코드','식별코드'], mask:['제출자성명(마스킹)','성명(마스킹)'], at:['제출일시'], closed:['종료일시'], empId:['사번'], realName:['성명(실명)'] };
-async function openData(){
-  var files = Array.prototype.slice.call($('#dataFile').files); if (!files.length) return;
+async function openData(list){
+  var files = Array.prototype.slice.call(list && list.length ? list : $('#dataFile').files); if (!files.length) return;
+  var keys = files.filter(function(f){ return /\.(ehskey|json|txt)$/i.test(f.name); });
+  if (keys.length){ files = files.filter(function(f){ return keys.indexOf(f) < 0; }); await setKeySource(keys[0]); }
+  if (!files.length){ $('#dataFile').value = ''; return; }
   var added = 0, dup = 0, bad = [];
   for (var fi = 0; fi < files.length; fi++){
     var file = files[fi];
@@ -185,13 +200,17 @@ function saveXlsx(){
   XLSX.writeFile(wb, '안전보건제안_정리(실명)_' + today() + '.xlsx');
   toast('정리 엑셀을 저장했습니다');
 }
-function clearAll(){ S.key = null; S.keyMeta = null; S.rows = []; S.files = []; S.page = 1;
+function clearAll(){ S.key = null; S.keyMeta = null; KEYSRC = null; $('#keyPick').innerHTML = ''; S.rows = []; S.files = []; S.page = 1;
   $$('.step').forEach(function(c){ c.classList.remove('done'); $('.st', c).innerHTML = c.dataset.ph; }); render(); toast('불러온 내용을 모두 지웠습니다'); }
 
 /* ---------- 이벤트 ---------- */
 $('#keyBtn').addEventListener('click', openKey);
 $('#keyPw').addEventListener('keydown', function(e){ if (e.key === 'Enter') openKey(); });
-$('#dataFile').addEventListener('change', openData);
+$('#dataFile').addEventListener('change', function(){ openData(); });
+$('#keyFile').addEventListener('change', async function(){ var f = this.files && this.files[0]; this.value = ''; if (f) await setKeySource(f); });
+/* 파일을 창 아무 곳에나 끌어다 놓으면 KEY / 데이터를 알아서 구분 */
+['dragover','drop'].forEach(function(ev){ document.addEventListener(ev, function(e){ e.preventDefault(); }); });
+document.addEventListener('drop', function(e){ var fs = e.dataTransfer && e.dataTransfer.files; if (fs && fs.length) openData(fs); });
 $('#saveBtn').addEventListener('click', saveXlsx);
 $('#clearBtn').addEventListener('click', clearAll);
 $$('.tabs button').forEach(function(b){ b.addEventListener('click', function(){ S.tab = b.dataset.tab; render(); }); });
