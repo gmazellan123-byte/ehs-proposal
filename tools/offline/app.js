@@ -99,8 +99,12 @@ async function resolveShared(){
 /* ---------- 엑셀 · 텍스트 읽기 ---------- */
 async function readSheet(file){
   if (/\.(txt|tsv)$/i.test(file.name)) return parseText(await file.text());
-  var wb = XLSX.read(await file.arrayBuffer(), { type:'array', raw:true });
-  return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1, raw:false, defval:'' });
+  var wb = XLSX.read(await file.arrayBuffer(), { type:'array', raw:true }), first = null;
+  for (var i = 0; i < wb.SheetNames.length; i++){
+    var aoa = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[i]], { header:1, raw:false, defval:'' });
+    if (!first) first = aoa; if (findHeader(aoa, D_COLS.no) > -1) return aoa;
+  }
+  return first || [];
 }
 /* 붙여넣은 내용: 엑셀에서 복사(탭 구분) · 메모장으로 연 CSV(쉼표 구분) 모두 처리 */
 function parseText(text){
@@ -116,25 +120,42 @@ function colOf(head, names){ return head.findIndex(function(h){ return names.ind
 /* ---------- 1. 받은 데이터 (휴대폰·PC에서 내보낸 접수목록 · 여러 개 가능) ---------- */
 var D_COLS = { no:['접수번호'], type:['유형'], status:['상태'], team:['사업팀'], site:['그룹'], dept:['팀'], part:['파트'], loc:['장소'], pg:['제안등급'], fg:['결정등급'],
   rl:['위험정도(제출)'], fr:['위험정도(반영)'], cat:['사고유형/위험요인','사고유형'], occ:['발생일시'], detail:['상세내용/상황설명','상세내용'], req:['조치요청사항'], prev:['재발방지의견'],
-  cmt:['처리의견'], code:['제출자식별코드','식별코드'], lcode:['대조코드'], mask:['제출자성명(마스킹)','성명(마스킹)'], at:['제출일시'], closed:['종료일시'], empId:['사번'], realName:['성명(실명)'] };
+  cmt:['처리의견'], code:['제출자식별코드','식별코드'], lcode:['대조코드'], mask:['제출자성명(마스킹)','성명(마스킹)'], at:['제출일시'], closed:['종료일시'], empId:['사번'], realName:['성명(실명)','성명'] };
 function ingest(aoa){
   var hi = findHeader(aoa, D_COLS.no); if (hi < 0) return null;
   var head = aoa[hi].map(low), c = {}; Object.keys(D_COLS).forEach(function(k){ c[k] = colOf(head, D_COLS[k]); });
-  var seen = {}, added = 0, dup = 0; S.rows.forEach(function(r){ seen[r.no] = 1; });
+  var rows = [];
   aoa.slice(hi + 1).forEach(function(r){
     var g = function(k){ return c[k] > -1 ? String(r[c[k]] == null ? '' : r[c[k]]).trim() : ''; };
-    var no = g('no'); if (!no) return; if (seen[no]){ dup++; return; } seen[no] = 1;
-    S.rows.push({ no:no, type:g('type'), status:g('status'), team:g('team'), site:g('site'), dept:g('dept'), part:g('part'), loc:g('loc'),
+    var no = g('no'); if (!no) return;
+    rows.push({ no:no, type:g('type'), status:g('status'), team:g('team'), site:g('site'), dept:g('dept'), part:g('part'), loc:g('loc'),
       pg:g('pg'), fg:g('fg'), rl:g('rl'), fr:g('fr'), cat:g('cat'), occ:g('occ'), detail:g('detail'), req:g('req'), prev:g('prev'), cmt:g('cmt'),
       code:g('code').toUpperCase(), lcode:g('lcode').toUpperCase(), mask:g('mask'), at:g('at'), closed:g('closed'), fileId:g('empId'), fileName:g('realName') });
-    added++;
   });
-  return { added:added, dup:dup };
+  return mergeRows(rows);
+}
+/* 머지: 여러 관리자 · 여러 날짜의 데이터를 접수번호 기준으로 하나로 합침
+   같은 건이면 처리가 더 진행된 쪽(검토중 < 결과)의 상태 · 등급 · 의견을 쓰고, 빈 칸은 서로 채움 */
+var M_FIELDS = ['type','status','team','site','dept','part','loc','pg','fg','rl','fr','cat','occ','detail','req','prev','cmt','code','lcode','mask','at','closed','fileId','fileName'];
+function stRank(s){ return /접수/.test(s || '') ? 0 : /검토/.test(s || '') ? 1 : s ? 2 : -1; }
+function mergeRows(list){
+  var idx = {}, added = 0, dup = 0, upd = 0; S.rows.forEach(function(r){ idx[r.no] = r; });
+  list.forEach(function(n){
+    var o = idx[n.no];
+    if (!o){ idx[n.no] = n; S.rows.push(n); added++; return; }
+    dup++; var ch = false;
+    var newer = stRank(n.status) > stRank(o.status) || (stRank(n.status) === stRank(o.status) && (n.closed || '') > (o.closed || ''));
+    if (newer) ['status','fg','fr','cmt','closed'].forEach(function(k){ if (n[k] && n[k] !== o[k]){ o[k] = n[k]; ch = true; } });
+    M_FIELDS.forEach(function(k){ if (!o[k] && n[k]){ o[k] = n[k]; ch = true; } });
+    if (ch) upd++;
+  });
+  if (added || upd) markDirty();
+  return { added:added, dup:dup, upd:upd };
 }
 var DUP = 0;
 async function finishData(){
   S.rows.sort(function(a, b){ return a.at < b.at ? 1 : a.at > b.at ? -1 : 0; });
-  setDone('data', '<b>' + S.rows.length.toLocaleString() + '건</b> · ' + S.files.length + '개 묶음' + (DUP ? ' <span class="dim">(중복 ' + DUP + '건 제외)</span>' : ''));
+  setDone('data', '<b>' + S.rows.length.toLocaleString() + '건</b> · ' + S.files.length + '개 묶음' + (DUP ? ' <span class="dim">(같은 접수번호 ' + DUP + '건은 합침)</span>' : ''));
   if (SHARED) await resolveShared(); else rematch();
 }
 async function openData(list){
@@ -144,22 +165,25 @@ async function openData(list){
   for (var fi = 0; fi < files.length; fi++){
     var file = files[fi];
     try {
-      if (/\.(ehskey|json)$/i.test(file.name)){ await setKeySource(file); continue; }
-      if (/\.(txt|tsv)$/i.test(file.name)){ var tx = await file.text(); if (isKeyText(tx)){ await setKeySource(file); continue; } }
+      if (/\.(ehskey|json|txt|tsv)$/i.test(file.name)){ var tx = await file.text();
+        if (isKeyText(tx)){ await setKeySource(file); continue; }
+        if (isBackupText(tx)){ if (await loadBackup(tx, file.name)) any = true; continue; }
+        if (/\.(ehskey|json)$/i.test(file.name)){ bad.push(file.name); continue; } }
       var res = ingest(await readSheet(file));
       if (!res){ bad.push(file.name); continue; }
       DUP += res.dup; S.files.push(file.name); any = true;
     } catch(e){ bad.push(file.name); }
   }
-  if (bad.length) toast('접수목록 형식이 아닌 파일은 건너뛰었습니다: ' + bad.join(', '), true);
+  if (bad.length) toast('접수목록 · 백업 형식이 아닌 파일은 건너뛰었습니다: ' + bad.join(', '), true);
   if (any) await finishData();
 }
-async function pasteData(){
-  var ta = $('#dataText'), text = ta.value.trim(); if (!text) return toast('붙여넣은 내용이 없습니다. 엑셀에서 전체 선택(Ctrl+A) → 복사(Ctrl+C) 후 이 칸에 붙여넣기(Ctrl+V) 하세요', true);
+async function pasteData(taSel){
+  var ta = $(typeof taSel === 'string' ? taSel : '#dataText'), text = ta.value.trim(); if (!text) return toast('붙여넣은 내용이 없습니다. 엑셀에서 전체 선택(Ctrl+A) → 복사(Ctrl+C) 후 이 칸에 붙여넣기(Ctrl+V) 하세요', true);
   if (isKeyText(text)){ KEYSRC = { name:'붙여넣은 KEY', text:text }; ta.value = ''; $('#keyPick').innerHTML = '선택한 KEY: <b>붙여넣은 KEY</b>'; $('#keyPw').focus(); return toast('KEY 내용이라 2번 칸으로 옮겼습니다. 비밀번호를 입력하고 [KEY 열기]를 누르세요'); }
+  if (isBackupText(text)){ if (await loadBackup(text, '붙여넣은 백업')){ ta.value = ''; await finishData(); } return; }
   var res = null; try { res = ingest(parseText(text)); } catch(e){}
   if (!res) return toast('접수목록 내용을 찾지 못했습니다. 첫 줄(머리글)에 "접수번호"가 포함되도록 전체를 복사해 주세요', true);
-  ta.value = ''; DUP += res.dup; S.files.push('붙여넣기'); toast(res.added.toLocaleString() + '건을 넣었습니다');
+  ta.value = ''; DUP += res.dup; S.files.push('붙여넣기'); toast(res.added.toLocaleString() + '건 추가' + (res.dup ? ' · 같은 접수번호 ' + res.dup + '건 합침' : ''));
   await finishData();
 }
 
@@ -170,10 +194,10 @@ function rematch(){
     r.empId = k ? k.id : (r.fileId || ''); r.name = k ? k.name : (r.fileName || '');
     r.matched = !!(r.empId && r.name);
   });
-  render();
+  markDirty(); render();
 }
 function setDone(k, html){ var card = $('#c-' + k); card.classList.add('done'); $('.st', card).innerHTML = html; }
-function decrypted(){ return !!S.key && S.rows.some(function(r){ return r.matched; }); }
+function decrypted(){ return S.rows.some(function(r){ return r.matched; }); }
 
 /* ---------- 공통 ---------- */
 function opts(sel, vals, label, cur){ sel.innerHTML = '<option value="all">' + label + ' 전체</option>' + vals.map(function(v){ return '<option' + (v === cur ? ' selected' : '') + '>' + esc(v) + '</option>'; }).join(''); if (cur !== 'all' && vals.indexOf(cur) < 0) sel.value = 'all'; }
@@ -212,8 +236,9 @@ function setSort(t, k){ var cur = sortState(t), nx = cur && cur.k === k ? (cur.d
 function render(){
   var dec = decrypted();
   $$('.apptab').forEach(function(b){ b.classList.toggle('on', b.dataset.view === S.view); });
-  $('#vDec').classList.toggle('hidden', S.view !== 'dec'); $('#vStat').classList.toggle('hidden', S.view !== 'stat');
-  if (S.view === 'dec') renderDec(); else renderStat();
+  $('#vDec').classList.toggle('hidden', S.view !== 'dec'); $('#vStat').classList.toggle('hidden', S.view !== 'stat'); $('#vCom').classList.toggle('hidden', S.view !== 'com');
+  storeUi();
+  if (S.view === 'dec') renderDec(); else if (S.view === 'stat') renderStat(); else renderCom();
 }
 
 /* ---------- ① 복호화 탭: 넣은 데이터 확인 (저장 없음) ---------- */
@@ -379,8 +404,220 @@ function saveXlsx(){
   XLSX.writeFile(wb, TITLE + '_' + today() + '.xlsx');
   toast('데이터 현황 엑셀을 저장했습니다 (시트 5개)');
 }
-function clearAll(){ S.key = null; S.keyMeta = null; KEYSRC = null; SHARED = null; DUP = 0; $('#keyPick').innerHTML = ''; S.rows = []; S.files = []; S.dec.page = 1; S.st.page = 1; S.view = 'dec';
+function clearAll(){ STORE.on = false; STORE.pw = null; S.com.sel = {}; S.key = null; S.keyMeta = null; KEYSRC = null; SHARED = null; DUP = 0; $('#keyPick').innerHTML = ''; S.rows = []; S.files = []; S.dec.page = 1; S.st.page = 1; S.view = 'dec';
   $$('.step').forEach(function(c){ c.classList.remove('done'); $('.st', c).innerHTML = c.dataset.ph; }); render(); toast('불러온 내용을 모두 지웠습니다'); }
+
+
+/* ===================== 백업 · 브라우저 저장 ===================== */
+function nowText(){ var d = new Date(); return d.getFullYear() + '.' + pad(d.getMonth() + 1) + '.' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+function B64(buf){ var u = new Uint8Array(buf), s = ''; for (var i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); }
+function rowOut(r){ return { no:r.no, type:r.type, status:r.status, team:r.team, site:r.site, dept:r.dept, part:r.part, loc:r.loc, pg:r.pg, fg:r.fg, rl:r.rl, fr:r.fr, cat:r.cat, occ:r.occ,
+  detail:r.detail, req:r.req, prev:r.prev, cmt:r.cmt, code:r.code, lcode:r.lcode, mask:r.mask, at:r.at, closed:r.closed, empId:r.empId || r.fileId || '', name:r.name || r.fileName || '' }; }
+function rowIn(o){ var r = { no:String(o.no) }; M_FIELDS.forEach(function(k){ r[k] = o[k] == null ? '' : String(o[k]); }); r.fileId = o.empId || ''; r.fileName = o.name || ''; return r; }
+function isBackupText(t){ try { var o = JSON.parse(t); return !!o && o.format === 'ehs-offline-backup'; } catch(e){ return false; } }
+async function pwKey(pw, salt, iter){ var base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name:'PBKDF2', hash:'SHA-256', salt:salt, iterations:iter }, base, { name:'AES-GCM', length:256 }, false, ['encrypt', 'decrypt']); }
+/* 백업 묶음: 비밀번호가 있으면 AES-256-GCM으로 잠금 */
+async function packRows(rows, pw){
+  var body = { rows:rows.map(rowOut), keyMeta:S.keyMeta || null };
+  var p = { format:'ehs-offline-backup', v:1, saved:nowText(), count:rows.length, enc:!!pw };
+  if (!pw){ p.data = body; return p; }
+  var salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12)), iter = 200000;
+  var ct = await crypto.subtle.encrypt({ name:'AES-GCM', iv:iv }, await pwKey(pw, salt, iter), new TextEncoder().encode(JSON.stringify(body)));
+  p.kdf = { iter:iter, salt:B64(salt) }; p.iv = B64(iv); p.ct = B64(ct); return p;
+}
+async function unpack(p, pw){
+  if (!p.enc) return p.data;
+  var pt = await crypto.subtle.decrypt({ name:'AES-GCM', iv:ub64(p.iv) }, await pwKey(pw, ub64(p.kdf.salt), p.kdf.iter), ub64(p.ct));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+async function loadBackup(text, name){
+  var p = JSON.parse(text), data;
+  try {
+    if (p.enc){ var pw = await askPw('백업 열기', '"' + name + '" (' + (p.saved || '') + ' 저장 · ' + (p.count || 0) + '건)은 비밀번호로 잠겨 있습니다.', false); if (pw == null) return false; data = await unpack(p, pw); }
+    else data = p.data;
+  } catch(e){ toast('비밀번호가 올바르지 않거나 백업 파일이 손상되었습니다', true); return false; }
+  var res = mergeRows((data.rows || []).filter(function(o){ return o && o.no; }).map(rowIn));
+  if (data.keyMeta && !S.keyMeta) S.keyMeta = data.keyMeta;
+  DUP += res.dup; S.files.push(name); toast(name + ' · ' + res.added.toLocaleString() + '건 추가' + (res.dup ? ' · 같은 접수번호 ' + res.dup + '건 합침' : ''));
+  return true;
+}
+var BK_HEAD = ['접수번호','유형','상태','사업팀','그룹','팀','파트','장소','제안등급','결정등급','위험정도(제출)','위험정도(반영)','사고유형/위험요인','발생일시','상세내용/상황설명','조치요청사항','재발방지의견','처리의견','제출자식별코드','대조코드','제출자성명(마스킹)','제출일시','종료일시','사번','성명(실명)'];
+function bkRow(r){ var o = rowOut(r); return [o.no, o.type, o.status, o.team, o.site, o.dept, o.part, o.loc, o.pg, o.fg, o.rl, o.fr, o.cat, o.occ, o.detail, o.req, o.prev, o.cmt, o.code, o.lcode, o.mask, o.at, o.closed, o.empId, o.name]; }
+function download(name, blob){ var a = document.createElement('a'), u = URL.createObjectURL(blob); a.href = u; a.download = name; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(u); a.remove(); }, 3000); }
+async function exportBackup(kind){
+  if (!S.rows.length) return toast('내보낼 데이터가 없습니다', true);
+  var d = new Date(), base = '안전보건 개선제안 현황_백업_' + today() + '_' + pad(d.getHours()) + pad(d.getMinutes());
+  if (kind === 'json'){ var pw = $('#bkPw').value; if (pw && pw.length < 6) return toast('백업 비밀번호는 6자 이상으로 정해 주세요', true);
+    download(base + '.json', new Blob([JSON.stringify(await packRows(S.rows, pw || null))], { type:'application/json' })); $('#bkPw').value = ''; }
+  if (kind === 'xlsx'){ var wb = XLSX.utils.book_new(); wb.Props = { Title:'안전보건 개선제안 현황 백업' }; XLSX.utils.book_append_sheet(wb, sheet([BK_HEAD].concat(S.rows.map(bkRow))), '백업'); XLSX.writeFile(wb, base + '.xlsx'); }
+  if (kind === 'txt'){ var tsv = [BK_HEAD].concat(S.rows.map(bkRow)).map(function(r){ return r.map(function(v){ v = String(v == null ? '' : v); return /[\t\n\r"]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join('\t'); }).join('\r\n');
+    download(base + '.txt', new Blob(['﻿' + tsv], { type:'text/plain;charset=utf-8' })); }
+  $('#bkModal').classList.remove('open'); toast('백업을 내보냈습니다 (' + S.rows.length.toLocaleString() + '건)');
+}
+
+/* 브라우저 저장: 이 PC의 브라우저 저장소(IndexedDB)에 '저장 비밀번호'로 암호화해 보관 · 켜 두면 3분마다 자동 저장 */
+var STORE = { on:false, pw:null, last:null, dirty:false, timer:null, saved:null };
+function markDirty(){ STORE.dirty = true; }
+var IDB = null;
+function idb(){ return new Promise(function(res, rej){ if (IDB) return res(IDB); try { var q = indexedDB.open('ehs-offline', 1);
+  q.onupgradeneeded = function(){ q.result.createObjectStore('kv'); }; q.onsuccess = function(){ IDB = q.result; res(IDB); }; q.onerror = function(){ rej(q.error); }; } catch(e){ rej(e); } }); }
+async function stPut(v){
+  try { var db = await idb(); await new Promise(function(res, rej){ var t = db.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, 'data'); t.oncomplete = res; t.onerror = function(){ rej(t.error); }; }); return true; }
+  catch(e){ try { localStorage.setItem('ehs-offline-data', JSON.stringify(v)); return true; } catch(_){ return false; } } }
+async function stGet(){
+  try { var db = await idb(); var v = await new Promise(function(res, rej){ var t = db.transaction('kv', 'readonly'), q = t.objectStore('kv').get('data'); q.onsuccess = function(){ res(q.result); }; q.onerror = function(){ rej(q.error); }; }); if (v) return v; } catch(e){}
+  try { var x = localStorage.getItem('ehs-offline-data'); return x ? JSON.parse(x) : null; } catch(_){ return null; } }
+async function stDel(){
+  try { var db = await idb(); await new Promise(function(res){ var t = db.transaction('kv', 'readwrite'); t.objectStore('kv').delete('data'); t.oncomplete = res; t.onerror = res; }); } catch(e){}
+  try { localStorage.removeItem('ehs-offline-data'); } catch(_){} }
+async function saveNow(silent){
+  if (!STORE.on || !STORE.pw || !S.rows.length) return;
+  if (await stPut(await packRows(S.rows, STORE.pw))){ STORE.last = nowText(); STORE.dirty = false; STORE.saved = { saved:STORE.last, count:S.rows.length }; storeUi(); if (!silent) toast('브라우저에 저장했습니다 (' + S.rows.length.toLocaleString() + '건)'); }
+  else toast('브라우저 저장에 실패했습니다. [백업 내보내기]를 이용해 주세요', true);
+}
+function startAuto(){ if (!STORE.timer) STORE.timer = setInterval(function(){ if (STORE.on && STORE.dirty) saveNow(true); }, 180000); }
+async function toggleStore(){
+  if (STORE.on){ await saveNow(true); STORE.on = false; storeUi(); return toast('자동 저장을 껐습니다. 저장된 데이터는 남아 있습니다'); }
+  if (!S.rows.length) return toast('저장할 데이터가 없습니다. 먼저 데이터를 넣어 주세요', true);
+  var pw = STORE.pw || await askPw('브라우저 저장 켜기', '이 PC 브라우저에 데이터를 <b>암호화해서</b> 저장하고, 켜 두는 동안 <b>3분마다 자동 저장</b>합니다. 다음에 열 때 이 저장 비밀번호가 필요합니다.', true);
+  if (pw == null) return;
+  STORE.pw = pw; STORE.on = true; startAuto(); await saveNow();
+}
+async function restoreStore(){
+  var p = await stGet(); if (!p) return toast('저장된 데이터가 없습니다', true);
+  var pw = await askPw('브라우저 저장 불러오기', p.saved + ' 저장 · ' + (p.count || 0) + '건 · 저장할 때 정한 비밀번호를 입력하세요.', false); if (pw == null) return;
+  var data; try { data = await unpack(p, pw); } catch(e){ return toast('저장 비밀번호가 올바르지 않습니다', true); }
+  var res = mergeRows((data.rows || []).map(rowIn)); if (data.keyMeta && !S.keyMeta) S.keyMeta = data.keyMeta;
+  DUP += res.dup; S.files.push('브라우저 저장(' + p.saved + ')');
+  STORE.pw = pw; STORE.on = true; STORE.last = p.saved; startAuto(); STORE.dirty = false;
+  toast('저장된 데이터 ' + res.added.toLocaleString() + '건을 불러왔습니다' + (res.dup ? ' · ' + res.dup + '건 합침' : '') + ' · 자동 저장 켜짐');
+  await finishData();
+}
+async function deleteStore(){
+  if (!confirm('이 PC 브라우저에 저장된 데이터를 삭제할까요? (지금 화면의 데이터와 백업 파일은 그대로입니다)')) return;
+  await stDel(); STORE.on = false; STORE.saved = null; STORE.last = null; storeUi(); toast('브라우저 저장 데이터를 삭제했습니다');
+}
+function storeUi(){
+  var b = $('#storeBtn'); if (b){ b.classList.toggle('on', STORE.on); b.innerHTML = STORE.on ? '💾 자동 저장 켜짐' + (STORE.last ? ' · ' + STORE.last.slice(11) : '') : '💾 브라우저 저장'; }
+  var side = $('#sideStore'); if (side) side.innerHTML = STORE.on ? '<i class="on"></i>자동 저장 켜짐 · 3분마다' + (STORE.last ? '<br><small>마지막 ' + esc(STORE.last) + '</small>' : '') : STORE.saved ? '<i></i>저장된 데이터 있음' : '<i></i>브라우저 저장 꺼짐';
+  var bn = STORE.saved && !STORE.on ? '<div class="savedbar">💾 이 브라우저에 저장된 데이터 <b>' + (STORE.saved.count || 0).toLocaleString() + '건</b> (' + esc(STORE.saved.saved || '') + ' 저장)<span class="r"><button class="btn pri sm" data-store="load">불러오기</button><button class="btn sm" data-store="del">저장 삭제</button></span></div>' : '';
+  $$('.savedSlot').forEach(function(el){ el.innerHTML = bn; });
+}
+/* 비밀번호 입력 창 */
+function askPw(title, desc, confirmMode){
+  return new Promise(function(resolve){
+    var m = $('#pwModal'); $('#pwTitle').textContent = title; $('#pwDesc').innerHTML = desc; $('#pwIn').value = ''; $('#pwIn2').value = '';
+    $('#pwIn2').classList.toggle('hidden', !confirmMode); m.classList.add('open'); setTimeout(function(){ $('#pwIn').focus(); }, 50);
+    var done = function(v){ m.classList.remove('open'); $('#pwOk').onclick = $('#pwCancel').onclick = null; $('#pwIn').onkeydown = $('#pwIn2').onkeydown = null; resolve(v); };
+    var ok = function(){ var a = $('#pwIn').value;
+      if (a.length < 6) return toast('비밀번호는 6자 이상으로 입력해 주세요', true);
+      if (confirmMode && a !== $('#pwIn2').value) return toast('두 비밀번호가 다릅니다', true);
+      done(a); };
+    $('#pwOk').onclick = ok; $('#pwCancel').onclick = function(){ done(null); };
+    $('#pwIn').onkeydown = $('#pwIn2').onkeydown = function(e){ if (e.key === 'Enter') ok(); if (e.key === 'Escape') done(null); };
+  });
+}
+
+/* ===================== 인쇄 (보고서 · 의안) ===================== */
+var LOGO = '';
+function printWith(html, landscape, title){
+  $('#pageStyle').textContent = '@page{size:A4 ' + (landscape ? 'landscape' : 'portrait') + ';margin:' + (landscape ? '0' : '12mm 11mm') + '}';
+  $('#printArea').innerHTML = html; $('#printArea').className = landscape ? 'land' : 'port';
+  document.body.classList.add('printing'); var old = document.title; document.title = title || old;
+  setTimeout(function(){ window.print(); setTimeout(function(){ document.title = old; }, 500); }, 80);
+}
+window.addEventListener('afterprint', function(){ document.body.classList.remove('printing'); $('#printArea').innerHTML = ''; });
+
+/* 데이터 현황 보고서 (A4 세로) */
+function reportHtml(){
+  var L = statRows(), m = agg(L), lv = autoLevel(L), O = sorted(orgRows(L, lv), { k:'t', dir:-1 }, mGet), MR = monthRows(L), maxT = Math.max.apply(null, MR.map(function(x){ return x.t; }).concat([1]));
+  var ST = {}; L.forEach(function(r){ var t = r.type || '-', st = r.status || '-'; (ST[t] = ST[t] || {})[st] = (ST[t][st] || 0) + 1; });
+  var sts = uniq(L, 'status');
+  var LS = L.slice().sort(function(a, b){ return a.at < b.at ? 1 : -1; });
+  return '<div class="rp">' +
+    '<div class="rp-h">' + (LOGO ? '<img src="' + LOGO + '">' : '') + '<div><h1>안전보건 개선제안 현황</h1><p>' + esc(condText()) + '</p></div><div class="rp-d">출력 ' + esc(nowText()) + '</div></div>' +
+    '<div class="rp-k"><div><span>조회 건수</span><b>' + m.t + '</b></div><div class="b"><span>개선제안</span><b>' + m.p + '</b></div><div class="t"><span>위험성평가</span><b>' + m.r + '</b></div><div class="o"><span>아차사고</span><b>' + m.n + '</b></div><div class="g"><span>처리 완료율</span><b>' + m.rate + '%</b></div><div><span>제출 인원</span><b>' + m.people + '</b></div></div>' +
+    '<h2>' + LV[lv] + '별 현황</h2><table><thead><tr><th>' + LV[lv] + '</th><th>개선제안</th><th>위험성평가</th><th>아차사고</th><th>합계</th><th>처리대기</th><th>완료</th><th>반려</th><th>완료율</th></tr></thead><tbody>' +
+      O.map(function(x){ return '<tr><td class="l">' + esc(x.name) + '</td><td>' + x.p + '</td><td>' + x.r + '</td><td>' + x.n + '</td><td><b>' + x.t + '</b></td><td>' + x.open + '</td><td>' + x.done + '</td><td>' + x.rej + '</td><td>' + x.rate + '%</td></tr>'; }).join('') +
+      '<tr class="tot"><td class="l">합계</td><td>' + m.p + '</td><td>' + m.r + '</td><td>' + m.n + '</td><td><b>' + m.t + '</b></td><td>' + m.open + '</td><td>' + m.done + '</td><td>' + m.rej + '</td><td>' + m.rate + '%</td></tr></tbody></table>' +
+    '<h2>월별 현황</h2><table><thead><tr><th>월</th><th>개선제안</th><th>위험성평가</th><th>아차사고</th><th>합계</th><th style="width:38%">추이</th></tr></thead><tbody>' +
+      MR.map(function(x){ return '<tr><td>' + x.name + '</td><td>' + x.p + '</td><td>' + x.r + '</td><td>' + x.n + '</td><td><b>' + x.t + '</b></td><td><div class="sbar"><i class="b" style="width:' + (x.p / maxT * 100) + '%"></i><i class="t" style="width:' + (x.r / maxT * 100) + '%"></i><i class="o" style="width:' + (x.n / maxT * 100) + '%"></i></div></td></tr>'; }).join('') + '</tbody></table>' +
+    '<h2>유형별 처리 상태</h2><table><thead><tr><th>유형</th>' + sts.map(function(x){ return '<th>' + esc(x) + '</th>'; }).join('') + '<th>합계</th></tr></thead><tbody>' +
+      Object.keys(ST).map(function(t){ var tt = 0; return '<tr><td class="l">' + esc(t) + '</td>' + sts.map(function(x){ var v = ST[t][x] || 0; tt += v; return '<td>' + v + '</td>'; }).join('') + '<td><b>' + tt + '</b></td></tr>'; }).join('') + '</tbody></table>' +
+    '<h2>접수 내역 <small>(' + LS.length + '건' + (LS.length > 300 ? ', 최근 300건 표시' : '') + ')</small></h2><table class="list"><thead><tr><th>접수번호</th><th>유형</th><th>소속</th><th>장소</th><th>내용</th><th>상태</th><th>제출자</th><th>제출일</th></tr></thead><tbody>' +
+      LS.slice(0, 300).map(function(r){ return '<tr><td>' + esc(r.no) + '</td><td>' + esc(r.type) + '</td><td class="l">' + esc([r.site, r.dept, r.part].filter(Boolean).join(' › ') || r.team) + '</td><td class="l">' + esc(r.loc) + '</td><td class="l">' + esc((r.detail || '').slice(0, 60)) + ((r.detail || '').length > 60 ? '…' : '') + '</td><td>' + esc(r.status) + '</td><td>' + esc(r.name || r.mask || '') + '</td><td>' + esc((r.at || '').slice(0, 10)) + '</td></tr>'; }).join('') + '</tbody></table>' +
+    '<div class="rp-f">㈜휴먼티에스에스 · 안전보건 제안 시스템 · 소속은 제출 당시(최초 등록 부서) 기준 · 대외비</div></div>';
+}
+function printReport(){
+  if (!statRows().length) return toast('조회 조건에 맞는 데이터가 없습니다', true);
+  printWith(reportHtml(), false, '안전보건 개선제안 현황_' + today());
+  toast('인쇄 창에서 "PDF로 저장"을 고르면 PDF 파일로 저장됩니다');
+}
+
+/* ===================== ③ 산안위 의결 ===================== */
+S.com = { year:0, q:'all', basis:'closed', per:2, names:true, sel:{} };
+function comBase(){ return S.rows.filter(function(r){ return r.type === '개선제안' && /위원회|의결/.test(r.status || ''); }); }
+function qOf(r){ var d = S.com.basis === 'closed' ? (r.closed || r.at) : r.at, m = /^(\d{4})[.\-\/](\d{1,2})/.exec(d || ''); return m ? { y:+m[1], q:Math.ceil(+m[2] / 3), d:d } : null; }
+function comRows(){ var c = S.com; return comBase().filter(function(r){ var k = qOf(r); return k && k.y === c.year && (c.q === 'all' || k.q === +c.q); })
+  .sort(function(a, b){ var x = qOf(a).d, y = qOf(b).d; return x < y ? -1 : x > y ? 1 : cmp(a.no, b.no); }); }
+function comTitle(){ var c = S.com; return c.year + '년 ' + (c.q === 'all' ? '' : c.q + '분기 ') + '산업안전보건위원회'; }
+function gradeOf(r){ return r.fg || r.pg || '-'; }
+function renderCom(){
+  var B = comBase(), c = S.com, years = {}; B.forEach(function(r){ var k = qOf(r); if (k) years[k.y] = 1; });
+  var Y = Object.keys(years).map(Number).sort(function(a, b){ return b - a; }); if (!Y.length) Y = [new Date().getFullYear()];
+  if (!c.year || Y.indexOf(c.year) < 0) c.year = Y[0];
+  $('#comYears').innerHTML = Y.map(function(y){ return '<button class="tg' + (y === c.year ? ' on' : '') + '" data-cy="' + y + '">' + y + '</button>'; }).join('');
+  $$('#comQs .tg').forEach(function(b){ b.classList.toggle('on', b.dataset.cq === String(c.q)); });
+  $$('#comBasis .tg').forEach(function(b){ b.classList.toggle('on', b.dataset.cb === c.basis); });
+  $$('#comPer .tg').forEach(function(b){ b.classList.toggle('on', +b.dataset.cp === c.per); });
+  $('#comNames').checked = c.names;
+  var L = comRows(), sel = L.filter(function(r){ return c.sel[r.no]; });
+  $('#comCount').innerHTML = '선택 <b>' + sel.length + '</b>건 / ' + L.length + '건';
+  $('#comPrint').disabled = !sel.length;
+  /* 연도 × 분기 현황 */
+  var mx = {}; B.forEach(function(r){ var k = qOf(r); if (!k) return; var row = mx[k.y] = mx[k.y] || [0, 0, 0, 0]; row[k.q - 1]++; });
+  var gr = { '가':0, '나':0, '다':0 }, byTeam = {}; L.forEach(function(r){ var g = gradeOf(r); if (gr[g] != null) gr[g]++; var t = r.team || '본사'; byTeam[t] = (byTeam[t] || 0) + 1; });
+  $('#comSum').innerHTML =
+    '<div class="kpis k4">' + kpi(comTitle().replace(' 산업안전보건위원회', '') + ' 의결 안건', L.length, c.basis === 'closed' ? '의결예정 결정일 기준' : '제출일 기준', 'b') + kpi('가 등급', gr['가'], '', 'g') + kpi('나 등급', gr['나'], '', 't') + kpi('다 등급', gr['다'], '', 'o') + '</div>' +
+    '<div class="grid2"><div class="panel"><div class="bar"><b class="pt">연도 · 분기별 의결 안건</b><span class="dim">칸을 누르면 그 분기로 이동</span></div><div class="tw s"><table><thead><tr><th>연도</th><th class="num">1분기</th><th class="num">2분기</th><th class="num">3분기</th><th class="num">4분기</th><th class="num">합계</th></tr></thead><tbody>' +
+      Object.keys(mx).sort().reverse().map(function(y){ var row = mx[y]; return '<tr><td class="mono"><b>' + y + '</b></td>' + row.map(function(v, i){ return '<td class="num qcell' + (+y === c.year && String(c.q) === String(i + 1) ? ' on' : '') + '" data-cy="' + y + '" data-cq="' + (i + 1) + '">' + (v || '-') + '</td>'; }).join('') + '<td class="num"><b>' + row.reduce(function(a, b){ return a + b; }, 0) + '</b></td></tr>'; }).join('') +
+      (Object.keys(mx).length ? '' : '<tr><td colspan="6" class="none">위원회 의결예정 건이 없습니다</td></tr>') + '</tbody></table></div></div>' +
+    '<div class="panel"><div class="bar"><b class="pt">사업팀별 (선택 기간)</b></div><div class="tw s"><table><thead><tr><th>사업팀</th><th class="num">안건</th></tr></thead><tbody>' +
+      Object.keys(byTeam).sort().map(function(t){ return '<tr><td>' + esc(t) + '</td><td class="num"><b>' + byTeam[t] + '</b></td></tr>'; }).join('') + (L.length ? '' : '<tr><td colspan="2" class="none">-</td></tr>') + '</tbody></table></div></div></div>';
+  $('#comList').innerHTML = L.length ? '<table><thead><tr><th style="width:34px"><input type="checkbox" id="comAll"' + (sel.length && sel.length === L.length ? ' checked' : '') + '></th><th>순번</th><th>접수번호</th><th>소속</th><th>장소</th><th>내용</th><th>등급</th><th>제안자</th><th>' + (c.basis === 'closed' ? '의결예정 결정일' : '제출일') + '</th></tr></thead><tbody>' +
+    L.map(function(r, i){ return '<tr data-i="' + S.rows.indexOf(r) + '"><td><input type="checkbox" class="comChk" data-no="' + esc(r.no) + '"' + (c.sel[r.no] ? ' checked' : '') + '></td><td class="num">' + (i + 1) + '</td><td class="mono">' + esc(r.no) + '</td><td class="ell">' + esc(unit(r)) + '</td><td class="ell">' + esc(r.loc) + '</td><td class="ell w">' + esc(r.detail) + '</td><td>제안 ' + esc(r.pg || '-') + ' → <b>' + esc(r.fg || '-') + '</b></td><td>' + (r.name ? '<b>' + esc(r.name) + '</b>' : '<span class="dim">' + esc(r.mask || '-') + '</span>') + '</td><td class="mono">' + esc((qOf(r).d || '').slice(0, 10)) + '</td></tr>'; }).join('') + '</tbody></table>'
+    : '<div class="none">' + comTitle() + ' 의결예정 개선제안이 없습니다. 연도 · 분기를 바꿔 보세요.</div>';
+  var pv = $('#comPreview');
+  if (!sel.length){ pv.innerHTML = '<div class="none">목록에서 체크한 안건이 여기에 의안 보고서(가로 · PT 형식)로 미리 보입니다.</div>'; return; }
+  pv.innerHTML = '<div class="pvwrap">' + comPages(sel, c.per) + '</div>';
+  var w = pv.clientWidth - 24, sc = Math.min(1, w / 1123);
+  $$('.agpage', pv).forEach(function(p){ var box = document.createElement('div'); box.className = 'pvbox'; box.style.height = (794 * sc) + 'px'; box.style.width = (1123 * sc) + 'px'; p.parentNode.insertBefore(box, p); box.appendChild(p); p.style.transform = 'scale(' + sc + ')'; });
+}
+function comPages(list, per){
+  var pages = []; for (var i = 0; i < list.length; i += per) pages.push(list.slice(i, i + per));
+  return pages.map(function(items, pi){
+    return '<section class="agpage pt' + per + '"><header><div><span class="pbadge">산업안전보건위원회 의안</span><b>' + esc(comTitle()) + ' · 안전 개선제안 의결 안건</b></div><span class="pno">' + (pi + 1) + ' / ' + pages.length + '</span></header>' +
+      '<div class="items">' + items.map(function(r, j){ return agendaHtml(r, pi * per + j + 1); }).join('') + '</div>' +
+      '<footer><span>㈜휴먼티에스에스 · 안전보건 제안 시스템</span><span>대외비 · 출력 ' + esc(nowText()) + '</span></footer></section>';
+  }).join('');
+}
+function agendaHtml(r, no){
+  var nm = S.com.names ? (r.name || r.mask || '-') : (r.mask || '-');
+  return '<article class="ag"><div class="ag-h"><span class="ano">의안 제' + no + '호</span><span class="grd">제안 등급 ' + esc(r.pg || '-') + ' → 결정 등급 <b>' + esc(r.fg || '-') + '</b></span></div>' +
+    '<h3>' + esc(r.loc || '(장소 미기재)') + '</h3>' +
+    '<div class="meta"><span>소속 <b>' + esc(unit(r) || '-') + '</b></span><span>제안자 <b>' + esc(nm) + '</b>' + (S.com.names && r.empId ? ' <i>' + esc(r.empId) + '</i>' : '') + '</span><span>접수 <b>' + esc(r.no) + '</b> · ' + esc((r.at || '').slice(0, 10)) + '</span></div>' +
+    '<div class="ab main"><label>제안 내용</label><p>' + esc(r.detail || '-') + '</p></div>' +
+    (r.req ? '<div class="ab"><label>조치 요청사항</label><p>' + esc(r.req) + '</p></div>' : '') +
+    (r.cmt ? '<div class="ab cmt"><label>검토 의견</label><p>' + esc(r.cmt) + '</p></div>' : '') +
+    '<div class="vote"><label>의결</label><span>□ 원안 의결</span><span>□ 수정 의결</span><span>□ 부결</span><em>비고</em></div></article>';
+}
+function printCom(){
+  var L = comRows().filter(function(r){ return S.com.sel[r.no]; });
+  if (!L.length) return toast('출력할 안건을 체크해 주세요', true);
+  printWith(comPages(L, S.com.per), true, '산안위 의안 보고서_' + S.com.year + (S.com.q === 'all' ? '' : '_' + S.com.q + '분기'));
+  toast('인쇄 창에서 "PDF로 저장" · 용지 방향 가로로 저장됩니다');
+}
 
 /* ---------- 이벤트 ---------- */
 $('#keyBtn').addEventListener('click', openKey);
@@ -406,6 +643,36 @@ document.addEventListener('click', function(e){
   var tr = e.target.closest('tr[data-i]'); if (tr){ openDetail(S.rows[+tr.dataset.i]); return; }
 });
 $('#saveBtn').addEventListener('click', saveXlsx);
+$('#reportBtn').addEventListener('click', printReport);
+$('#storeBtn').addEventListener('click', toggleStore);
+$('#saveNowBtn').addEventListener('click', function(){ if (!STORE.on) return toggleStore(); saveNow(); });
+$('#bkBtn').addEventListener('click', function(){ if (!S.rows.length) return toast('내보낼 데이터가 없습니다', true); $('#bkModal').classList.add('open'); });
+$('#ioBtn').addEventListener('click', function(){ $('#ioModal').classList.add('open'); });
+$('#ioFile').addEventListener('change', async function(){ var fs = this.files; if (fs && fs.length){ $('#ioModal').classList.remove('open'); await openData(fs); } this.value = ''; });
+$('#ioPaste').addEventListener('click', async function(){ $('#ioModal').classList.remove('open'); await pasteData('#ioText'); });
+['bkModal','ioModal'].forEach(function(id){ $('#' + id).addEventListener('click', function(e){ if (e.target.id === id || e.target.closest('[data-close]')) this.classList.remove('open');
+  var k = e.target.closest('[data-bk]'); if (k) exportBackup(k.dataset.bk); }); });
+(function(){ var el = $('#dzIo');
+  el.addEventListener('dragover', function(e){ e.preventDefault(); el.classList.add('over'); }); el.addEventListener('dragleave', function(){ el.classList.remove('over'); });
+  el.addEventListener('drop', function(e){ e.preventDefault(); e.stopPropagation(); el.classList.remove('over'); var fs = e.dataTransfer && e.dataTransfer.files; if (fs && fs.length){ $('#ioModal').classList.remove('open'); openData(fs); } }); })();
+$('#comPrint').addEventListener('click', printCom);
+$('#comNames').addEventListener('change', function(){ S.com.names = this.checked; render(); });
+document.addEventListener('change', function(e){
+  if (e.target.id === 'comAll'){ var on = e.target.checked; comRows().forEach(function(r){ if (on) S.com.sel[r.no] = 1; else delete S.com.sel[r.no]; }); render(); }
+  if (e.target.classList.contains('comChk')){ if (e.target.checked) S.com.sel[e.target.dataset.no] = 1; else delete S.com.sel[e.target.dataset.no]; render(); }
+});
+document.addEventListener('click', function(e){
+  var t = e.target;
+  if (t.closest('.comChk') || t.id === 'comAll'){ e.stopPropagation(); return; }
+  var y = t.closest('[data-cy]'); if (y){ S.com.year = +y.dataset.cy; if (y.dataset.cq) S.com.q = y.dataset.cq; render(); return; }
+  var q = t.closest('[data-cq]'); if (q){ S.com.q = q.dataset.cq === 'all' ? 'all' : q.dataset.cq; render(); return; }
+  var bs = t.closest('[data-cb]'); if (bs){ S.com.basis = bs.dataset.cb; render(); return; }
+  var pp = t.closest('[data-cp]'); if (pp){ S.com.per = +pp.dataset.cp; render(); return; }
+  if (t.closest('#comSelAll')){ comRows().forEach(function(r){ S.com.sel[r.no] = 1; }); render(); return; }
+  if (t.closest('#comSelNone')){ S.com.sel = {}; render(); return; }
+  var st = t.closest('[data-store]'); if (st){ if (st.dataset.store === 'load') restoreStore(); else deleteStore(); return; }
+}, true);
+window.addEventListener('resize', function(){ if (S.view === 'com') renderCom(); });
 $('#clearBtn').addEventListener('click', clearAll);
 $('#sReset').addEventListener('click', function(){ S.st.f = { type:'all', team:'all', site:'all', dept:'all', part:'all', status:'all', only:'all', from:'', to:'', q:'' }; S.st.lv = 'auto'; S.st.sort = {}; S.st.page = 1; $('#sQ').value = ''; render(); });
 var CH = [['sType','type'],['sTeam','team'],['sSite','site'],['sDept','dept'],['sPart','part'],['sStatus','status'],['sOnly','only'],['sFrom','from'],['sTo','to']];
@@ -418,5 +685,7 @@ $('#dQ').addEventListener('input', function(){ S.dec.q = this.value; S.dec.page 
 $('#modal').addEventListener('click', function(e){ if (e.target.id === 'modal' || e.target.closest('[data-close]')) $('#modal').classList.remove('open'); });
 document.addEventListener('keydown', function(e){ if (e.key === 'Escape') $('#modal').classList.remove('open'); });
 $$('.step').forEach(function(c){ c.dataset.ph = $('.st', c).innerHTML; });
+LOGO = ($('.brand img') || {}).src || '';
 render();
+stGet().then(function(p){ if (p && p.format === 'ehs-offline-backup'){ STORE.saved = { saved:p.saved, count:p.count }; storeUi(); } });
 })();

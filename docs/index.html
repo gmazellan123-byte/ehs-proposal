@@ -1293,7 +1293,7 @@ span.rt-hi{background:#DC2626;} span.rt-md{background:#EA7A0C;} span.rt-lo{backg
                     <li><span class="n">3</span><div><b>PC</b> · 정리 도구에 데이터 파일과 KEY를 넣고 비밀번호를 입력합니다.</div></li>
                     <li><span class="n">4</span><div>식별코드가 <b>사번 · 성명</b>으로 바뀌면 엑셀로 저장합니다.</div></li>
                   </ol>
-                  <a class="btn btn-primary btn-block" href="ehs-offline.html" download="안전보건제안_오프라인정리도구.html" style="margin-top:12px">오프라인 정리 도구 받기</a>
+                  <a class="btn btn-primary btn-block dl-tool" href="ehs-offline.html" download="안전보건 개선제안 현황.html" style="margin-top:12px">오프라인 정리 도구 받기</a>
                   <h3 style="margin-top:18px">보안 <span class="mono">SECURITY</span></h3>
                   <ul>
                     <li><b>실명</b>은 서버에 저장하지 않고 이 PC에서 KEY로만 만듭니다.</li>
@@ -2606,7 +2606,7 @@ function saveCsv(filename, rows){
   a.href = url; a.download = filename; a.style.display = 'none'; document.body.appendChild(a); a.click();
   setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 4000); toast('CSV 파일을 저장했습니다');
 }
-var APP_VER = '2026.11.20-b';
+var APP_VER = '2026.11.20-c';
 $$('[data-ver]').forEach(function(el){ el.textContent = APP_VER; });
 function wideScreen(){ return window.matchMedia('(min-width: 900px)').matches; }
 async function openExportSheet(){
@@ -2742,7 +2742,7 @@ function dgo(s){
   if (s === 'ddash') act.innerHTML = '<button class="btn btn-ghost" data-da="refresh">새로고침</button>';
   if (s === 'dlist') act.innerHTML = '<button class="btn btn-ghost" data-da="refresh">새로고침</button><button class="btn btn-ghost" data-da="nameList">실명 포함 엑셀</button><button class="btn btn-primary dbtn" data-da="xlsList">조회 결과 엑셀</button>';
   if (s === 'dorg') act.innerHTML = '<button class="btn btn-ghost" data-da="refresh">새로고침</button><button class="btn btn-ghost" data-da="nameEmp">실명 포함 엑셀</button><button class="btn btn-primary dbtn" data-da="xlsEmp">인원 목록 엑셀</button>';
-  if (s === 'dimport') act.innerHTML = '<button class="btn btn-ghost dbtn" data-da="tpl">업로드 양식</button><a class="btn btn-primary dbtn" href="ehs-offline.html" download="안전보건제안_오프라인정리도구.html">오프라인 정리 도구 받기</a>';
+  if (s === 'dimport') act.innerHTML = '<button class="btn btn-ghost dbtn" data-da="tpl">업로드 양식</button><a class="btn btn-primary dbtn dl-tool" href="ehs-offline.html" download="안전보건 개선제안 현황.html">오프라인 정리 도구 받기</a>';
   if (s === 'dpw') act.innerHTML = '<button class="btn btn-ghost" data-da="refresh">새로고침</button>';
   if (s === 'ddash') deskLoadDash();
   if (s === 'dlist') deskLoadList();
@@ -3145,7 +3145,7 @@ function keyDoneHtml(list, copied, common){
   var mail = '[안전보건 제안] ' + list.map(function(x){ return x.scope; }).join(', ') + ' KEY 전달\n\n' +
     (copied ? '아래 KEY 내용을 오프라인 정리 도구 2번 칸의 "KEY 내용 붙여넣기"에 그대로 붙여넣어 사용하세요.\n' : '첨부한 KEY 파일(' + list.map(function(x){ return x.file; }).join(', ') + ')을 사용하세요.\n') +
     '사용 기한: ' + list[0].expires + '까지\n' + (common ? '※ 전사 공통 KEY입니다. 각 사업장의 데이터 파일에 있는 인원만 사번·성명으로 바뀝니다.\n' : '') + '\n' +
-    '사용 방법\n1. 오프라인 정리 도구(안전보건제안_오프라인정리도구.html)를 PC의 Chrome 또는 Edge로 엽니다.\n' +
+    '사용 방법\n1. 오프라인 정리 도구(안전보건 개선제안 현황_날짜.html)를 PC의 Chrome 또는 Edge로 엽니다.\n' +
     '2. 1번 칸: 휴대폰 접수목록 [내보내기]로 받은 데이터 파일을 넣습니다.\n3. 2번 칸: 이 KEY ' + (copied ? '내용을 붙여넣고' : '파일을 넣고') + ', 따로 받은 비밀번호를 입력한 뒤 [KEY 열기]를 누릅니다.\n' +
     '4. 식별코드가 사번·성명으로 바뀌면 필요한 경우 [정리 엑셀 저장]을 누릅니다.\n\n※ 비밀번호는 별도로 전달합니다. 이 메일에 비밀번호를 적어 회신하지 마세요.';
   var sms = '[안전보건 제안] KEY 비밀번호: ' + list[0].pw + ' (' + list[0].expires + '까지 사용). 메일로 받은 KEY와 함께 쓰세요. 이 문자는 사용 후 지워 주세요.';
@@ -3156,6 +3156,8 @@ function keyDoneHtml(list, copied, common){
     '<label class="label" style="margin-top:10px">① 메일 안내문</label><textarea class="mono" id="kdMail" readonly style="min-height:150px;font-size:12px">' + esc(mail) + '</textarea><button class="btn btn-ghost btn-sm" data-kcp="kdMail" type="button" style="margin-top:6px">메일 안내문 복사</button>' +
     '<label class="label" style="margin-top:12px">② 비밀번호 안내 (문자용)</label><textarea class="mono" id="kdSms" readonly style="min-height:56px;font-size:12px">' + esc(sms) + '</textarea><button class="btn btn-ghost btn-sm" data-kcp="kdSms" type="button" style="margin-top:6px">비밀번호 안내 복사</button></div>';
 }
+/* 오프라인 정리 도구 받기: 파일명 '안전보건 개선제안 현황_날짜.html' (화면의 버튼 이름은 그대로) */
+document.addEventListener('click', function(e){ var a = e.target.closest('a.dl-tool'); if (a) a.setAttribute('download', '안전보건 개선제안 현황_' + stamp() + '.html'); }, true);
 $('#keyCommon').addEventListener('click', async function(){ var bt = this, lbl = '전사 공통 KEY 받기';
   if ($('#keyPwd').value.trim().length < 8) return toast('KEY 비밀번호를 8자 이상 입력하거나 [자동 생성]을 눌러 주세요', true);
   bt.disabled = true;

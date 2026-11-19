@@ -161,6 +161,59 @@ details.paste .btn{margin-top:6px}
 .warnbar{margin-bottom:12px;padding:10px 14px;border-radius:11px;background:#FFF7ED;border:1px solid #FCD9B6;color:#7A4A12;font-size:13px;display:flex;align-items:center;gap:10px}
 .warnbar .btn{margin-left:auto}
 #saveBtn:disabled{opacity:.45;cursor:not-allowed}
+.sstore{margin-top:14px;padding:9px 11px;border-radius:10px;background:rgba(255,255,255,.08);font-size:12px;line-height:1.5}.sstore i{display:inline-block;width:8px;height:8px;border-radius:50%;background:#94A3B8;margin-right:6px}.sstore i.on{background:#4ADE80}.sstore small{opacity:.75}
+.ph .acts{margin-left:auto;display:flex;gap:6px}#storeBtn.on{background:#EEF9F2;border-color:#9ED8B4;color:#166534}
+.savedbar{display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px 14px;border-radius:11px;background:#EFF6FF;border:1px solid #BFDBFE;font-size:13px}.savedbar .r{margin-left:auto;display:flex;gap:6px}
+.mm{position:fixed;inset:0;background:rgba(15,25,45,.45);display:none;align-items:center;justify-content:center;padding:24px;z-index:60}.mm.open{display:flex}
+.mmbox{width:640px;max-width:96vw;background:#fff;border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,.3);overflow:hidden}.mmbox.sm{width:420px}
+.mmb{padding:16px 20px 20px;font-size:13.5px;line-height:1.6;color:var(--soft)}.mmb p{margin-bottom:10px}.mmb b{color:var(--ink)}
+.mmb input[type=password]{width:100%;margin-top:8px}.mmf{display:flex;justify-content:flex-end;gap:6px;margin-top:14px}
+.mmb .dz{margin:10px 0}.mmb textarea{width:100%;height:90px;margin-top:6px;font:12px Consolas,monospace;padding:8px;border:1px solid #C9D6E5;border-radius:9px}
+.bkc{display:grid;gap:10px}.bk{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:12px}
+.bk b{font-size:14.5px}.bk em{font-style:normal;font-size:11.5px;color:#0B5FA8;margin-left:6px}.bk span{grid-column:1;font-size:12.5px}.bk input{grid-column:1}.bk .btn{grid-column:2;grid-row:1 / span 3}
+.mmb .warn{margin-top:12px;color:#9A3412;font-size:12.5px}
+.comgrid{display:grid;grid-template-columns:250px 1fr;gap:14px;align-items:start}
+.ctrl{position:sticky;top:12px;background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:14px 14px 16px;box-shadow:0 4px 12px rgba(20,40,80,.05)}
+.ctrl h4{font-size:12.5px;color:var(--soft);margin:12px 0 6px}.ctrl h4:first-child{margin-top:0}
+.tgs{display:flex;flex-wrap:wrap;gap:5px}.tg{border:1px solid #C9D6E5;background:#fff;border-radius:9px;padding:7px 11px;font-weight:700;font-size:13px;color:var(--soft)}
+.tg.on{background:linear-gradient(180deg,#1E8BD8,#0B5FA8);border-color:transparent;color:#fff}
+.chkl{display:flex;align-items:center;gap:7px;margin-top:12px;font-size:13px;font-weight:700}
+.ccount{margin:12px 0 8px;font-size:13px;color:var(--soft)}.ccount b{color:var(--brand);font-size:16px}
+.btn.big{width:100%;padding:12px;font-size:14.5px}.btn:disabled{opacity:.45;cursor:not-allowed}
+.ctrl .hint{font-size:11.5px;color:var(--faint);margin-top:8px;line-height:1.5}
+.cview{display:flex;flex-direction:column;gap:12px;min-width:0}.cview .panel{margin-top:0}.kpis.k4{grid-template-columns:repeat(4,1fr)}
+.qcell{cursor:pointer}.qcell:hover{background:#EEF6FD}.qcell.on{background:#DBEAFE;font-weight:800}
+.pv{padding:12px;background:#E9EEF5;min-height:120px}.pvwrap{display:flex;flex-direction:column;align-items:center;gap:12px}.pvbox{overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.18);background:#fff}.pvbox .agpage{transform-origin:0 0}
+/* ---- 의안 보고서 (A4 가로 · PT) ---- */
+.agpage{width:297mm;height:210mm;padding:11mm 13mm 9mm;background:#fff;display:flex;flex-direction:column;font-family:'Pretendard','Noto Sans KR','Malgun Gothic',sans-serif;color:#13233F;box-sizing:border-box;overflow:hidden}
+.agpage header{display:flex;align-items:center;justify-content:space-between;padding-bottom:4mm;border-bottom:1.2mm solid #0B4F96;margin-bottom:5mm}
+.agpage header b{font-size:17pt;font-weight:900;letter-spacing:-.3px;margin-left:3mm}.pbadge{display:inline-block;padding:1.2mm 3mm;border-radius:2mm;background:#0B4F96;color:#fff;font-size:10pt;font-weight:800}
+.pno{font-size:11pt;color:#64748B;font-weight:700}
+.agpage .items{flex:1;display:grid;gap:5mm;min-height:0}.pt1 .items{grid-template-columns:1fr}.pt2 .items{grid-template-columns:1fr 1fr}.pt4 .items{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+.agpage footer{display:flex;justify-content:space-between;margin-top:4mm;font-size:8.5pt;color:#94A3B8}
+.ag>*{flex-shrink:0}.ag{display:flex;flex-direction:column;border:.4mm solid #CBD5E1;border-radius:3mm;padding:4.5mm 5mm;min-height:0;overflow:hidden;background:linear-gradient(180deg,#FBFDFF,#fff)}
+.ag-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:2mm}.ano{font-size:12pt;font-weight:900;color:#fff;background:linear-gradient(90deg,#EA580C,#F97316);padding:1mm 3.5mm;border-radius:1.5mm}
+.grd{font-size:10pt;color:#475569}.grd b{font-size:13pt;color:#C2410C}
+.ag h3{font-size:15pt;font-weight:900;margin:1mm 0 2mm;letter-spacing:-.3px}
+.meta{display:flex;flex-wrap:wrap;gap:1mm 5mm;font-size:9.5pt;color:#475569;padding-bottom:2.5mm;border-bottom:.3mm dashed #CBD5E1;margin-bottom:2.5mm}.meta b{color:#13233F}.meta i{font-style:normal;color:#64748B;font-family:Consolas,monospace}
+.ab{margin-bottom:2mm;min-height:0}.ab label{display:block;font-size:9pt;font-weight:800;color:#0B4F96;margin-bottom:.8mm}.ab p{font-size:11pt;line-height:1.55;white-space:pre-wrap;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical}
+.pt1 .ab.main p{-webkit-line-clamp:12;font-size:12.5pt}.pt1 .ab p{-webkit-line-clamp:4}.pt2 .ab.main p{-webkit-line-clamp:10}.pt2 .ab p{-webkit-line-clamp:3}
+.pt4 .ab.main p{-webkit-line-clamp:3;font-size:10pt}.pt4 .ab p{-webkit-line-clamp:1;font-size:9.5pt}.pt4 .ab{margin-bottom:1mm}.pt4 .ab.cmt{display:none}.pt4 .ag{padding:3mm 4mm}.pt4 .ag-h{margin-bottom:1mm}.pt4 .ano{font-size:10pt}.pt4 .grd{font-size:9pt}.pt4 .grd b{font-size:11pt}.pt4 .ag h3{font-size:12pt;margin:.5mm 0 1mm}.pt4 .meta{font-size:8pt;padding-bottom:1.5mm;margin-bottom:1.5mm}.pt4 .ab label{font-size:8pt;margin-bottom:.3mm}.pt4 .vote{padding-top:1.5mm;font-size:9pt}.pt4 .items{gap:4mm}.pt4 .ag h3{font-size:12.5pt}.pt4 .meta{font-size:8.5pt}
+.vote{margin-top:auto;display:flex;align-items:center;gap:5mm;padding-top:2.5mm;border-top:.3mm solid #CBD5E1;font-size:10pt;font-weight:700}.vote label{color:#fff;background:#13233F;padding:.8mm 2.5mm;border-radius:1.2mm;font-size:9pt}.vote em{margin-left:auto;font-style:normal;color:#94A3B8;border-bottom:.3mm solid #CBD5E1;min-width:40mm}
+/* ---- 데이터 현황 보고서 (A4 세로) ---- */
+#printArea{display:none}
+.rp{font-family:'Pretendard','Noto Sans KR','Malgun Gothic',sans-serif;color:#13233F;font-size:9.5pt}
+.rp-h{display:flex;align-items:center;gap:4mm;padding-bottom:3mm;border-bottom:1mm solid #0B4F96;margin-bottom:4mm}.rp-h img{height:13mm}.rp-h h1{font-size:19pt;font-weight:900;letter-spacing:-.4px}.rp-h p{font-size:9pt;color:#475569;margin-top:1mm}.rp-d{margin-left:auto;font-size:8.5pt;color:#64748B}
+.rp-k{display:grid;grid-template-columns:repeat(6,1fr);gap:2.5mm;margin-bottom:5mm}.rp-k div{border:.3mm solid #CBD5E1;border-radius:2mm;padding:2.5mm 3mm}.rp-k span{display:block;font-size:8pt;color:#64748B}.rp-k b{font-size:15pt;font-weight:900}
+.rp-k .b b{color:#2563EB}.rp-k .t b{color:#0F766E}.rp-k .o b{color:#EA580C}.rp-k .g b{color:#16A34A}
+.rp h2{font-size:11.5pt;font-weight:900;margin:5mm 0 2mm;padding-left:2.5mm;border-left:1.2mm solid #1E8BD8}.rp h2 small{font-weight:600;color:#64748B;font-size:8.5pt}
+.rp table{width:100%;border-collapse:collapse;font-size:8.8pt}.rp th{background:#EEF4FB;font-weight:800;padding:1.6mm 2mm;border:.25mm solid #CBD5E1}.rp td{padding:1.4mm 2mm;border:.25mm solid #DCE3EC;text-align:center}.rp td.l{text-align:left}
+.rp tr.tot td{background:#F1F7FE;font-weight:800}.rp .list td{font-size:8pt}.rp tr{page-break-inside:avoid}
+.rp .sbar{display:flex;height:3mm;border-radius:1mm;overflow:hidden;background:#EEF2F7}.rp .sbar i{display:block;height:100%}.rp .sbar .b{background:#3B82F6}.rp .sbar .t{background:#14B8A6}.rp .sbar .o{background:#F97316}
+.rp-f{margin-top:5mm;padding-top:2mm;border-top:.3mm solid #CBD5E1;font-size:8pt;color:#94A3B8;text-align:center}
+@media print{body.printing>*:not(#printArea){display:none!important}body.printing{background:#fff;min-width:0}body.printing #printArea{display:block}
+ #printArea.land .agpage{page-break-after:always;break-after:page}#printArea.land .agpage:last-child{page-break-after:auto}
+ *{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 .toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);opacity:0;transition:all .2s;background:#13233F;color:#fff;padding:11px 18px;border-radius:12px;font-weight:700;font-size:13.5px;z-index:60;pointer-events:none;max-width:80vw}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .toast.err{background:#C62828}
@@ -171,15 +224,18 @@ details.paste .btn{margin-top:6px}
  <div class="brand"><img src="__LOGO__" alt="로고"><div><b>안전보건 제안</b><span>오프라인 정리 도구</span></div></div>
  <nav class="snav">
   <button class="apptab on" data-view="dec"><span class="n">1</span><span class="tx">복호화<small>데이터 · KEY 넣기</small></span></button>
-  <button class="apptab" id="tabStat" data-view="stat"><span class="n">2</span><span class="tx">데이터 현황<small>조회 · 정렬 · 저장</small></span></button>
+  <button class="apptab" id="tabStat" data-view="stat"><span class="n">2</span><span class="tx">데이터 현황<small>조회 · 백업 · 보고서</small></span></button>
+  <button class="apptab" id="tabCom" data-view="com"><span class="n">3</span><span class="tx">산안위 의결<small>분기별 의안 · PDF</small></span></button>
  </nav>
+ <div class="sstore" id="sideStore"></div>
  <div class="sfoot"><div class="badge"><i></i>인터넷 연결 없이 동작</div><button class="btn ghost" id="clearBtn" title="불러온 내용을 모두 지움">모두 지우기</button>
-  <p>넣은 파일은 이 창의 메모리에만 있고, 창을 닫으면 사라집니다.</p></div>
+  <p>넣은 파일은 이 창의 메모리에만 있습니다. 계속 쓰려면 [데이터 현황]에서 브라우저 저장 · 백업을 이용하세요.</p></div>
 </aside>
 <main class="mainc">
 <div class="wrap">
 <section id="vDec">
  <div class="ph"><h1>① 복호화</h1><p>현장 데이터의 식별코드를 본사 KEY로 사번 · 성명으로 바꿉니다</p></div>
+ <div class="savedSlot"></div>
  <div class="decgrid">
   <div class="steps">
    <div class="step" id="c-data"><h3><span class="n">1</span>데이터 넣기 <em>휴대폰 · PC [내보내기] 접수목록 파일</em></h3>
@@ -220,7 +276,9 @@ details.paste .btn{margin-top:6px}
  </div>
 </section>
 <section id="vStat" class="hidden">
- <div class="ph"><h1>② 데이터 현황</h1><p>유형 · 소속 · 기간별 조회와 현황 · 엑셀 저장</p></div>
+ <div class="ph"><h1>② 데이터 현황</h1><p>조회 · 현황 · 백업 · 보고서</p>
+  <div class="acts"><button class="btn" id="ioBtn">📥 불러오기 · 머지</button><button class="btn" id="bkBtn">📤 백업 내보내기</button><button class="btn" id="storeBtn">💾 브라우저 저장</button><button class="btn sm" id="saveNowBtn" title="지금 저장">지금 저장</button></div></div>
+ <div class="savedSlot"></div>
  <div id="statLock" class="lock"><b>아직 넣은 데이터가 없습니다</b><p>① 복호화 탭에서 데이터 파일을 넣으면 여기에서 유형 · 소속 · 기간별 현황을 볼 수 있습니다.</p><button class="btn pri" data-go="dec">① 복호화로 가기</button></div>
  <div id="statMain" class="hidden">
   <div id="statWarn"></div>
@@ -235,7 +293,7 @@ details.paste .btn{margin-top:6px}
     <span class="lb">기간(제출월)</span><input type="month" id="sFrom"><span class="dim">~</span><input type="month" id="sTo">
     <span class="qbtns"><button class="btn sm" data-period="year">올해</button><button class="btn sm" data-period="last">작년</button><button class="btn sm" data-period="12m">최근 12개월</button><button class="btn sm" data-period="all">전체</button></span>
     <input type="search" id="sQ" placeholder="장소 · 내용 · 사번 · 성명 검색">
-    <div class="r"><button class="btn" id="sReset">조건 초기화</button><button class="btn pri" id="saveBtn">엑셀 저장</button></div>
+    <div class="r"><button class="btn" id="sReset">조건 초기화</button><button class="btn" id="reportBtn">🖨 보고서 출력</button><button class="btn pri" id="saveBtn">엑셀 저장</button></div>
    </div>
    <div class="cond" id="sCond"></div>
   </div>
@@ -252,9 +310,46 @@ details.paste .btn{margin-top:6px}
  </div>
 </section>
 </div>
+<section id="vCom" class="hidden">
+ <div class="ph"><h1>③ 산안위 의결</h1><p>위원회 의결예정 개선제안 · 연도 · 분기별 현황과 의안 보고서(가로 PDF)</p></div>
+ <div class="comgrid">
+  <aside class="ctrl">
+   <h4>연도</h4><div class="tgs" id="comYears"></div>
+   <h4>분기</h4><div class="tgs" id="comQs"><button class="tg" data-cq="all">전체</button><button class="tg" data-cq="1">1분기</button><button class="tg" data-cq="2">2분기</button><button class="tg" data-cq="3">3분기</button><button class="tg" data-cq="4">4분기</button></div>
+   <h4>분기 기준</h4><div class="tgs" id="comBasis"><button class="tg" data-cb="closed">의결예정 결정일</button><button class="tg" data-cb="at">제출일</button></div>
+   <h4>한 페이지에</h4><div class="tgs" id="comPer"><button class="tg" data-cp="1">1건</button><button class="tg" data-cp="2">2건</button><button class="tg" data-cp="4">4건</button></div>
+   <label class="chkl"><input type="checkbox" id="comNames" checked> 제안자 실명 · 사번 표시</label>
+   <h4>안건 선택</h4><div class="tgs"><button class="tg" id="comSelAll">전체 선택</button><button class="tg" id="comSelNone">선택 해제</button></div>
+   <div class="ccount" id="comCount"></div>
+   <button class="btn pri big" id="comPrint" disabled>🖨 의안 보고서 PDF 출력</button>
+   <p class="hint">A4 가로 · PT 형식 · 순번(의안 제N호) · 인쇄 창에서 <b>PDF로 저장</b>을 고르세요.</p>
+  </aside>
+  <div class="cview">
+   <div id="comSum"></div>
+   <div class="panel"><div class="bar"><b class="pt">의결 안건 목록</b><span class="dim">체크한 안건이 아래 미리보기 · 출력에 들어갑니다 · 행을 누르면 상세</span></div><div class="tw s" id="comList"></div></div>
+   <div class="panel"><div class="bar"><b class="pt">의안 보고서 미리보기</b><span class="dim">A4 가로</span></div><div id="comPreview" class="pv"></div></div>
+  </div>
+ </div>
+</section>
 </div>
 </main>
 </div>
+<div id="printArea"></div><style id="pageStyle"></style>
+<div id="pwModal" class="mm"><div class="mmbox sm"><div class="mh"><span id="pwTitle"></span></div><div class="mmb"><p id="pwDesc"></p>
+ <input type="password" id="pwIn" placeholder="비밀번호 (6자 이상)" autocomplete="off"><input type="password" id="pwIn2" class="hidden" placeholder="비밀번호 확인" autocomplete="off">
+ <div class="mmf"><button class="btn" id="pwCancel">취소</button><button class="btn pri" id="pwOk">확인</button></div></div></div></div>
+<div id="ioModal" class="mm"><div class="mmbox"><div class="mh"><span>📥 불러오기 · 머지</span><button data-close>✕</button></div><div class="mmb">
+ <p>여러 관리자가 휴대폰에서 내보낸 데이터, 이전 백업(JSON · 엑셀 · TXT), 저장한 정리 엑셀을 <b>접수번호 기준으로 합칩니다</b>. 같은 건은 처리가 더 진행된 내용으로 갱신되고, 새 건은 추가됩니다. KEY가 열려 있으면 새로 들어온 건도 바로 사번 · 성명으로 바뀝니다.</p>
+ <label class="dz" id="dzIo"><input type="file" id="ioFile" multiple accept=".xlsx,.xls,.csv,.txt,.tsv,.json"><b>📄 파일을 끌어다 놓거나 눌러서 선택 (여러 개 가능)</b><span>엑셀 · CSV · TXT · 백업 JSON</span></label>
+ <details class="paste" open><summary>또는 내용 붙여넣기 (엑셀 Ctrl+A → Ctrl+C / 메모장으로 연 TXT · JSON)</summary><textarea id="ioText" placeholder="여기에 Ctrl+V" spellcheck="false"></textarea><button class="btn pri" id="ioPaste" type="button">붙여넣은 내용 합치기</button></details>
+</div></div></div>
+<div id="bkModal" class="mm"><div class="mmbox"><div class="mh"><span>📤 백업 내보내기</span><button data-close>✕</button></div><div class="mmb">
+ <p>지금 불러온 전체 데이터(사번 · 성명 포함)를 파일로 내보냅니다. 다른 PC나 나중에 <b>[불러오기 · 머지]</b>로 다시 넣을 수 있습니다.</p>
+ <div class="bkc"><div class="bk"><b>JSON <em>복원용 · 권장</em></b><span>비밀번호를 정하면 암호화해서 저장합니다</span><input type="password" id="bkPw" placeholder="백업 비밀번호 (권장 · 6자 이상)" autocomplete="off"><button class="btn pri" data-bk="json">JSON 내보내기</button></div>
+ <div class="bk"><b>엑셀</b><span>엑셀에서 바로 열어 보기 · 다시 불러오기 가능</span><button class="btn" data-bk="xlsx">엑셀 내보내기</button></div>
+ <div class="bk"><b>TXT <em>탭 구분</em></b><span>메모장으로 열어 복사 · 붙여넣기로 옮길 때</span><button class="btn" data-bk="txt">TXT 내보내기</button></div></div>
+ <p class="warn">엑셀 · TXT와 비밀번호 없는 JSON은 실명이 그대로 담깁니다. 사내 PC에만 보관하세요.</p>
+</div></div></div>
 <div id="modal"><div class="mbox"><div class="mh"><span id="mTitle"></span><button data-close>✕</button></div><div id="mBody"></div></div></div>
 <div class="toast" id="toast"></div>
 <script>
