@@ -2387,6 +2387,13 @@ async function shareFile(filename, sheets){
   try { await navigator.share({ files:[f], title:title, text:text }); toast(f === cf ? 'CSV 파일(엑셀에서 열림)로 공유했습니다' : '공유했습니다'); }
   catch(e){ if (e && e.name === 'AbortError') return; saveWorkbook(X, workbookFrom(X, sheets), filename); toast('공유하지 못해 휴대폰에 저장했습니다', true); }
 }
+function saveCsv(filename, rows){
+  var blob = new Blob(['\ufeff' + rows.map(function(r){ return r.map(csvCell).join(','); }).join('\r\n')], { type:'text/csv;charset=utf-8' });
+  var url = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href = url; a.download = filename; a.style.display = 'none'; document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 4000); toast('CSV 파일을 저장했습니다');
+}
+var APP_VER = '2026.11.19-c';
 function wideScreen(){ return window.matchMedia('(min-width: 900px)').matches; }
 async function openExportSheet(){
   var L = filtered(); if (!L.length) return toast('내보낼 데이터가 없습니다', true);
@@ -2396,12 +2403,16 @@ async function openExportSheet(){
     '<div class="exp-wrap"><p class="inst-lead">현재 조회 조건의 <b>'+L.length.toLocaleString()+'건</b>을 엑셀로 만듭니다. 제출자는 <b>식별코드와 가린 성명(홍*동)</b>으로만 표시됩니다.</p>' +
     '<div class="exp-btns"><button class="btn btn-primary" data-x="share">'+ICON.share+'공유하기<small>회사 메일 · 사내 메신저 등</small></button>' +
     '<button class="btn btn-ghost" data-x="save">'+ICON.save+'휴대폰에 저장<small>다운로드 폴더</small></button></div>' +
+    '<button class="btn btn-ghost btn-block" data-x="csv" style="margin-top:10px">CSV로 저장 <small style="font-weight:600;opacity:.75">· 휴대폰에 엑셀 앱이 없을 때</small></button>' +
+    (IN_APP ? '<div class="notice warn" style="margin-top:10px"><b>카카오톡·네이버 등 앱 안의 브라우저</b>에서는 파일 저장이 막힐 수 있습니다. 화면의 ⋮ 메뉴에서 <b>다른 브라우저(Chrome)로 열기</b> 후 다시 시도해 주세요.</div>' : '') +
     '<div class="notice warn" style="margin-top:12px">회사 업무 자료입니다. <b>회사 메일·사내 저장소로만</b> 보내고, 개인 메신저·개인 메일로는 보내지 마세요. 보낸 뒤 휴대폰에 남은 파일은 지워 주세요.</div>' +
-    (wideScreen() ? '<button class="btn btn-ghost btn-block" data-x="names" style="margin-top:10px">실명 포함 엑셀 만들기 (PC · 인사명단 대조)</button>' : '') + '</div>');
+    (wideScreen() ? '<button class="btn btn-ghost btn-block" data-x="names" style="margin-top:10px">실명 포함 엑셀 만들기 (PC · 인사명단 대조)</button>' : '') +
+    '<p class="note" style="text-align:right;margin-top:8px">화면 버전 '+APP_VER+'</p></div>');
   $('[data-close]', sheet).onclick = closeSheet;
   $('.exp-wrap', sheet).addEventListener('click', async function(e){ var b = e.target.closest('[data-x]'); if (!b) return;
     var rows = [{ name:'접수목록', rows:reportRows(L) }];
     if (b.dataset.x === 'save'){ closeSheet(); downloadXlsx(name, rows); }
+    if (b.dataset.x === 'csv'){ closeSheet(); saveCsv(name.replace(/\.xlsx$/, '.csv'), rows[0].rows); }
     if (b.dataset.x === 'share'){ b.disabled = true; try { await shareFile(name, rows); closeSheet(); } catch(err){ fail(err); } finally { b.disabled = false; } }
     if (b.dataset.x === 'names'){ openNameExport('reports', L); }
   });
