@@ -140,6 +140,8 @@ input[type=datetime-local]{min-height:46px;}
 .cipher p b{color:var(--ink);}
 .demo-box{margin-top:12px;padding:11px 13px;border-radius:var(--r-sm);background:var(--amber-soft);border:1px solid #F4D9A1;font-size:12px;color:#7A4E06;line-height:1.65;}
 .demo-box b{color:#5C3A00;}
+.team-tag{margin-top:10px;font-size:12.5px;font-weight:800;letter-spacing:.06em;color:var(--ink-soft);}
+.team-tag+.ver-tag{margin-top:2px;}
 .ver-tag{margin-top:6px;font-family:var(--mono, Consolas, monospace);font-size:11px;color:var(--ink-faint);opacity:.85;}
 .side-ver{text-align:center;font-size:11px;color:rgba(255,255,255,.6);font-family:Consolas,monospace;}
 .guide,.inst-steps li>div,.dpanel .note,.notice{word-break:keep-all;overflow-wrap:break-word;text-wrap:pretty;}
@@ -960,7 +962,7 @@ span.rt-hi{background:#DC2626;} span.rt-md{background:#EA7A0C;} span.rt-lo{backg
         <label class="chk"><input type="checkbox" id="saveId"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="t">ID 저장</span></label>
         <label class="chk"><input type="checkbox" id="autoLogin"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="t">자동 로그인</span></label>
       </div>
-      <p class="auto-warn hidden" id="autoWarn">⚠ 공용·공유 휴대폰에서는 자동 로그인을 사용하지 마세요.</p>
+      <p class="auto-warn hidden" id="autoWarn">⚠ 공유, 공용 PC에서는 자동 로그인을 사용하지 마세요.</p>
       <button class="btn btn-primary" id="authBtn" type="submit">로그인</button>
 
       <div class="cipher">
@@ -990,6 +992,7 @@ span.rt-hi{background:#DC2626;} span.rt-md{background:#EA7A0C;} span.rt-lo{backg
     <div class="login-foot">
       최초 사용 시 <b>[최초 등록]</b>에서 비밀번호를 설정하세요.<br>
       비밀번호를 잊은 경우 소속 관리자에게 초기화를 요청하세요.
+      <div class="team-tag">EHS팀</div>
       <div class="ver-tag">화면 버전 <span data-ver></span></div>
     </div>
   </section>
@@ -2630,7 +2633,7 @@ function saveCsv(filename, rows){
   a.href = url; a.download = filename; a.style.display = 'none'; document.body.appendChild(a); a.click();
   setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 4000); toast('CSV 파일을 저장했습니다');
 }
-var APP_VER = '2026.11.19-m';
+var APP_VER = '2026.11.20-a';
 $$('[data-ver]').forEach(function(el){ el.textContent = APP_VER; });
 function wideScreen(){ return window.matchMedia('(min-width: 900px)').matches; }
 async function openExportSheet(){
