@@ -385,6 +385,7 @@ input[type=datetime-local]{min-height:46px;}
 .emp-row{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:var(--r-sm);background:linear-gradient(180deg,#fff,#FAFCFE);border:1px solid var(--line);box-shadow:var(--sh-1);}
 .emp-row .code{font-family:var(--mono);font-weight:700;font-size:13.5px;letter-spacing:.08em;color:var(--ink);}
 .emp-row .info{flex:1;min-width:0;}
+.emp-row .code .nm{margin-left:8px;font-family:var(--font, inherit);font-family:'Pretendard',-apple-system,sans-serif;font-weight:800;font-size:14px;letter-spacing:0;color:var(--ink);}
 .emp-row .sub{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;}
 .emp-row.off{opacity:.55;}
 .mini{font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:5px;background:#EEF1F5;color:var(--ink-soft);}
@@ -1148,7 +1149,7 @@ span.rt-hi{background:#DC2626;} span.rt-md{background:#EA7A0C;} span.rt-lo{backg
 
       <div class="sec-title"><h2 style="font-size:15px">등록 인원</h2><span class="kicker" id="empStat">-</span></div>
       <div class="frow" style="grid-template-columns:1fr auto;margin:0">
-        <input id="empQ" class="mono" placeholder="식별코드 검색">
+        <input id="empQ" class="mono" placeholder="식별코드 · 성명 검색">
         <button class="btn btn-ghost btn-sm" id="empRefresh" type="button">새로고침</button>
       </div>
       <div class="org-sel" id="empOrg" style="margin-bottom:10px"></div>
@@ -2413,11 +2414,11 @@ function sortEmps(L){ var S = sitesOf(), T = teams();
 function renderEmps(){
   var E = state.employees, q = normEmp($('#empQ').value), u = state.user;
   $('#empStat').textContent = 'TOTAL ' + E.length + ' · JOINED ' + E.filter(function(e){ return e.registered_at; }).length;
-  var L = sortEmps(E.filter(function(e){ return (!q || e.emp_code.indexOf(q) > -1) && matchOrg(e, state.empSel); }));
+  var L = sortEmps(E.filter(function(e){ return (!q || e.emp_code.indexOf(q) > -1 || (e.name_mask || '').indexOf(q) > -1) && matchOrg(e, state.empSel); }));
   $('#empList').innerHTML = L.length ? L.slice(0, 300).map(function(e){
     var mine = e.emp_hash === u.hash, can = !mine && canManage(u, e);
     return '<div class="emp-row'+(e.active ? '' : ' off')+'" data-h="'+esc(e.emp_hash)+'">' +
-      '<div class="info"><div class="code">'+esc(e.emp_code)+(mine ? ' <span class="mini" style="font-family:inherit">나</span>' : '')+'</div><div class="sub">' +
+      '<div class="info"><div class="code">'+esc(e.emp_code)+(e.name_mask ? '<span class="nm">'+esc(e.name_mask)+'</span>' : '')+(mine ? ' <span class="mini" style="font-family:inherit">나</span>' : '')+'</div><div class="sub">' +
       roleChip(e.role) + '<span class="mini">'+esc(fullUnit(e))+'</span>' +
       (e.registered_at ? '<span class="mini ok">가입완료</span>' : '<span class="mini wait">가입대기</span>') + (e.active ? '' : '<span class="mini stop">사용중지</span>') + '</div></div>' +
       (can ? '<button class="btn btn-ghost btn-sm" data-act="menu">관리</button>' : '') + '</div>';
@@ -2629,7 +2630,7 @@ function saveCsv(filename, rows){
   a.href = url; a.download = filename; a.style.display = 'none'; document.body.appendChild(a); a.click();
   setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 4000); toast('CSV 파일을 저장했습니다');
 }
-var APP_VER = '2026.11.19-l';
+var APP_VER = '2026.11.19-m';
 $$('[data-ver]').forEach(function(el){ el.textContent = APP_VER; });
 function wideScreen(){ return window.matchMedia('(min-width: 900px)').matches; }
 async function openExportSheet(){
