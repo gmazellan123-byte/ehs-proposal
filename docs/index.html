@@ -2509,7 +2509,7 @@ function saveCsv(filename, rows){
   a.href = url; a.download = filename; a.style.display = 'none'; document.body.appendChild(a); a.click();
   setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 4000); toast('CSV 파일을 저장했습니다');
 }
-var APP_VER = '2026.11.19-d';
+var APP_VER = '2026.11.19-e';
 function wideScreen(){ return window.matchMedia('(min-width: 900px)').matches; }
 async function openExportSheet(){
   var L = filtered(); if (!L.length) return toast('내보낼 데이터가 없습니다', true);
@@ -2520,7 +2520,7 @@ async function openExportSheet(){
     '<div class="exp-btns"><button class="btn btn-primary" data-x="share">'+ICON.share+'공유하기<small>회사 메일 · 사내 메신저 등</small></button>' +
     '<button class="btn btn-ghost" data-x="save">'+ICON.save+'휴대폰에 저장<small>다운로드 폴더</small></button></div>' +
     '<button class="btn btn-ghost btn-block" data-x="csv" style="margin-top:10px">CSV로 저장 <small style="font-weight:600;opacity:.75">· 휴대폰에 엑셀 앱이 없을 때</small></button>' +
-    (IS_KAKAO ? '<div class="notice warn" style="margin-top:10px"><b>카카오톡 안에서는 파일을 저장·공유할 수 없습니다.</b> 아래 버튼으로 기본 브라우저에서 연 뒤 다시 로그인해서 내보내 주세요.<button class="btn btn-primary btn-block" data-x="ext" style="margin-top:8px">기본 브라우저(Chrome·Safari)로 열기</button></div>'
+    (IS_KAKAO ? '<div class="notice warn" style="margin-top:10px"><b>카카오톡 안에서는 파일을 저장·공유할 수 없습니다.</b> 아래 버튼으로 '+(IS_ANDROID?'Chrome':'기본 브라우저')+'에서 연 뒤 다시 로그인해서 내보내 주세요.<button class="btn btn-primary btn-block" data-x="ext" style="margin-top:8px">'+(IS_ANDROID?'Chrome으로 열기':'기본 브라우저(Safari)로 열기')+'</button></div>'
       : IN_APP ? '<div class="notice warn" style="margin-top:10px"><b>앱 안의 브라우저</b>에서는 파일 저장이 막힐 수 있습니다. 화면의 ⋮ 메뉴에서 <b>다른 브라우저로 열기</b> 후 다시 시도해 주세요.</div>' : '') +
     '<div class="notice warn" style="margin-top:12px">회사 업무 자료입니다. <b>회사 메일·사내 저장소로만</b> 보내고, 개인 메신저·개인 메일로는 보내지 마세요. 보낸 뒤 휴대폰에 남은 파일은 지워 주세요.</div>' +
     (wideScreen() ? '<button class="btn btn-ghost btn-block" data-x="names" style="margin-top:10px">실명 포함 엑셀 만들기 (PC · 인사명단 대조)</button><button class="btn btn-ghost btn-block" data-x="key" style="margin-top:8px">오프라인 대조키 만들기 (PC)</button>' : '') +
@@ -3184,10 +3184,26 @@ var IS_ANDROID = /Android/i.test(UA);
 var IN_APP = /KAKAOTALK|NAVER\(inapp|Instagram|FBAN|FBAV|Line\/|DaumApps|everytimeApp/i.test(UA);
 /* 카카오톡 안에서 열면 기본 브라우저로 자동 전환 (카카오톡 브라우저는 파일 저장·앱 설치를 지원하지 않음) */
 var IS_KAKAO = /KAKAOTALK/i.test(UA);
-function openExternal(){ location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href); }
-(function(){ if (!IS_KAKAO) return; var k = 'ehs-kakao-ext'; try { if (sessionStorage.getItem(k)) return; sessionStorage.setItem(k, '1'); } catch(e){}
-  setTimeout(openExternal, 300); })();
 var IS_SAMSUNG = /SamsungBrowser/i.test(UA);
+/* 갤럭시: 설치는 Chrome에서 (Chrome이 정식 앱처럼 설치해 줌). Chrome 이외 브라우저·앱 안 브라우저면 Chrome으로 넘김 */
+var IS_CHROME = IS_ANDROID && /Chrome\/\d/.test(UA) && !IN_APP && !/SamsungBrowser|EdgA|OPR\/|Whale|NAVER|YaBrowser|Firefox|; wv\)/i.test(UA);
+function chromeIntent(url){
+  var u = new URL(url || location.href);
+  return 'intent://' + u.host + u.pathname + u.search + u.hash + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(u.href) + ';end';
+}
+function openInChrome(){
+  if (!IS_ANDROID) return openExternal();
+  location.href = chromeIntent();
+  /* Chrome으로 넘어가지 못한 경우(일부 앱 안 브라우저) → 카카오톡은 기본 브라우저로 */
+  if (IS_KAKAO) setTimeout(function(){ if (!document.hidden) location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href); }, 1500);
+}
+function openExternal(){
+  if (IS_ANDROID) return openInChrome();
+  location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href);
+}
+/* 카카오톡(안드로이드는 앱 안 브라우저 전체)에서 열면 Chrome(아이폰은 Safari)으로 자동 전환 — 앱 안 브라우저는 파일 저장·앱 설치를 지원하지 않음 */
+(function(){ if (!(IS_KAKAO || (IS_ANDROID && IN_APP))) return; var k = 'ehs-kakao-ext'; try { if (sessionStorage.getItem(k)) return; sessionStorage.setItem(k, '1'); } catch(e){}
+  setTimeout(openExternal, 300); })();
 var IS_IOS_OTHER = IS_IOS && /CriOS|FxiOS|EdgiOS|Whale|NAVER/i.test(UA);
 function isStandalone(){ return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true; }
 function installDismissed(){ try { return sessionStorage.getItem('ehs-install-hide') === '1'; } catch(e){ return false; } }
@@ -3197,7 +3213,8 @@ function refreshInstallCard(){
   var show = mobile && !isStandalone() && !installDismissed();
   card.classList.toggle('hidden', !show);
   if (!show) return;
-  $('#installSub').textContent = IN_APP ? '앱 안에서는 설치 불가 · 눌러서 방법 보기'
+  $('#installSub').textContent = (IS_ANDROID && !IS_CHROME) ? '누르면 Chrome에서 열어 설치합니다'
+    : IN_APP ? '앱 안에서는 설치 불가 · 눌러서 방법 보기'
     : INSTALL.evt ? '누르면 바로 설치 · 주소창 없는 전체화면'
     : '주소창 없이 앱처럼 전체화면 실행';
 }
@@ -3216,6 +3233,10 @@ $('#installBtn').addEventListener('click', async function(){
     refreshInstallCard(); return;
   }
   var title = '앱으로 설치하기', body;
+  if (IS_ANDROID && !IS_CHROME){
+    toast('Chrome에서 열립니다. Chrome 화면에서 [설치]를 한 번 더 눌러 주세요');
+    setTimeout(openInChrome, 600); return;
+  }
   if (IN_APP){
     body = '<p class="inst-lead">카카오톡·네이버 등 <b>앱 안의 브라우저</b>에서는 설치할 수 없습니다. 기본 브라우저로 다시 열어 주세요.</p>' +
       stepHtml(IS_IOS ? ['화면 오른쪽 아래(또는 위)의 '+DOTS_ICO+' 또는 공유 버튼을 누릅니다', '<b>Safari로 열기</b>를 누릅니다', 'Safari에서 다시 [설치] 버튼을 누릅니다']
@@ -3225,14 +3246,9 @@ $('#installBtn').addEventListener('click', async function(){
     body = (IS_IOS_OTHER ? '<p class="inst-lead">아이폰은 <b>Safari</b>에서만 홈 화면에 추가할 수 있습니다. 주소를 복사해 Safari에서 열어 주세요.</p>' +
         '<div class="inst-url"><span class="mono">'+esc(location.origin + location.pathname)+'</span><button class="btn btn-ghost btn-sm" id="copyUrl">주소 복사</button></div>' : '') +
       stepHtml(['화면 아래(아이패드는 위)의 <b>공유 버튼</b> '+SHARE_ICO+' 을 누릅니다', '메뉴를 아래로 내려 <b>홈 화면에 추가</b> '+PLUS_ICO+' 를 누릅니다', '오른쪽 위 <b>추가</b>를 누릅니다', '홈 화면에 생긴 <b>안전제안</b> 아이콘으로 실행하면 주소창 없이 열립니다']);
-  } else if (IS_SAMSUNG){
-    body = stepHtml(['화면 아래 <b>≡ 메뉴</b>를 누릅니다', '<b>현재 페이지 추가</b> → <b>홈 화면</b>을 누릅니다', '홈 화면에 생긴 <b>안전제안</b> 아이콘으로 실행합니다']);
   } else {
-    body = stepHtml(['Chrome 오른쪽 위 '+DOTS_ICO+' 메뉴를 누릅니다', '<b>앱 설치</b> 또는 <b>홈 화면에 추가</b>를 누릅니다', '<b>설치/추가</b>를 누른 뒤 홈 화면의 <b>안전제안</b> 아이콘으로 실행합니다']);
-  }
-  if (IS_ANDROID && !IN_APP){
-    body += '<p class="inst-lead" style="margin-top:14px">또는 <b>설치 파일(APK)</b>로 앱을 설치할 수 있습니다.</p>' +
-      '<a class="btn btn-ghost btn-block" href="install.html">갤럭시용 설치 파일 받기</a>';
+    body = '<p class="inst-lead">이미 설치했다면 앱 서랍·홈 화면의 <b>안전제안</b> 아이콘으로 실행하세요. 설치 창이 바로 뜨지 않으면 아래 순서로 설치합니다.</p>' +
+      stepHtml(['Chrome 오른쪽 위 '+DOTS_ICO+' 메뉴를 누릅니다', '<b>앱 설치</b> (또는 <b>홈 화면에 추가</b> → <b>설치</b>)를 누릅니다', '앱 서랍·홈 화면에 생긴 <b>안전제안</b> 아이콘으로 실행합니다']);
   }
   openSheet('<div class="sheet-head"><div class="h"><span class="kicker">INSTALL</span><h3>'+title+'</h3></div><button class="icon-btn" data-close>✕</button></div>' + body +
     '<p class="note" style="margin-top:14px">설치한 아이콘으로 열면 주소창 없이 앱처럼 전체화면으로 실행됩니다. 로그인 정보·데이터는 같은 계정으로 그대로 이어집니다.</p>' +

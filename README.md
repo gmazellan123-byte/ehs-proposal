@@ -312,14 +312,15 @@ PC 또는 휴대폰으로 주소 접속 → **[최초 등록]** → 본인 사�
 
 직접 하는 방법:
 - **아이폰(Safari)**: 공유 버튼 → **홈 화면에 추가**
-- **안드로이드(Chrome)**: **⋮** → **홈 화면에 추가** (또는 앱 설치)
+- **안드로이드(Chrome)**: 로그인 화면의 **[설치]** 또는 **⋮** → **앱 설치**. 삼성 인터넷·카카오톡 등에서 열면 자동으로 Chrome으로 넘어갑니다.
 
 ### 직원에게 보낼 링크 하나: 설치 안내 페이지
 `https://gmazellan123-byte.github.io/ehs-proposal/install.html`
-- 휴대폰 종류를 자동으로 알아보고 **갤럭시 → APK 다운로드**, **아이폰 → 홈 화면 추가** 안내를 보여줍니다.
+- 휴대폰 종류를 자동으로 알아보고 **갤럭시 → Chrome에서 앱 설치**, **아이폰 → Safari 홈 화면 추가** 안내를 보여줍니다.
 - 기존 주소(`.../ehs-proposal/`)도 그대로 쓸 수 있습니다.
 
-### 갤럭시용 APK (설치 파일)
+### 갤럭시용 APK (보관용 · 현재 안내하지 않음)
+- 2026-11 기준 갤럭시 설치는 **Chrome 앱 설치** 방식으로 통일했습니다. 설치 파일 경고·보안 설정 변경이 없고 화면·아이콘 변경이 자동 반영됩니다. 아래 APK 빌드는 필요할 때를 대비해 남겨 둡니다.
 - 다운로드 주소(항상 최신): `https://github.com/gmazellan123-byte/ehs-proposal/releases/latest/download/ehs-proposal.apk`
 - APK는 GitHub Pages의 화면을 여는 **껍데기 앱(TWA)** 입니다. 화면을 고치면 APK를 다시 만들지 않아도 바로 반영됩니다.
 - 빌드는 GitHub Actions(`.github/workflows/android-apk.yml`)가 자동으로 합니다. `android/` 폴더가 바뀌면 다시 빌드되고, **Actions → Android APK → Run workflow**로 직접 돌릴 수도 있습니다.
