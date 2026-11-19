@@ -324,21 +324,31 @@ async function actMatch(req: Request, body: any) {
   const addPath = (h: string, p: string | null) => { if (!p) return; if (!paths.has(h)) paths.set(h, new Set()); paths.get(h)!.add(p); };
   const withPaths = actor.role === "hq" && body.withPaths === true;
   if (hashes.length) {
-    const { data: emps } = await db.from("employees").select("emp_hash, org_path").in("emp_hash", hashes);
+    // 해시를 50개씩 나눠 조회 (한 번에 많이 넣으면 요청 주소가 너무 길어져 조회가 실패함)
+    const CH = 50, chunks: string[][] = [];
+    for (let k = 0; k < hashes.length; k += CH) chunks.push(hashes.slice(k, k + CH));
     const prefix = actor.role === "team" ? teamPrefix(actor.org_path) : actor.org_path;
-    for (const e of emps ?? []) {
-      if (actor.role === "hq" || within(e.org_path, prefix)) ok.add(e.emp_hash);
-      if (withPaths) addPath(e.emp_hash, e.org_path);
+    for (const part of chunks) {
+      const { data: emps, error } = await db.from("employees").select("emp_hash, org_path").in("emp_hash", part);
+      if (error) throw new HttpError(500, "인원 대조 중 오류가 발생했습니다");
+      for (const e of emps ?? []) {
+        if (actor.role === "hq" || within(e.org_path, prefix)) ok.add(e.emp_hash);
+        if (withPaths) addPath(e.emp_hash, e.org_path);
+      }
     }
     // 퇴직·삭제된 인원도 제출 기록이 있으면 대조 (제출 당시 부서 기준)
     const rest = withPaths ? hashes : hashes.filter((h) => !ok.has(h));
-    for (let from = 0; rest.length; from += 1000) {
-      const { data: reps } = await db.from("reports").select("emp_hash, org_path").in("emp_hash", rest).order("id").range(from, from + 999);
-      for (const r of reps ?? []) {
-        if (actor.role === "hq" || within(r.org_path, prefix)) ok.add(r.emp_hash);
-        if (withPaths) addPath(r.emp_hash, r.org_path);
+    for (let k = 0; k < rest.length; k += CH) {
+      const part = rest.slice(k, k + CH);
+      for (let from = 0; ; from += 1000) {
+        const { data: reps, error } = await db.from("reports").select("emp_hash, org_path").in("emp_hash", part).order("id").range(from, from + 999);
+        if (error) throw new HttpError(500, "제출 기록 대조 중 오류가 발생했습니다");
+        for (const r of reps ?? []) {
+          if (actor.role === "hq" || within(r.org_path, prefix)) ok.add(r.emp_hash);
+          if (withPaths) addPath(r.emp_hash, r.org_path);
+        }
+        if (!reps || reps.length < 1000) break;
       }
-      if (!reps || reps.length < 1000) break;
     }
   }
   const matches: { i: number; h: string; p?: string[] }[] = [];
