@@ -842,6 +842,15 @@ span.rt-hi{background:#DC2626;} span.rt-md{background:#EA7A0C;} span.rt-lo{backg
 .exp-agree{display:flex;gap:8px;align-items:flex-start;margin-top:14px;padding:12px;border-radius:var(--r-sm);background:#FFF7ED;border:1px solid #FCD9B6;font-size:13px;line-height:1.55;color:var(--ink-soft);cursor:pointer;}
 .exp-agree input{width:18px;height:18px;margin-top:1px;flex:none;-webkit-appearance:auto;appearance:auto;accent-color:var(--brand);box-shadow:none;padding:0;}
 .drop.off{opacity:.45;pointer-events:none;}
+
+/* ===== v4.7: 로그인 암호화 설명 줄 — 어떤 휴대폰 폭에서도 한 줄 ===== */
+.cipher{container-type:inline-size;}
+.cipher-flow{flex-wrap:nowrap;justify-content:space-between;gap:clamp(2px,1vw,6px);font-size:clamp(6.5px,2.45vw,11px);white-space:nowrap;}
+.cipher-flow .tok{padding:.28em .55em;flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.02em;}
+.cipher-flow .arrow{flex:none;}
+@supports (container-type:inline-size){
+  .cipher-flow{font-size:clamp(6.5px,3.45cqw,11.5px);gap:clamp(2px,1.4cqw,7px);}
+}
 </style>
 </head>
 <body>
