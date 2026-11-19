@@ -114,6 +114,7 @@ alter table public.reports drop constraint if exists reports_type_check;
 alter table public.reports add constraint reports_type_check check (type in ('proposal','nearmiss','risk'));
 alter table public.reports add column if not exists risk_level text check (risk_level in ('상','중','하'));
 alter table public.reports add column if not exists final_risk text check (final_risk in ('상','중','하'));
+alter table public.reports add column if not exists edited_at timestamptz;   -- 작성자가 접수 상태에서 내용을 수정한 마지막 시각
 
 -- ---------------------------------------------------------------------
 -- 4. 처리 이력
@@ -130,6 +131,8 @@ create table if not exists public.report_logs (
   created_at      timestamptz not null default now()
 );
 create index if not exists report_logs_report_idx on public.report_logs (report_id, created_at);
+-- kind : submit 접수 / process 처리(상태·등급·의견) / edit 작성자 내용 수정
+alter table public.report_logs add column if not exists kind text;
 
 -- ---------------------------------------------------------------------
 -- 4-1. 실명 대조 기록 (PC에서 인사명단과 대조해 실명 엑셀을 만들 때마다 서버 함수가 기록)
@@ -323,7 +326,39 @@ create trigger trg_reports_before_insert
 --      결정등급 가·나·다 → 상태가 자동으로 '위원회 의결예정(committee)'으로 종료
 create or replace function public.reports_before_update()
 returns trigger language plpgsql security definer set search_path = public as $$
+declare v_staff boolean; v_author boolean; v_content boolean; v_proc boolean;
 begin
+  -- 작성자 수정 / 관리자 처리 구분
+  --   작성자 : 결재(검토중 포함) 전, 즉 '접수' 상태에서만 내용 수정 가능 · 처리 항목은 바꿀 수 없음
+  --   관리자 : 상태 · 등급 · 위험정도 · 처리 의견만 바꿀 수 있음 (내용은 바꿀 수 없음)
+  v_staff  := auth.uid() is null or public.in_scope(old.org_path);   -- auth.uid() 없음 = 서버 내부 처리
+  v_author := auth.uid() is not null and auth.uid() = old.author_id;
+  v_content := new.location is distinct from old.location or new.category is distinct from old.category or new.occurred_at is distinct from old.occurred_at
+            or new.detail is distinct from old.detail or new.request is distinct from old.request or new.prevention is distinct from old.prevention
+            or new.proposed_grade is distinct from old.proposed_grade or new.risk_level is distinct from old.risk_level or new.photo_path is distinct from old.photo_path;
+  v_proc := new.status is distinct from old.status or new.final_grade is distinct from old.final_grade
+         or new.final_risk is distinct from old.final_risk or new.admin_comment is distinct from old.admin_comment;
+  if v_content then
+    if not v_author then raise exception '제출 내용은 작성자만 수정할 수 있습니다'; end if;
+    if old.status <> 'received' then raise exception '검토가 시작된 건은 수정할 수 없습니다'; end if;
+    if v_proc then raise exception '내용 수정과 처리를 함께 할 수 없습니다'; end if;
+    if coalesce(btrim(new.location), '') = '' then raise exception '장소를 입력해야 합니다'; end if;
+    if char_length(coalesce(new.detail, '')) < 5 then raise exception '내용을 5자 이상 작성해야 합니다'; end if;
+    if new.type = 'proposal' and new.proposed_grade is null then raise exception '제안 등급을 선택해야 합니다'; end if;
+    if new.type = 'risk' and new.risk_level is null then raise exception '위험정도(상·중·하)를 선택해야 합니다'; end if;
+    if new.type = 'nearmiss' and (new.occurred_at is null or new.occurred_at > now() + interval '5 minutes') then raise exception '발생 일시를 확인해야 합니다'; end if;
+    if new.type <> 'proposal' then new.proposed_grade := null; new.request := case when new.type = 'proposal' then new.request else null end; end if;
+    if new.type <> 'risk' then new.risk_level := null; end if;
+    if new.type <> 'nearmiss' then new.occurred_at := null; new.prevention := null; end if;
+    if new.type = 'proposal' then new.category := null; end if;
+    new.type := old.type; new.created_at := old.created_at; new.author_id := old.author_id; new.emp_hash := old.emp_hash;
+    new.team := old.team; new.site := old.site; new.dept := old.dept; new.part := old.part; new.org_code := old.org_code; new.org_path := old.org_path;
+    new.edited_at := now(); new.updated_at := now();
+    return new;
+  end if;
+  if v_proc and not v_staff then raise exception '처리 권한이 없습니다'; end if;
+  new.edited_at := old.edited_at;
+
   -- 제출 당시 작성자·소속은 고정 (인원의 퇴직·부서 이동·조직 개편과 관계없이 원래 부서 집계에 남음)
   new.type := old.type; new.created_at := old.created_at;
   if new.author_id is not null then new.author_id := old.author_id; end if; -- 계정 삭제 시 연결만 끊는 것은 허용
@@ -381,16 +416,20 @@ create or replace function public.reports_after_change()
 returns trigger language plpgsql security definer set search_path = public as $$
 declare v_code text; v_role text;
 begin
+  if current_setting('ehs.skip_log', true) = '1' then return null; end if;   -- 이력 삭제로 되돌릴 때는 기록하지 않음
   select emp_code, role into v_code, v_role from public.employees where user_id = auth.uid();
   if tg_op = 'INSERT' then
-    insert into public.report_logs (report_id, from_status, to_status, comment, changed_by_code, changed_by_role)
-    values (new.id, null, new.status, '접수', v_code, v_role);
+    insert into public.report_logs (report_id, from_status, to_status, comment, changed_by_code, changed_by_role, kind)
+    values (new.id, null, new.status, '접수', v_code, v_role, 'submit');
+  elsif new.edited_at is distinct from old.edited_at then
+    insert into public.report_logs (report_id, from_status, to_status, comment, changed_by_code, changed_by_role, kind)
+    values (new.id, old.status, new.status, '작성자가 내용을 수정했습니다', v_code, v_role, 'edit');
   elsif new.status is distinct from old.status
         or new.final_grade is distinct from old.final_grade
         or new.final_risk is distinct from old.final_risk
         or new.admin_comment is distinct from old.admin_comment then
-    insert into public.report_logs (report_id, from_status, to_status, final_grade, comment, changed_by_code, changed_by_role)
-    values (new.id, old.status, new.status, coalesce(new.final_grade, new.final_risk), new.admin_comment, v_code, v_role);
+    insert into public.report_logs (report_id, from_status, to_status, final_grade, comment, changed_by_code, changed_by_role, kind)
+    values (new.id, old.status, new.status, coalesce(new.final_grade, new.final_risk), new.admin_comment, v_code, v_role, 'process');
   end if;
   return null;
 end $$;
@@ -399,6 +438,40 @@ drop trigger if exists trg_reports_after_change on public.reports;
 create trigger trg_reports_after_change
   after insert or update on public.reports
   for each row execute function public.reports_after_change();
+
+-- 6-5) 처리 이력 삭제 (관리자 이상 · 관리 범위 안)
+--      가장 최근 처리 이력을 지우면 제출건의 상태 · 등급 · 위험정도 · 처리 의견을 직전 단계로 되돌림
+--      ('검토중'을 지우면 다시 '접수' → 작성자가 다시 수정 가능). 최초 '접수' 기록은 지울 수 없음
+create or replace function public.delete_report_log(p_log_id bigint)
+returns public.reports language plpgsql security definer set search_path = public as $$
+declare l public.report_logs; r public.reports; latest bigint; prev public.report_logs; v_role text;
+begin
+  select * into l from public.report_logs where id = p_log_id;
+  if not found then raise exception '이력을 찾을 수 없습니다'; end if;
+  select * into r from public.reports where id = l.report_id;
+  v_role := public.my_role();
+  if v_role is null or v_role = 'worker' or not public.in_scope(r.org_path) then raise exception '이력을 삭제할 권한이 없습니다'; end if;
+  if coalesce(l.kind, case when l.from_status is null then 'submit' else 'process' end) = 'submit' then raise exception '최초 접수 기록은 삭제할 수 없습니다'; end if;
+  select max(id) into latest from public.report_logs
+   where report_id = r.id and coalesce(kind, case when from_status is null then 'submit' else 'process' end) = 'process';
+  delete from public.report_logs where id = l.id;
+  if l.id = latest and coalesce(l.kind, 'process') = 'process' then
+    select * into prev from public.report_logs
+     where report_id = r.id and id < l.id and coalesce(kind, case when from_status is null then 'submit' else 'process' end) = 'process'
+     order by id desc limit 1;
+    perform set_config('ehs.skip_log', '1', true);
+    update public.reports set
+      status        = coalesce(l.from_status, 'received'),
+      final_grade   = case when r.type = 'proposal' then prev.final_grade end,
+      final_risk    = case when r.type = 'risk' then prev.final_grade end,
+      admin_comment = prev.comment
+     where id = r.id returning * into r;
+    perform set_config('ehs.skip_log', '', true);
+  end if;
+  return r;
+end $$;
+revoke all on function public.delete_report_log(bigint) from public, anon;
+grant execute on function public.delete_report_log(bigint) to authenticated;
 
 -- 6-5) 이미 등록된 인원 바로잡기: 사업팀 소속 지원그룹 인원은 사업팀 권한 (본사 계정 제외)
 --      이 파일을 다시 실행할 때마다 적용되므로, 업로드를 다시 하지 않아도 정리됨
@@ -429,7 +502,8 @@ grant usage, select on all sequences in schema public to service_role;
 grant select on public.org_units, public.employees, public.reports, public.report_logs to authenticated;
 grant insert (type, proposed_grade, location, category, occurred_at, detail, request, prevention, photo_path, risk_level)
   on public.reports to authenticated;
-grant update (status, final_grade, final_risk, admin_comment) on public.reports to authenticated;
+grant update (status, final_grade, final_risk, admin_comment,
+              location, category, occurred_at, detail, request, prevention, proposed_grade, risk_level) on public.reports to authenticated;
 grant delete on public.reports to authenticated;
 
 drop policy if exists org_select on public.org_units;
@@ -451,6 +525,11 @@ create policy rep_insert on public.reports for insert to authenticated
 drop policy if exists rep_update on public.reports;
 create policy rep_update on public.reports for update to authenticated
   using (public.in_scope(org_path)) with check (public.in_scope(org_path));
+
+-- 작성자: 결재 전('접수' 상태) 본인 제출건 내용 수정
+drop policy if exists rep_update_own on public.reports;
+create policy rep_update_own on public.reports for update to authenticated
+  using (author_id = auth.uid() and status = 'received') with check (author_id = auth.uid());
 
 drop policy if exists rep_delete on public.reports;
 create policy rep_delete on public.reports for delete to authenticated

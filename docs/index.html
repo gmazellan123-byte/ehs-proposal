@@ -851,6 +851,22 @@ span.rt-hi{background:#DC2626;} span.rt-md{background:#EA7A0C;} span.rt-lo{backg
 @supports (container-type:inline-size){
   .cipher-flow{font-size:clamp(6.5px,3.45cqw,11.5px);gap:clamp(2px,1.4cqw,7px);}
 }
+
+/* ===== v4.8: 작성자 수정 · 처리 이력 삭제 ===== */
+.edit-box{display:flex;align-items:center;gap:12px;margin-top:12px;padding:12px 14px;border-radius:var(--r-sm);background:linear-gradient(180deg,#F2F9FE,#E8F4FC);border:1px solid #CBE6F7;}
+.edit-box div{flex:1;min-width:0;}
+.edit-box b{display:block;font-size:14px;color:var(--ink);}
+.edit-box span{display:block;font-size:12px;color:var(--ink-soft);margin-top:2px;line-height:1.45;}
+.edit-box .btn{width:auto;flex:none;padding:10px 16px;}
+.edit-form{display:block;}
+.edit-form textarea{min-height:90px;}
+.edited{display:inline-block;margin-left:4px;padding:0 6px;border-radius:5px;background:#EEF3F9;color:var(--ink-soft);font-size:11px;font-weight:700;}
+.timeline li{position:relative;}
+.tl-del{position:absolute;right:0;top:0;border:1px solid var(--line2);background:#fff;color:var(--ink-faint);border-radius:7px;font-size:11px;font-weight:800;padding:2px 7px;cursor:pointer;}
+.tl-del:hover{color:var(--red);border-color:#F4BEBE;}
+.tl-del.armed{color:#fff;background:var(--red);border-color:transparent;}
+.timeline li.k-edit .tx{color:var(--ink-soft);}
+.tl-hint{display:block;margin-top:3px;font-family:inherit;letter-spacing:0;text-transform:none;font-size:11.5px;font-weight:600;color:var(--ink-faint);}
 </style>
 </head>
 <body>
@@ -1343,6 +1359,7 @@ function makeRealApi(){
     var m = String(error && error.message || '');
     if (/JWT|session|token/i.test(m)) return new Error('로그인이 만료되었습니다. 다시 로그인해주세요.');
     if (/row-level|permission/i.test(m)) return new Error('권한이 없습니다.');
+    if (/PGRST116|0 rows|no rows/i.test(m)) return new Error('권한이 없거나 이미 검토가 시작된 건입니다. 새로고침 후 확인해주세요.');
     return new Error(m || '처리 중 오류가 발생했습니다.');
   }
   /* 서버는 한 번에 1,000행까지만 돌려주므로 나눠서 모두 받음 */
@@ -1392,6 +1409,7 @@ function makeRealApi(){
       if (r.error) throw dbErr(r.error); return r.data; },
     photoUrl: async function(path){ var r = await sb.storage.from(BUCKET).createSignedUrl(path, 300);
       if (r.error) throw new Error('사진을 불러올 수 없습니다'); return r.data.signedUrl; },
+    deleteLog: async function(logId){ var r = await sb.rpc('delete_report_log', { p_log_id: logId }); if (r.error) throw dbErr(r.error); return Array.isArray(r.data) ? r.data[0] : r.data; },
     update: async function(id, patch){ var r = await sb.from('reports').update(patch).eq('id', id).select('*').single();
       if (r.error) throw dbErr(r.error); return r.data; },
     remove: async function(rep){ var r = await sb.from('reports').delete().eq('id', rep.id); if (r.error) throw dbErr(r.error);
@@ -1426,7 +1444,8 @@ function makeDemoApi(){
   function pickOne(a){ return a[Math.floor(rnd() * a.length)]; }
   function h64(s){ var out=''; for (var k=0;k<8;k++){ var x = 0x811c9dc5 ^ (k*0x9e3779b1); var t='demo|'+k+'|'+s;
       for (var i=0;i<t.length;i++){ x ^= t.charCodeAt(i); x = Math.imul(x, 0x01000193) >>> 0; } out += x.toString(16).padStart(8,'0'); } return out; }
-  var emps = {}, pw = {}, me = null, reports = [], logs = [], seq = 200;
+  var emps = {}, pw = {}, me = null, reports = [], logs = [], seq = 200, logSeq = 0;
+  var CONTENT = ['location','category','occurred_at','detail','request','prevention','proposed_grade','risk_level'];
   function applyOrg(e, role, code){
     if (code){ var u = unitOfCode(code); if (!u) throw new Error('등록되지 않은 부서코드입니다');
       e.org_code = u.code; e.org_path = u.path; e.team = u.team; e.site = u.site; e.dept = u.dept; e.part = u.part; }
@@ -1460,8 +1479,8 @@ function makeDemoApi(){
       photo_path:null, status:st, admin_comment: st === 'committee' ? '산업안전보건위원회 상정 예정입니다.' : st === 'done' ? '조치 완료했습니다. 감사합니다.' : st === 'rejected' ? '이미 개선 일정이 잡혀 있어 반려합니다.' : null,
       created_at:t, updated_at:t, reviewed_at: st !== 'received' ? t : null, closed_at: CLOSED.indexOf(st) > -1 ? t : null };
     reports.push(r);
-    logs.push({ report_id:r.id, from_status:null, to_status:'received', comment:'접수', changed_by_code:e.emp_code, changed_by_role:e.role, created_at:t });
-    if (st !== 'received') logs.push({ report_id:r.id, from_status:'received', to_status:st, final_grade:fg, comment:r.admin_comment, changed_by_code:codeOf(h64('7001')), changed_by_role:'manager', created_at:t });
+    logs.push({ id:++logSeq, kind:'submit', report_id:r.id, from_status:null, to_status:'received', comment:'접수', changed_by_code:e.emp_code, changed_by_role:e.role, created_at:t });
+    if (st !== 'received') logs.push({ id:++logSeq, kind:'process', report_id:r.id, from_status:'received', to_status:st, final_grade:fg, comment:r.admin_comment, changed_by_code:codeOf(h64('7001')), changed_by_role:'manager', created_at:t });
   }
   reports.sort(function(a,b){ return a.created_at < b.created_at ? 1 : -1; });
   function wait(ms){ return new Promise(function(r){ setTimeout(r, ms||200); }); }
@@ -1491,13 +1510,33 @@ function makeDemoApi(){
       var r = Object.assign({ proposed_grade:null, location:null, category:null, occurred_at:null, request:null, prevention:null, risk_level:null, final_risk:null }, data,
         { id:uuid(), report_no:++seq, type:type, author_id:me, emp_hash:me, team:e.team, site:e.site, dept:e.dept, part:e.part, org_code:e.org_code, org_path:e.org_path, final_grade:null,
           photo_path: photo ? URL.createObjectURL(photo) : null, status:'received', admin_comment:null, created_at:now, updated_at:now, reviewed_at:null, closed_at:null });
-      reports.unshift(r); logs.push({ report_id:r.id, from_status:null, to_status:'received', comment:'접수', changed_by_code:e.emp_code, changed_by_role:e.role, created_at:now });
+      reports.unshift(r); logs.push({ id:++logSeq, kind:'submit', report_id:r.id, from_status:null, to_status:'received', comment:'접수', changed_by_code:e.emp_code, changed_by_role:e.role, created_at:now });
       return r.report_no; },
     mine: async function(){ await wait(); return clone(reports.filter(function(r){ return r.author_id === me; })); },
     all: async function(){ await wait(); var a = actor(); return clone(reports.filter(function(r){ return r.author_id === me || inScope(a, r.org_path); })); },
     logs: async function(id){ return clone(logs.filter(function(l){ return l.report_id === id; })); },
+    deleteLog: async function(logId){ await wait(); var a = actor(), l = logs.find(function(x){ return x.id === logId; }); if (!l) throw new Error('이력을 찾을 수 없습니다');
+      var r = reports.find(function(x){ return x.id === l.report_id; });
+      if (!a || a.role === 'worker' || !inScope(a, r.org_path)) throw new Error('이력을 삭제할 권한이 없습니다');
+      if ((l.kind || (l.from_status ? 'process' : 'submit')) === 'submit') throw new Error('최초 접수 기록은 삭제할 수 없습니다');
+      var P = logs.filter(function(x){ return x.report_id === r.id && (x.kind || (x.from_status ? 'process' : 'submit')) === 'process'; }), latest = P[P.length - 1];
+      logs = logs.filter(function(x){ return x !== l; });
+      if (latest === l){ var prev = P[P.length - 2] || null;
+        r.status = l.from_status || 'received'; r.final_grade = r.type === 'proposal' && prev ? prev.final_grade || null : null; r.final_risk = r.type === 'risk' && prev ? prev.final_grade || null : null;
+        r.admin_comment = prev ? prev.comment || null : null; r.closed_at = CLOSED.indexOf(r.status) > -1 ? r.closed_at : null; r.updated_at = new Date().toISOString(); }
+      return clone(r); },
     photoUrl: async function(p){ return p; },
     update: async function(id, patch){ await wait(); var a = actor(), r = reports.find(function(x){ return x.id === id; });
+      if (CONTENT.some(function(k){ return patch[k] !== undefined; })){   /* 작성자 내용 수정 (접수 상태만) */
+        if (r.author_id !== me) throw new Error('제출 내용은 작성자만 수정할 수 있습니다');
+        if (r.status !== 'received') throw new Error('검토가 시작된 건은 수정할 수 없습니다');
+        var e2 = Object.assign({}, r, patch);
+        if (!String(e2.location || '').trim()) throw new Error('장소를 입력해야 합니다');
+        if (String(e2.detail || '').length < 5) throw new Error('내용을 5자 이상 작성해야 합니다');
+        CONTENT.forEach(function(k){ if (patch[k] !== undefined) r[k] = patch[k]; });
+        r.edited_at = r.updated_at = new Date().toISOString();
+        logs.push({ id:++logSeq, kind:'edit', report_id:id, from_status:r.status, to_status:r.status, comment:'작성자가 내용을 수정했습니다', changed_by_code:a.emp_code, changed_by_role:a.role, created_at:r.edited_at });
+        return clone(r); }
       if (!inScope(a, r.org_path)) throw new Error('권한이 없습니다.');
       var n = Object.assign({}, r, patch);
       if (n.type === 'nearmiss'){ if (['received','reviewing','done'].indexOf(n.status) < 0) throw new Error('아차사고는 접수/검토중/조치완료 상태만 사용할 수 있습니다'); n.final_grade = null; }
@@ -1507,7 +1546,7 @@ function makeDemoApi(){
       else n.final_grade = null;
       var now = new Date().toISOString();
       if (n.status !== r.status || n.final_grade !== r.final_grade || n.final_risk !== r.final_risk || (n.admin_comment||null) !== (r.admin_comment||null)){
-        n.reviewed_at = now; logs.push({ report_id:id, from_status:r.status, to_status:n.status, final_grade:n.final_grade || n.final_risk || null, comment:n.admin_comment, changed_by_code:a.emp_code, changed_by_role:a.role, created_at:now }); }
+        n.reviewed_at = now; logs.push({ id:++logSeq, kind:'process', report_id:id, from_status:r.status, to_status:n.status, final_grade:n.final_grade || n.final_risk || null, comment:n.admin_comment, changed_by_code:a.emp_code, changed_by_role:a.role, created_at:now }); }
       n.closed_at = CLOSED.indexOf(n.status) > -1 ? (r.closed_at && CLOSED.indexOf(r.status) > -1 ? r.closed_at : now) : null;
       n.updated_at = now; Object.assign(r, n); return clone(r); },
     remove: async function(rep){ if (actor().role !== 'hq') throw new Error('권한이 없습니다.'); reports = reports.filter(function(x){ return x.id !== rep.id; }); },
@@ -1856,7 +1895,7 @@ async function openDetail(r, staffView){
   else if (isR) meta.push(['장소 (근무지)', esc(r.location || '-')], ['위험요인', esc(r.category || '미분류')], ['위험정도 (제출)', riskTag(r.risk_level) + ' ' + (RISK[r.risk_level] ? RISK[r.risk_level].desc : '')],
     ['위험정도 (반영)', r.final_risk ? riskTag(r.final_risk) + ' ' + RISK[r.final_risk].desc : '<span style="color:var(--ink-faint)">미결정</span>']);
   else meta.push(['발생 일시', fmt(r.occurred_at)], ['장소', esc(r.location || '-')], ['사고 유형', esc(r.category || '미분류')]);
-  meta.push(['제출 일시', fmt(r.created_at)]);
+  meta.push(['제출 일시', fmt(r.created_at) + (r.edited_at ? ' <span class="edited">수정 ' + fmt(r.edited_at).slice(5) + '</span>' : '')]);
   if (staffView) meta.push(['제출자 식별코드', '<span class="mono" style="color:var(--brand)">'+esc(codeOf(r.emp_hash))+'</span>'], ['종료 일시', fmt(r.closed_at)]);
   var blocks = isP ? [['DETAIL · 상세 내용', r.detail], ['REQUEST · 조치 요청사항', r.request]]
              : isR ? [['CONTENT · 내용', r.detail]]
@@ -1881,20 +1920,36 @@ async function openDetail(r, staffView){
       '<textarea id="cmt" maxlength="2000" placeholder="처리 내용·조치 결과를 입력하세요">'+esc(r.admin_comment||'')+'</textarea>' +
       '<button class="btn btn-primary" id="saveProc" style="margin-top:10px">처리 내용 저장</button></div>';
   }
-  html += '<div class="timeline"><div class="bt kicker" style="margin-bottom:10px">HISTORY · 처리 이력</div><ol id="tl"><li><div class="tx">불러오는 중…</div></li></ol></div>';
+  var canEdit = !!u && r.author_id === u.uid && r.status === 'received';
+  if (canEdit) html += '<div class="edit-box"><div><b>결재 전이라 내용을 수정할 수 있습니다</b><span>관리자가 검토를 시작하면(검토중 포함) 더 이상 수정할 수 없습니다</span></div><button class="btn btn-ghost" id="editRep">내용 수정</button></div>';
+  else if (!!u && r.author_id === u.uid && !staffView) html += '<p class="note" style="margin-top:10px">검토가 시작되어 내용을 수정할 수 없습니다. 수정이 필요하면 관리자에게 요청하세요.</p>';
+  html += '<div class="timeline"><div class="bt kicker" style="margin-bottom:10px">HISTORY · 처리 이력'+(canProc ? '<span class="tl-hint">관리자: 이력 옆 ✕로 삭제 · 최근 처리를 지우면 직전 상태로 되돌아감</span>' : '')+'</div><ol id="tl"><li><div class="tx">불러오는 중…</div></li></ol></div>';
   if (staffView && u.role === 'hq') html += '<div class="actions-row"><button class="btn btn-danger" id="delRep">이 건 삭제</button></div>';
   openSheet(html);
   $('[data-close]', sheet).onclick = closeSheet;
+  var eb = $('#editRep'); if (eb) eb.onclick = function(){ openEditSheet(r, staffView); };
 
   if (r.photo_path) api.photoUrl(r.photo_path).then(function(src){ var b = $('#dPhoto'); if (b) b.innerHTML = '<img alt="첨부 사진" src="'+esc(src)+'">'; })
     .catch(function(){ var b = $('#dPhoto'); if (b) b.textContent = '사진을 불러올 수 없습니다'; });
   api.logs(r.id).then(function(ls){
     var tl = $('#tl'); if (!tl) return;
+    var kindOf = function(l){ return l.kind || (l.from_status ? 'process' : 'submit'); };
     tl.innerHTML = ls.length ? ls.map(function(l){
-      return '<li><div class="tm">'+fmt(l.created_at)+(staffView && l.changed_by_code ? ' · '+(ROLE[l.changed_by_role]?ROLE[l.changed_by_role].ko+' ':'')+'ID '+esc(l.changed_by_code) : '')+'</div><div class="tx">' +
-        (l.from_status ? esc(stLabel(l.from_status, r.type))+' → ' : '')+'<b>'+esc(stLabel(l.to_status, r.type))+'</b>' + (l.final_grade ? (isR ? ' · 위험정도 '+esc(l.final_grade) : ' · 결정 '+esc(l.final_grade)+'등급') : '') +
-        (l.comment && l.comment !== '접수' ? '<br>'+esc(l.comment) : '') + '</div></li>'; }).join('') : '<li><div class="tx">이력이 없습니다</div></li>';
+      return '<li class="k-'+kindOf(l)+'">' + (canProc && kindOf(l) !== 'submit' && l.id != null ? '<button class="tl-del" data-log="'+esc(l.id)+'" title="이 이력 삭제">✕</button>' : '') + '<div class="tm">'+fmt(l.created_at)+(staffView && l.changed_by_code ? ' · '+(ROLE[l.changed_by_role]?ROLE[l.changed_by_role].ko+' ':'')+'ID '+esc(l.changed_by_code) : '')+'</div><div class="tx">' +
+        (kindOf(l) === 'edit' ? '<b>내용 수정</b>' : (l.from_status ? esc(stLabel(l.from_status, r.type))+' → ' : '')+'<b>'+esc(stLabel(l.to_status, r.type))+'</b>') + (l.final_grade ? (isR ? ' · 위험정도 '+esc(l.final_grade) : ' · 결정 '+esc(l.final_grade)+'등급') : '') +
+        (l.comment && l.comment !== '접수' && kindOf(l) !== 'edit' ? '<br>'+esc(l.comment) : kindOf(l) === 'edit' ? ' · 작성자가 결재 전에 수정' : '') + '</div></li>'; }).join('') : '<li><div class="tx">이력이 없습니다</div></li>';
   }).catch(function(){});
+  if (canProc) $('#tl').addEventListener('click', async function(e){
+    var b = e.target.closest('[data-log]'); if (!b) return;
+    if (!b.classList.contains('armed')){ b.classList.add('armed'); b.textContent = '삭제?'; setTimeout(function(){ if (b.isConnected){ b.classList.remove('armed'); b.textContent = '✕'; } }, 3000); return; }
+    b.disabled = true;
+    try {
+      var upd = await api.deleteLog(Number(b.dataset.log));
+      if (upd && upd.id){ var i = state.all.findIndex(function(x){ return x.id === upd.id; }); if (i > -1) state.all[i] = upd; else upd = null; }
+      refreshViews(); toast(upd && upd.status !== r.status ? '이력을 삭제하고 \'' + stLabel(upd.status, r.type) + '\' 상태로 되돌렸습니다' : '이력을 삭제했습니다');
+      openDetail(upd && upd.id ? upd : r, true);
+    } catch(err){ fail(err); b.disabled = false; }
+  });
 
   if (canProc){
     function syncFg(){
@@ -1929,6 +1984,46 @@ async function openDetail(r, staffView){
   if (del){ var armed = false; del.onclick = async function(){
     if (!armed){ armed = true; del.textContent = '한 번 더 누르면 삭제됩니다'; setTimeout(function(){ armed = false; del.textContent = '이 건 삭제'; }, 3000); return; }
     try { await api.remove(r); state.all = state.all.filter(function(x){ return x.id !== r.id; }); refreshViews(); closeSheet(); toast('삭제되었습니다'); } catch(e){ fail(e); } }; }
+}
+
+
+/* 작성자 내용 수정 (결재 전 '접수' 상태에서만 · 사진은 그대로 유지) */
+function openEditSheet(r, staffView){
+  var t = r.type, g = r.proposed_grade, rl = r.risk_level;
+  var catOpts = NM_CATS.length ? '<select data-e="category"><option value="">선택 안 함</option>' + NM_CATS.map(function(c){ return '<option'+(c === r.category ? ' selected' : '')+'>'+esc(c)+'</option>'; }).join('') + '</select>' : '';
+  var occ = r.occurred_at ? (function(){ var d = new Date(r.occurred_at); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0,16); })() : '';
+  var f = function(label, inner, req){ return '<div class="field"><label class="label">'+label+(req ? ' <span class="req">*</span>' : ' <span class="opt">선택</span>')+'</label>'+inner+'</div>'; };
+  var body = t === 'proposal' ? f('제안 등급', '<div class="grade-pick sm" id="eGrade">'+gradePickHtml(g, true)+'</div>', 1) + f('장소', '<input data-e="location" maxlength="100" value="'+esc(r.location||'')+'">', 1) +
+      f('상세 내용', '<textarea data-e="detail" maxlength="2000">'+esc(r.detail||'')+'</textarea>', 1) + f('조치 요청사항', '<textarea data-e="request" maxlength="2000">'+esc(r.request||'')+'</textarea>')
+    : t === 'risk' ? f('장소 (근무지)', '<input data-e="location" maxlength="100" value="'+esc(r.location||'')+'">', 1) + (catOpts ? f('위험요인', catOpts) : '') +
+      f('내용', '<textarea data-e="detail" maxlength="2000">'+esc(r.detail||'')+'</textarea>', 1) + f('위험정도', '<div class="rl-pick sm" id="eRisk">'+riskPickHtml(rl)+'</div>', 1)
+    : f('발생 일시', '<input type="datetime-local" data-e="occurred_at" value="'+occ+'" max="'+nowLocal()+'">', 1) + f('장소', '<input data-e="location" maxlength="100" value="'+esc(r.location||'')+'">', 1) + (catOpts ? f('사고 유형', catOpts) : '') +
+      f('상황 설명', '<textarea data-e="detail" maxlength="2000">'+esc(r.detail||'')+'</textarea>', 1) + f('재발 방지 의견', '<textarea data-e="prevention" maxlength="2000">'+esc(r.prevention||'')+'</textarea>');
+  openSheet('<div class="sheet-head"><div class="h"><span class="kicker">EDIT · '+noOf(r.report_no)+'</span><h3>'+esc(TYPE[t].label)+' 수정</h3></div><button class="icon-btn" data-close>✕</button></div>' +
+    '<div class="form-panel on edit-form" data-type="'+t+'">'+body+'</div>' +
+    '<p class="note">사진은 수정할 수 없습니다. 수정 내용은 처리 이력에 \'작성자가 내용을 수정했습니다\'로 기록됩니다.</p>' +
+    '<div class="actions-row"><button class="btn btn-ghost" data-back>취소</button><button class="btn btn-primary" id="eSave">수정 저장</button></div>');
+  $('[data-close]', sheet).onclick = closeSheet; $('[data-back]', sheet).onclick = function(){ openDetail(r, staffView); };
+  var eg = $('#eGrade'); if (eg) bindGradePick(eg, function(x){ g = x; });
+  var er = $('#eRisk'); if (er) er.addEventListener('click', function(e){ var b = e.target.closest('[data-r]'); if (!b) return; rl = b.dataset.r; $$('button', er).forEach(function(x){ x.classList.toggle('on', x === b); }); });
+  $('#eSave').onclick = async function(){
+    var v = function(k){ var el = $('[data-e='+k+']', sheet); return el ? el.value.trim() : undefined; }, patch = {};
+    patch.location = v('location'); patch.detail = v('detail');
+    if (!patch.location) return toast('장소를 입력해주세요', true);
+    if ((patch.detail || '').length < 5) return toast('내용을 5자 이상 작성해주세요', true);
+    if (v('category') !== undefined) patch.category = v('category') || null;
+    if (t === 'proposal'){ if (!g) return toast('제안 등급을 선택해주세요', true); patch.proposed_grade = g; patch.request = v('request') || null; }
+    if (t === 'risk'){ if (!rl) return toast('위험정도를 선택해주세요', true); patch.risk_level = rl; }
+    if (t === 'nearmiss'){ var oc = v('occurred_at'), od = new Date(oc); if (!oc || isNaN(od) || od > new Date(Date.now() + 6e4)) return toast('발생 일시를 확인해주세요', true);
+      patch.occurred_at = od.toISOString(); patch.prevention = v('prevention') || null; }
+    var btn = this; btn.disabled = true;
+    try {
+      var upd = await api.update(r.id, patch);
+      [state.all, typeof mineCache !== 'undefined' ? mineCache : []].forEach(function(L){ var i = L.findIndex(function(x){ return x.id === upd.id; }); if (i > -1) L[i] = upd; });
+      refreshViews(); if (state.screen === 'mine') loadMine();
+      toast('수정했습니다'); openDetail(upd, staffView);
+    } catch(e){ fail(e); btn.disabled = false; }
+  };
 }
 
 /* =====================================================================
