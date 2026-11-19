@@ -14,3 +14,14 @@ adb logcat -d > $OUT/logcat.txt
 adb logcat -d -b crash > $OUT/crash.txt
 grep -iE "$PKG|AndroidRuntime|browserhelper|TwaLauncher|CustomTabs|ActivityTaskManager|FATAL" $OUT/logcat.txt | head -300 > $OUT/logcat-filtered.txt
 true
+set +x
+for f in browsers install monkey top crash logcat-filtered; do echo "=====BEGIN $f"; cat $OUT/$f.txt; echo "=====END $f"; done
+# 화면 캡처(축소)를 로그로 출력
+for t in 3 20; do
+  python3 - "$OUT/shot-after-$t.png" <<'PY' || true
+import sys,base64
+from PIL import Image
+im=Image.open(sys.argv[1]).convert('RGB'); im.thumbnail((360,800)); im.save('/tmp/s.jpg',quality=60)
+print('=====BEGIN SHOT', sys.argv[1]); print(base64.b64encode(open('/tmp/s.jpg','rb').read()).decode()); print('=====END SHOT')
+PY
+done
