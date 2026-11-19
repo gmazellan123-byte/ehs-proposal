@@ -302,6 +302,44 @@ async function actRemove(req: Request, body: any) {
   return { ok: true };
 }
 
+// [관리자 이상] 실명 대조용 사번 확인
+//   PC 브라우저가 인사명단의 사번 목록을 보내면, 관리 범위 안의 인원(또는 범위 안 제출건의 작성자)만
+//   { i: 목록 순번, h: 사번해시 } 로 돌려줌. 성명은 받지도 보내지도 않음(대조는 브라우저 안에서).
+//   사번은 저장하지 않으며, 누가 몇 명을 대조했는지만 export_logs 에 기록
+async function actMatch(req: Request, body: any) {
+  const actor = await getActor(req);
+  const list: unknown[] = Array.isArray(body.empIds) ? body.empIds : [];
+  if (!list.length) throw new HttpError(400, "대조할 사번이 없습니다");
+  if (list.length > 1000) throw new HttpError(400, "한 번에 최대 1,000건까지 대조할 수 있습니다");
+  const byHash = new Map<string, number[]>();
+  for (let i = 0; i < list.length; i++) {
+    const emp = normEmp(list[i]);
+    if (!EMP_RE.test(emp)) continue;
+    const h = await hmacHex(emp);
+    byHash.set(h, [...(byHash.get(h) ?? []), i]);
+  }
+  const hashes = [...byHash.keys()];
+  const ok = new Set<string>();
+  if (hashes.length) {
+    const { data: emps } = await db.from("employees").select("emp_hash, org_path").in("emp_hash", hashes);
+    const prefix = actor.role === "team" ? teamPrefix(actor.org_path) : actor.org_path;
+    for (const e of emps ?? []) if (actor.role === "hq" || within(e.org_path, prefix)) ok.add(e.emp_hash);
+    if (actor.role !== "hq") {
+      const rest = hashes.filter((h) => !ok.has(h));
+      if (rest.length) {
+        const { data: reps } = await db.from("reports").select("emp_hash, org_path").in("emp_hash", rest);
+        for (const r of reps ?? []) if (within(r.org_path, prefix)) ok.add(r.emp_hash);
+      }
+    }
+  }
+  const matches: { i: number; h: string }[] = [];
+  for (const h of ok) for (const i of byHash.get(h) ?? []) matches.push({ i, h });
+  const { data: me } = await db.from("employees").select("emp_code").eq("emp_hash", actor.empHash).maybeSingle();
+  await db.from("export_logs").insert({ actor_code: me?.emp_code ?? null, actor_role: actor.role, kind: String(body.kind ?? "").slice(0, 20) || null,
+    requested: list.length, matched: matches.length });
+  return { matches };
+}
+
 // [본사] 조직 트리 계산: [{code, name, parent}] → 경로·단계·단계별 이름
 //   사업팀(이름이 '사업팀'으로 끝나는 최상위)이 아닌 최상위 조직은 모두 '본사'로 묶어 표시
 function buildOrg(list: any[]) {
@@ -397,6 +435,7 @@ Deno.serve(async (req) => {
       case "admin_reset":    result = await actReset(req, body); break;
       case "admin_remove":   result = await actRemove(req, body); break;
       case "admin_import":   result = await actImport(req, body); break;
+      case "match_names":    result = await actMatch(req, body); break;
       default: throw new HttpError(400, "알 수 없는 요청입니다");
     }
     return new Response(JSON.stringify(result), { status: 200, headers });

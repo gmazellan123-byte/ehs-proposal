@@ -132,6 +132,20 @@ create table if not exists public.report_logs (
 create index if not exists report_logs_report_idx on public.report_logs (report_id, created_at);
 
 -- ---------------------------------------------------------------------
+-- 4-1. 실명 대조 기록 (PC에서 인사명단과 대조해 실명 엑셀을 만들 때마다 서버 함수가 기록)
+--      사번·성명은 기록하지 않고, 누가(식별코드·권한) 언제 몇 명을 대조했는지만 남김
+-- ---------------------------------------------------------------------
+create table if not exists public.export_logs (
+  id          bigint generated always as identity primary key,
+  actor_code  text,
+  actor_role  text,
+  kind        text,
+  requested   int,
+  matched     int,
+  created_at  timestamptz not null default now()
+);
+
+-- ---------------------------------------------------------------------
 -- 5. 권한 판단 함수
 -- ---------------------------------------------------------------------
 create or replace function public.my_role()
@@ -401,12 +415,15 @@ alter table public.org_units   enable row level security;
 alter table public.employees   enable row level security;
 alter table public.reports     enable row level security;
 alter table public.report_logs enable row level security;
+alter table public.export_logs enable row level security;
 
 revoke all on public.org_units, public.employees, public.reports, public.report_logs from anon, authenticated;
 
 -- 서버 함수(service_role)용 권한 — 최근 Supabase 프로젝트는 새 표에 자동으로 권한을 주지 않으므로 명시
 grant usage on schema public to service_role, authenticated;
-grant all on public.org_units, public.employees, public.reports, public.report_logs to service_role;
+grant all on public.org_units, public.employees, public.reports, public.report_logs, public.export_logs to service_role;
+revoke all on public.export_logs from anon, authenticated;
+grant select on public.export_logs to authenticated;
 grant usage, select on all sequences in schema public to service_role;
 
 grant select on public.org_units, public.employees, public.reports, public.report_logs to authenticated;
@@ -442,6 +459,9 @@ create policy rep_delete on public.reports for delete to authenticated
 drop policy if exists log_select on public.report_logs;
 create policy log_select on public.report_logs for select to authenticated
   using (exists (select 1 from public.reports r where r.id = report_id));  -- reports RLS 가 범위를 제한
+
+drop policy if exists exp_select on public.export_logs;
+create policy exp_select on public.export_logs for select to authenticated using (public.my_role() = 'hq');   -- 대조 기록은 본사만 열람
 
 drop function if exists public.in_scope(text, text);   -- v3 이하의 이름 기준 범위 함수 정리
 
