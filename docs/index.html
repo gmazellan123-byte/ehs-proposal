@@ -2407,7 +2407,7 @@ async function openExportSheet(){
     (IS_KAKAO ? '<div class="notice warn" style="margin-top:10px"><b>카카오톡 안에서는 파일을 저장·공유할 수 없습니다.</b> 아래 버튼으로 기본 브라우저에서 연 뒤 다시 로그인해서 내보내 주세요.<button class="btn btn-primary btn-block" data-x="ext" style="margin-top:8px">기본 브라우저(Chrome·Safari)로 열기</button></div>'
       : IN_APP ? '<div class="notice warn" style="margin-top:10px"><b>앱 안의 브라우저</b>에서는 파일 저장이 막힐 수 있습니다. 화면의 ⋮ 메뉴에서 <b>다른 브라우저로 열기</b> 후 다시 시도해 주세요.</div>' : '') +
     '<div class="notice warn" style="margin-top:12px">회사 업무 자료입니다. <b>회사 메일·사내 저장소로만</b> 보내고, 개인 메신저·개인 메일로는 보내지 마세요. 보낸 뒤 휴대폰에 남은 파일은 지워 주세요.</div>' +
-    (wideScreen() ? '<button class="btn btn-ghost btn-block" data-x="names" style="margin-top:10px">실명 포함 엑셀 만들기 (PC · 인사명단 대조)</button>' : '') +
+    (wideScreen() ? '<button class="btn btn-ghost btn-block" data-x="names" style="margin-top:10px">실명 포함 엑셀 만들기 (PC · 인사명단 대조)</button><button class="btn btn-ghost btn-block" data-x="key" style="margin-top:8px">오프라인 대조키 만들기 (PC)</button>' : '') +
     '<p class="note" style="text-align:right;margin-top:8px">화면 버전 '+APP_VER+'</p></div>');
   $('[data-close]', sheet).onclick = closeSheet;
   $('.exp-wrap', sheet).addEventListener('click', async function(e){ var b = e.target.closest('[data-x]'); if (!b) return;
@@ -2417,6 +2417,7 @@ async function openExportSheet(){
     if (b.dataset.x === 'csv'){ closeSheet(); saveCsv(name.replace(/\.xlsx$/, '.csv'), rows[0].rows); }
     if (b.dataset.x === 'share'){ b.disabled = true; try { await shareFile(name, rows); closeSheet(); } catch(err){ fail(err); } finally { b.disabled = false; } }
     if (b.dataset.x === 'names'){ openNameExport('reports', L); }
+    if (b.dataset.x === 'key'){ openKeyExport(); }
   });
 }
 
@@ -2470,6 +2471,66 @@ function openNameExport(kind, list){
   });
 }
 
+/* ---- 오프라인 대조키 (.ehskey) ----
+   사원명부(사원번호만 사용)를 서버와 대조해, 내 관리 범위 안 인원의 '식별코드 ↔ 사번' 표를 만들고
+   직접 정한 비밀번호로 암호화(AES-256-GCM, PBKDF2 25만 회)해서 저장. 성명은 넣지 않음.
+   오프라인 정리 도구(ehs-offline.html)에서 비밀번호로 풀어 사원명부와 함께 사용 */
+function b64(buf){ var s = '', u = new Uint8Array(buf); for (var i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); }
+async function encryptKey(obj, password){
+  var enc = new TextEncoder(), salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12)), iter = 250000;
+  var base = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+  var key = await crypto.subtle.deriveKey({ name:'PBKDF2', hash:'SHA-256', salt:salt, iterations:iter }, base, { name:'AES-GCM', length:256 }, false, ['encrypt']);
+  var ct = await crypto.subtle.encrypt({ name:'AES-GCM', iv:iv }, key, enc.encode(JSON.stringify(obj)));
+  return { format:'ehs-matchkey', v:1, kdf:{ name:'PBKDF2', hash:'SHA-256', iter:iter, salt:b64(salt) }, iv:b64(iv), ct:b64(ct),
+    meta:{ scope:obj.scope, created:obj.created, count:obj.count, by:obj.by } };
+}
+function openKeyExport(){
+  if (!wideScreen()) return toast('대조키는 PC에서만 만들 수 있습니다', true);
+  openSheet('<div class="sheet-head"><div class="h"><span class="kicker">OFFLINE KEY</span><h3>오프라인 대조키 만들기</h3></div><button class="icon-btn" data-close>✕</button></div>' +
+    '<p class="inst-lead">오프라인 정리 도구에서 <b>식별코드를 사번·성명으로 바꿔 볼 때</b> 필요한 열쇠 파일입니다. 사원명부와 서버를 대조해 <b>내 관리 범위 안 인원</b>의 식별코드↔사번 표를 만들고, <b>직접 정한 비밀번호로 암호화</b>해 저장합니다. 성명은 들어가지 않습니다.</p>' +
+    '<label class="label">대조키 비밀번호 <span class="req">*</span><span class="opt">8자 이상 · 오프라인 도구에서 입력</span></label>' +
+    '<div class="frow" style="margin-top:0"><input type="password" id="kpw1" placeholder="비밀번호" maxlength="64" autocomplete="new-password"><input type="password" id="kpw2" placeholder="비밀번호 확인" maxlength="64" autocomplete="new-password"></div>' +
+    '<label class="exp-agree"><input type="checkbox" id="kAgree"><span>대조키와 비밀번호는 <b>따로 전달·보관</b>하고, 업무 목적 외에는 쓰지 않겠습니다. (대조키+비밀번호+사원명부가 함께 있으면 제출자를 확인할 수 있습니다)</span></label>' +
+    '<label class="drop off" id="kDrop" style="margin-top:12px"><b>사원명부 엑셀 선택</b><span>사원번호 열만 읽습니다 · 비밀번호 입력과 확인란 체크 후 선택</span><input type="file" id="kFile" accept=".xlsx,.xls,.csv" disabled></label>' +
+    '<div id="kResult"></div>' +
+    '<p class="note" style="margin-top:10px">오프라인 정리 도구는 <a href="ehs-offline.html" download>여기서 내려받을 수 있습니다</a> (인터넷 없이 실행되는 HTML 파일 1개).</p>');
+  $('[data-close]', sheet).onclick = closeSheet;
+  function sync(){ var ok = $('#kAgree').checked && $('#kpw1').value.length >= 8 && $('#kpw1').value === $('#kpw2').value;
+    $('#kFile').disabled = !ok; $('#kDrop').classList.toggle('off', !ok); }
+  ['kAgree','kpw1','kpw2'].forEach(function(id){ $('#'+id).addEventListener('input', sync); $('#'+id).addEventListener('change', sync); });
+  $('#kFile').addEventListener('change', async function(){
+    var file = this.files && this.files[0]; if (!file) return; this.value = '';
+    var out = $('#kResult'), pw = $('#kpw1').value; out.innerHTML = '<div class="loading"><span class="spin"></span>대조 · 암호화 중</div>';
+    try {
+      var X = await loadXLSX(), wb = X.read(await file.arrayBuffer(), { type:'array' });
+      var aoa = X.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1, raw:false, defval:'' }); wb = null;
+      var low = function(c){ return String(c).trim().toLowerCase(); };
+      var hi = aoa.slice(0, 20).findIndex(function(r){ return r.some(function(c){ return IMP_COLS.empId.indexOf(low(c)) > -1; }); });
+      if (hi < 0) throw new Error('첫 시트에서 "사원번호" 열을 찾지 못했습니다');
+      var ci = aoa[hi].map(low).findIndex(function(h){ return IMP_COLS.empId.indexOf(h) > -1; });
+      var ids = []; aoa.slice(hi + 1).forEach(function(r){ var id = normEmp(r[ci]); if (EMP_RE.test(id) && ids.indexOf(id) < 0) ids.push(id); });
+      aoa = null;
+      if (!ids.length) throw new Error('대조할 사번이 없습니다');
+      var map = {}, n = 0;
+      for (var i = 0; i < ids.length; i += 1000){
+        var part = ids.slice(i, i + 1000), res = await api.matchNames(part, 'offline_key');
+        (res.matches || []).forEach(function(m){ var c = String(m.h).slice(0, 8).toUpperCase(); if (!map[c]){ map[c] = part[m.i]; n++; } });
+      }
+      ids = null;
+      if (!n) throw new Error('관리 범위 안에서 대조된 인원이 없습니다');
+      var u = state.user, now = new Date();
+      var payload = { scope: scopeLabel(u), created: fmt(now), by: u.code, count: n, map: map };
+      var pack = await encryptKey(payload, pw); map = null; payload = null;
+      var blob = new Blob([JSON.stringify(pack)], { type:'application/json' }), url = URL.createObjectURL(blob), a = document.createElement('a');
+      a.href = url; a.download = '대조키_' + scopeLabel(u).replace(/[\\/:*?"<>|\s]+/g, '') + '_' + stamp() + '.ehskey'; document.body.appendChild(a); a.click();
+      setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 4000);
+      $('#kpw1').value = ''; $('#kpw2').value = ''; sync();
+      out.innerHTML = '<div class="imp-sum done"><div><b>'+n.toLocaleString()+'</b><span>대조키에 담긴 인원</span></div></div>' +
+        '<p class="note">대조키 파일을 저장했습니다. 비밀번호는 파일과 <b>다른 경로</b>로 전달하세요. 생성 기록(인원 수)은 본사 확인용으로 남습니다.</p>';
+    } catch(e){ out.innerHTML = ''; fail(e); }
+  });
+}
+
 /* =====================================================================
    14. 본사 PC 콘솔 (화면 너비 900px 이상에서 본사 계정 로그인 시)
    ===================================================================== */
@@ -2515,8 +2576,8 @@ function dgo(s){
   var act = $('#dActions');
   $('#dClock').classList.remove('hidden'); tickClock();
   if (s === 'ddash') act.innerHTML = '<button class="btn btn-ghost" data-da="refresh">새로고침</button>';
-  if (s === 'dlist') act.innerHTML = '<button class="btn btn-ghost" data-da="refresh">새로고침</button><button class="btn btn-ghost" data-da="nameList">실명 포함 엑셀</button><button class="btn btn-primary dbtn" data-da="xlsList">조회 결과 엑셀</button>';
-  if (s === 'dorg') act.innerHTML = '<button class="btn btn-ghost" data-da="refresh">새로고침</button><button class="btn btn-ghost" data-da="nameEmp">실명 포함 엑셀</button><button class="btn btn-primary dbtn" data-da="xlsEmp">인원 목록 엑셀</button>';
+  if (s === 'dlist') act.innerHTML = '<button class="btn btn-ghost" data-da="refresh">새로고침</button><button class="btn btn-ghost" data-da="nameList">실명 포함 엑셀</button><button class="btn btn-ghost" data-da="key">오프라인 대조키</button><button class="btn btn-primary dbtn" data-da="xlsList">조회 결과 엑셀</button>';
+  if (s === 'dorg') act.innerHTML = '<button class="btn btn-ghost" data-da="refresh">새로고침</button><button class="btn btn-ghost" data-da="nameEmp">실명 포함 엑셀</button><button class="btn btn-ghost" data-da="key">오프라인 대조키</button><button class="btn btn-primary dbtn" data-da="xlsEmp">인원 목록 엑셀</button>';
   if (s === 'dimport') act.innerHTML = '<button class="btn btn-primary dbtn" data-da="tpl">업로드 양식 다운로드</button>';
   if (s === 'dpw') act.innerHTML = '<button class="btn btn-ghost" data-da="refresh">새로고침</button>';
   if (s === 'ddash') deskLoadDash();
@@ -2539,6 +2600,7 @@ $('#dActions').addEventListener('click', async function(e){
   if (k === 'xlsEmp'){ var E = deskEmpFiltered(); if (!E.length) return toast('내보낼 데이터가 없습니다', true);
     downloadXlsx('안전보건제안_인원목록_' + stamp() + '.xlsx', [{ name:'인원목록', rows:employeeRows(E) }]); }
   if (k === 'tpl') downloadTemplate();
+  if (k === 'key') openKeyExport();
   if (k === 'nameList'){ var NL = deskFiltered(); if (!NL.length) return toast('내보낼 데이터가 없습니다', true); openNameExport('reports', NL); }
   if (k === 'nameEmp'){ var NE = deskEmpFiltered(); if (!NE.length) return toast('내보낼 데이터가 없습니다', true); openNameExport('employees', NE); }
 });
