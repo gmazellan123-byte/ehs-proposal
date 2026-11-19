@@ -115,6 +115,10 @@ alter table public.reports add constraint reports_type_check check (type in ('pr
 alter table public.reports add column if not exists risk_level text check (risk_level in ('상','중','하'));
 alter table public.reports add column if not exists final_risk text check (final_risk in ('상','중','하'));
 alter table public.reports add column if not exists edited_at timestamptz;   -- 작성자가 접수 상태에서 내용을 수정한 마지막 시각
+-- 제출 데이터는 사람이 아니라 '제출 당시 소속 조직(부서코드)'에 귀속
+--   인원이 퇴직·삭제되어도 식별코드(사번 해시)와 제출 당시 성명(마스킹)은 제출건에 그대로 남음
+alter table public.reports drop constraint if exists reports_emp_hash_fkey;
+alter table public.reports add column if not exists author_mask text check (char_length(author_mask) <= 20);
 
 -- ---------------------------------------------------------------------
 -- 4. 처리 이력
@@ -147,6 +151,25 @@ create table if not exists public.export_logs (
   matched     int,
   created_at  timestamptz not null default now()
 );
+
+-- 4-2. 조직·인원 백데이터 반영 이력 (본사 콘솔 업로드 1회 = 1행, 본사만 열람)
+create table if not exists public.import_logs (
+  id              bigint generated always as identity primary key,
+  batch_id        uuid not null unique,
+  created_at      timestamptz not null default now(),   -- 반영 시작
+  finished_at     timestamptz not null default now(),   -- 마지막 반영
+  actor_code      text,                                 -- 반영한 본사 계정 식별코드
+  file_name       text check (char_length(file_name) <= 120),
+  file_rows       int not null default 0,               -- 파일에서 읽은 반영 대상 인원
+  client_invalid  int not null default 0,               -- 화면 검증 오류 행
+  units_sent      int not null default 0,               -- 신규·변경 조직 단위
+  units_total     int not null default 0,               -- 반영 후 전체 조직 단위
+  emp_inserted    int not null default 0,               -- 신규 등록
+  emp_updated     int not null default 0,               -- 소속·권한 갱신
+  server_invalid  int not null default 0,               -- 서버 검증 오류
+  emp_total       int not null default 0                -- 반영 후 전체 인원(사용 중)
+);
+create index if not exists import_logs_created_idx on public.import_logs (created_at desc);
 
 -- ---------------------------------------------------------------------
 -- 5. 권한 판단 함수
@@ -200,6 +223,14 @@ begin
     from public.org_units o where e.org_code = o.code
      and (e.org_path is distinct from o.path or e.team is distinct from o.team or e.site is distinct from o.site
           or e.dept is distinct from o.dept or e.part is distinct from o.part);
+  -- 제출건은 제출 당시 부서코드에 귀속: 그 부서의 이름·상위 조직이 바뀌면 제출건 집계도 함께 따라감
+  --   (작성자 개인의 부서 이동·퇴직은 제출건에 영향 없음)
+  perform set_config('ehs.org_sync', '1', true);
+  update public.reports r set team = o.team, site = o.site, dept = o.dept, part = o.part, org_path = o.path
+    from public.org_units o where r.org_code = o.code
+     and (r.org_path is distinct from o.path or r.team is distinct from o.team or r.site is distinct from o.site
+          or r.dept is distinct from o.dept or r.part is distinct from o.part);
+  perform set_config('ehs.org_sync', '', true);
   return jsonb_build_object('units', n);
 end $$;
 revoke all on function public.import_org(jsonb) from public, anon, authenticated;
@@ -250,6 +281,32 @@ end $$;
 revoke all on function public.import_employees(jsonb) from public, anon, authenticated;
 grant execute on function public.import_employees(jsonb) to service_role;
 
+-- (서버 함수 전용) 백데이터 반영 이력 기록 — 500명씩 나눠 보내도 업로드 1회(batch_id)당 1행으로 누적
+create or replace function public.log_import(p jsonb)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare r public.import_logs;
+begin
+  insert into public.import_logs as l (batch_id, actor_code, file_name, file_rows, client_invalid, units_sent, units_total,
+                                       emp_inserted, emp_updated, server_invalid, emp_total)
+  values ((p->>'batch_id')::uuid, nullif(p->>'actor_code', ''), left(nullif(p->>'file_name', ''), 120),
+          coalesce((p->>'file_rows')::int, 0), coalesce((p->>'client_invalid')::int, 0), coalesce((p->>'units_sent')::int, 0),
+          (select count(*) from public.org_units),
+          coalesce((p->>'emp_inserted')::int, 0), coalesce((p->>'emp_updated')::int, 0), coalesce((p->>'server_invalid')::int, 0),
+          (select count(*) from public.employees where active))
+  on conflict (batch_id) do update set
+    finished_at    = now(),
+    units_sent     = greatest(l.units_sent, excluded.units_sent),
+    units_total    = excluded.units_total,
+    emp_inserted   = l.emp_inserted + excluded.emp_inserted,
+    emp_updated    = l.emp_updated + excluded.emp_updated,
+    server_invalid = l.server_invalid + excluded.server_invalid,
+    emp_total      = excluded.emp_total
+  returning * into r;
+  return to_jsonb(r);
+end $$;
+revoke all on function public.log_import(jsonb) from public, anon, authenticated;
+grant execute on function public.log_import(jsonb) to service_role;
+
 -- ---------------------------------------------------------------------
 -- 6. 자동 처리 트리거
 -- ---------------------------------------------------------------------
@@ -291,6 +348,7 @@ begin
   new.part          := e.part;
   new.org_code      := e.org_code;
   new.org_path      := e.org_path;
+  new.author_mask   := e.name_mask;
   new.status        := 'received';
   new.final_grade   := null;
   new.admin_comment := null;
@@ -328,6 +386,10 @@ create or replace function public.reports_before_update()
 returns trigger language plpgsql security definer set search_path = public as $$
 declare v_staff boolean; v_author boolean; v_content boolean; v_proc boolean;
 begin
+  -- 조직 개편 반영(서버 내부 import_org)만 소속 경로 갱신 허용 — 그 외 항목·수정시각은 그대로
+  if auth.uid() is null and current_setting('ehs.org_sync', true) = '1' then
+    return new;
+  end if;
   -- 작성자 수정 / 관리자 처리 구분
   --   작성자 : 결재(검토중 포함) 전, 즉 '접수' 상태에서만 내용 수정 가능 · 처리 항목은 바꿀 수 없음
   --   관리자 : 상태 · 등급 · 위험정도 · 처리 의견만 바꿀 수 있음 (내용은 바꿀 수 없음)
@@ -353,18 +415,19 @@ begin
     if new.type = 'proposal' then new.category := null; end if;
     new.type := old.type; new.created_at := old.created_at; new.author_id := old.author_id; new.emp_hash := old.emp_hash;
     new.team := old.team; new.site := old.site; new.dept := old.dept; new.part := old.part; new.org_code := old.org_code; new.org_path := old.org_path;
+    new.author_mask := old.author_mask;
     new.edited_at := now(); new.updated_at := now();
     return new;
   end if;
   if v_proc and not v_staff then raise exception '처리 권한이 없습니다'; end if;
   new.edited_at := old.edited_at;
 
-  -- 제출 당시 작성자·소속은 고정 (인원의 퇴직·부서 이동·조직 개편과 관계없이 원래 부서 집계에 남음)
+  -- 제출 당시 작성자·소속은 고정 (작성자의 퇴직·부서 이동과 관계없이 제출 당시 부서에 귀속. 부서 자체의 개편은 import_org 가 반영)
   new.type := old.type; new.created_at := old.created_at;
   if new.author_id is not null then new.author_id := old.author_id; end if; -- 계정 삭제 시 연결만 끊는 것은 허용
   new.team := old.team; new.site := old.site; new.dept := old.dept; new.part := old.part;
   new.org_code := old.org_code; new.org_path := old.org_path;
-  if new.emp_hash is not null then new.emp_hash := old.emp_hash; end if;   -- 사번 삭제 시 연결만 끊는 것은 허용
+  new.emp_hash := old.emp_hash; new.author_mask := old.author_mask;     -- 식별코드·제출 당시 성명은 영구 보존 (인원 삭제와 무관)
   new.risk_level := old.risk_level;
   if new.type = 'nearmiss' then
     if new.status not in ('received','reviewing','done') then
@@ -489,14 +552,15 @@ alter table public.employees   enable row level security;
 alter table public.reports     enable row level security;
 alter table public.report_logs enable row level security;
 alter table public.export_logs enable row level security;
+alter table public.import_logs enable row level security;
 
 revoke all on public.org_units, public.employees, public.reports, public.report_logs from anon, authenticated;
 
 -- 서버 함수(service_role)용 권한 — 최근 Supabase 프로젝트는 새 표에 자동으로 권한을 주지 않으므로 명시
 grant usage on schema public to service_role, authenticated;
-grant all on public.org_units, public.employees, public.reports, public.report_logs, public.export_logs to service_role;
-revoke all on public.export_logs from anon, authenticated;
-grant select on public.export_logs to authenticated;
+grant all on public.org_units, public.employees, public.reports, public.report_logs, public.export_logs, public.import_logs to service_role;
+revoke all on public.export_logs, public.import_logs from anon, authenticated;
+grant select on public.export_logs, public.import_logs to authenticated;
 grant usage, select on all sequences in schema public to service_role;
 
 grant select on public.org_units, public.employees, public.reports, public.report_logs to authenticated;
@@ -541,6 +605,8 @@ create policy log_select on public.report_logs for select to authenticated
 
 drop policy if exists exp_select on public.export_logs;
 create policy exp_select on public.export_logs for select to authenticated using (public.my_role() = 'hq');   -- 대조 기록은 본사만 열람
+drop policy if exists imp_select on public.import_logs;
+create policy imp_select on public.import_logs for select to authenticated using (public.my_role() = 'hq');   -- 백데이터 반영 이력은 본사만 열람
 
 drop function if exists public.in_scope(text, text);   -- v3 이하의 이름 기준 범위 함수 정리
 
@@ -567,6 +633,20 @@ drop policy if exists photo_delete on storage.objects;
 create policy photo_delete on storage.objects for delete to authenticated
   using (bucket_id = 'report-photos'
          and ((storage.foldername(name))[1] = auth.uid()::text or public.my_role() = 'hq'));
+
+-- ---------------------------------------------------------------------
+-- 9. 기존 제출건 정리 (다시 실행해도 안전)
+--    · 제출 당시 성명(마스킹)이 비어 있는 건은 현재 인원 정보로 채움
+--    · 소속 부서코드의 조직 경로가 바뀐 건은 현재 조직도에 맞춤
+-- ---------------------------------------------------------------------
+select set_config('ehs.org_sync', '1', false);
+update public.reports r set author_mask = e.name_mask
+  from public.employees e where r.emp_hash = e.emp_hash and r.author_mask is null and e.name_mask is not null;
+update public.reports r set team = o.team, site = o.site, dept = o.dept, part = o.part, org_path = o.path
+  from public.org_units o where r.org_code = o.code
+   and (r.org_path is distinct from o.path or r.team is distinct from o.team or r.site is distinct from o.site
+        or r.dept is distinct from o.dept or r.part is distinct from o.part);
+select set_config('ehs.org_sync', '', false);
 
 -- 완료 확인: 4개 테이블이 보이면 정상 (org_units 는 본사 콘솔에서 인사 명단을 올리면 채워짐)
 select 'org_units' as t, count(*) from public.org_units

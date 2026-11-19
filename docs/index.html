@@ -452,6 +452,7 @@ input[type=datetime-local]{min-height:46px;}
 .idline .pair{display:flex;align-items:center;gap:6px;}
 .idline .pair b.u{font-family:'Pretendard',sans-serif;letter-spacing:0;color:var(--ink);}
 .frow.c3{grid-template-columns:1fr 1fr 1fr;}
+.frow.fperiod select:disabled{opacity:.55;}
 .frow.c1{grid-template-columns:1fr;}
 select:disabled{opacity:.6;}
 
@@ -589,6 +590,11 @@ body.desk #app{display:none;}
 .drop input{position:absolute;inset:0;opacity:0;cursor:pointer;}
 .imp-sum{display:flex;gap:10px;margin:14px 0 10px;}
 .imp-sum div{flex:1;padding:12px;border-radius:var(--r-sm);background:linear-gradient(160deg,#F4F8FF,#E0EAFF);border:1px solid #C6D7FA;}
+.imp-last{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;padding:12px 14px;border-radius:var(--r-sm);background:linear-gradient(160deg,#F2FBF5,#DDF3E6);border:1px solid #BFE5CD;margin-bottom:10px;font-size:13px;}
+.imp-last .t{font-weight:800;font-size:14px;color:#0E6B37;}
+.imp-last .t .mono{font-size:13px;}
+.imp-last span{color:var(--ink-soft);}
+.imp-last b{color:var(--ink);}
 .imp-sum div.bad{background:linear-gradient(160deg,#FFF6F6,#FDDEDE);border-color:#F4BEBE;}
 .imp-sum.done div{background:linear-gradient(160deg,#F2FBF5,#DCF3E4);border-color:#BDE5CA;}
 .imp-sum b{display:block;font-family:var(--mono);font-size:24px;}
@@ -1077,6 +1083,10 @@ span.rt-hi{background:#DC2626;} span.rt-md{background:#EA7A0C;} span.rt-lo{backg
           <button class="chip" data-v="committee">위원회 상정</button>
         </div>
         <div class="org-sel" id="fOrg"></div>
+        <div class="frow fperiod">
+          <select id="fYear" aria-label="접수 연도"></select>
+          <select id="fMonth" aria-label="접수 월"></select>
+        </div>
         <div class="frow" style="grid-template-columns:1fr 1.4fr auto">
           <select id="fStatus"></select>
           <input id="fQ" type="search" placeholder="장소·내용·식별코드">
@@ -1240,8 +1250,13 @@ span.rt-hi{background:#DC2626;} span.rt-md{background:#EA7A0C;} span.rt-lo{backg
                     <li><b>본사 권한</b>은 업로드로 부여·변경되지 않습니다. [조직 · 인원]에서 별도로 지정하세요.</li>
                     <li>새 사번은 <b>등록</b>되고, 이미 있는 인원은 <b>소속과 권한이 갱신</b>됩니다.</li>
                     <li>재직여부 열이 있으면 <b>재직</b> 인원만 반영합니다. 업로드 파일 자체는 서버에 저장되지 않습니다.</li>
+                    <li>인원이 다른 부서로 옮기거나 퇴직·삭제되어도 <b>이미 제출된 건은 제출 당시 소속 조직</b>에 남습니다. 부서 이름·상위 조직이 바뀌면 그 부서의 제출건도 새 조직도에 맞춰 집계됩니다.</li>
                   </ul>
                 </div>
+              </div>
+              <div class="panel box" id="impHist" style="margin-top:14px">
+                <h3>반영 이력 <span class="mono">HISTORY</span></h3>
+                <div id="impHistBody"><div class="note">불러오는 중…</div></div>
               </div>
             </div>
           </div>
@@ -1428,7 +1443,8 @@ function makeRealApi(){
       if (rep.photo_path) await sb.storage.from(BUCKET).remove([rep.photo_path]); },
     employees: async function(){ return await pageAll(function(){ return sb.from('employees').select('emp_hash, emp_code, role, team, site, dept, part, org_code, org_path, name_mask, active, registered_at, created_at').order('created_at', { ascending:false }).order('emp_hash'); }); },
     register: function(ids, unit){ return fn('admin_register', { empIds:ids, role:unit.role, orgCode:unit.orgCode }); },
-    importEmployees: function(units, rows){ return fn('admin_import', { units:units || [], rows:rows || [] }); },
+    importEmployees: function(units, rows, batch, meta){ return fn('admin_import', { units:units || [], rows:rows || [], batch:batch || null, meta:meta || {} }); },
+    importLogs: async function(){ var r = await sb.from('import_logs').select('*').order('created_at', { ascending:false }).limit(20); if (r.error) throw dbErr(r.error); return r.data || []; },
     matchNames: function(ids, kind){ return fn('match_names', { empIds:ids, kind:kind }); },
     lookup:   function(empId){ return fn('admin_lookup', { empId:empId }); },
     updateEmployee: function(hash, patch){ return fn('admin_update', Object.assign({ empHash:hash }, patch)); },
@@ -1456,7 +1472,7 @@ function makeDemoApi(){
   function pickOne(a){ return a[Math.floor(rnd() * a.length)]; }
   function h64(s){ var out=''; for (var k=0;k<8;k++){ var x = 0x811c9dc5 ^ (k*0x9e3779b1); var t='demo|'+k+'|'+s;
       for (var i=0;i<t.length;i++){ x ^= t.charCodeAt(i); x = Math.imul(x, 0x01000193) >>> 0; } out += x.toString(16).padStart(8,'0'); } return out; }
-  var emps = {}, pw = {}, me = null, reports = [], logs = [], seq = 200, logSeq = 0;
+  var emps = {}, pw = {}, me = null, reports = [], logs = [], seq = 200, logSeq = 0, impLogs = [], impSeq = 0;
   var CONTENT = ['location','category','occurred_at','detail','request','prevention','proposed_grade','risk_level'];
   function applyOrg(e, role, code){
     if (code){ var u = unitOfCode(code); if (!u) throw new Error('등록되지 않은 부서코드입니다');
@@ -1520,7 +1536,7 @@ function makeDemoApi(){
     org: async function(){ var a = actor(); return a && a.role !== 'worker' ? clone(UNITS) : []; },
     submit: async function(type, data, photo){ await wait(400); var e = actor(), now = new Date().toISOString();
       var r = Object.assign({ proposed_grade:null, location:null, category:null, occurred_at:null, request:null, prevention:null, risk_level:null, final_risk:null }, data,
-        { id:uuid(), report_no:++seq, type:type, author_id:me, emp_hash:me, team:e.team, site:e.site, dept:e.dept, part:e.part, org_code:e.org_code, org_path:e.org_path, final_grade:null,
+        { id:uuid(), report_no:++seq, type:type, author_id:me, emp_hash:me, author_mask:e.name_mask || null, team:e.team, site:e.site, dept:e.dept, part:e.part, org_code:e.org_code, org_path:e.org_path, final_grade:null,
           photo_path: photo ? URL.createObjectURL(photo) : null, status:'received', admin_comment:null, created_at:now, updated_at:now, reviewed_at:null, closed_at:null });
       reports.unshift(r); logs.push({ id:++logSeq, kind:'submit', report_id:r.id, from_status:null, to_status:'received', comment:'접수', changed_by_code:e.emp_code, changed_by_role:e.role, created_at:now });
       return r.report_no; },
@@ -1589,19 +1605,21 @@ function makeDemoApi(){
       e.registered_at = null; delete pw[h]; return { ok:true, message:'초기화되었습니다. 해당 직원이 [최초 등록]으로 다시 가입하면 됩니다' }; },
     removeEmployee: async function(h){ var a = staff(), e = emps[h];
       if (h === me) throw new Error('본인 계정은 삭제할 수 없습니다'); if (!canManage(a, e)) throw new Error('관리 범위 밖의 인원입니다');
-      delete emps[h]; delete pw[h]; reports.forEach(function(r){ if (r.emp_hash === h){ r.emp_hash = null; r.author_id = null; } }); return { ok:true }; },
+      delete emps[h]; delete pw[h]; reports.forEach(function(r){ if (r.emp_hash === h){ r.author_mask = r.author_mask || e.name_mask || null; r.author_id = null; } }); return { ok:true }; },
     matchNames: async function(ids, kind){ await wait(300); var a = staff(), px = scopePrefix(a), out = [];
       ids.forEach(function(id, i){ id = normEmp(id); if (!EMP_RE.test(id)) return; var h = h64(id), e = emps[h];
         var ok = a.role === 'hq' ? !!(e || reports.some(function(r){ return r.emp_hash === h; })) : (e && within(e.org_path, px)) || reports.some(function(r){ return r.emp_hash === h && within(r.org_path, px); });
         if (ok) out.push({ i:i, h:h }); });
       return { matches:out }; },
-    importEmployees: async function(units, rows){ await wait(300); var a = actor(); if (!a || a.role !== 'hq') throw new Error('조직 백데이터 업로드는 본사만 가능합니다');
+    importLogs: async function(){ await wait(); if (actor().role !== 'hq') return []; return clone(impLogs.slice().sort(function(a,b){ return b.id - a.id; }).slice(0, 20)); },
+    importEmployees: async function(units, rows, batch, meta){ await wait(300); var a = actor(); if (!a || a.role !== 'hq') throw new Error('조직 백데이터 업로드는 본사만 가능합니다');
       var nu = 0;
       if (units && units.length){
         var merged = {}; UNITS.forEach(function(u){ merged[u.code] = { code:u.code, name:u.name, parent:u.parent_code }; });
         units.forEach(function(u){ merged[u.code] = { code:u.code, name:u.name, parent:u.parent }; });
         UNITS = buildOrg(Object.keys(merged).map(function(k){ return merged[k]; })); nu = UNITS.length;
-        Object.keys(emps).forEach(function(k){ var e = emps[k]; if (e.org_code) applyOrg(e, e.role, e.org_code); }); }
+        Object.keys(emps).forEach(function(k){ var e = emps[k]; if (e.org_code) applyOrg(e, e.role, e.org_code); });
+        reports.forEach(function(r){ var u = unitOfCode(r.org_code); if (u){ r.team = u.team; r.site = u.site; r.dept = u.dept; r.part = u.part; r.org_path = u.path; } }); }
       var ins = 0, upd = 0, invalid = [];
       (rows || []).forEach(function(r){ var id = normEmp(r.empId);
         if (!EMP_RE.test(id)) return invalid.push({ row:r.row, reason:'사번 형식 오류' });
@@ -1609,7 +1627,14 @@ function makeDemoApi(){
         var h = h64(id), e = emps[h];
         if (!e){ addEmp(id, r.role || 'worker', r.orgCode, false, r.nameMask || null); ins++; }
         else { applyOrg(e, e.role === 'hq' ? 'hq' : (r.role || e.role), r.orgCode); if (r.nameMask) e.name_mask = maskName(r.nameMask); upd++; } });
-      return { inserted:ins, updated:upd, skipped:0, units:nu, invalid:invalid }; }
+      meta = meta || {}; batch = batch || uuid();
+      var lg = impLogs.find(function(x){ return x.batch_id === batch; }), nowIso = new Date().toISOString();
+      if (!lg){ lg = { id:++impSeq, batch_id:batch, created_at:nowIso, actor_code:a.emp_code, file_name:meta.fileName || '', file_rows:meta.fileRows || 0, client_invalid:meta.clientInvalid || 0,
+        units_sent:(units || []).length, units_total:0, emp_inserted:0, emp_updated:0, server_invalid:0, emp_total:0 }; impLogs.push(lg); }
+      lg.finished_at = nowIso; lg.units_sent = Math.max(lg.units_sent, (units || []).length); lg.units_total = UNITS.length;
+      lg.emp_inserted += ins; lg.emp_updated += upd; lg.server_invalid += invalid.length;
+      lg.emp_total = Object.keys(emps).filter(function(k){ return emps[k].active; }).length;
+      return { inserted:ins, updated:upd, skipped:0, units:nu, invalid:invalid, log:clone(lg) }; }
   };
 }
 
@@ -1719,7 +1744,7 @@ $('#authForm').addEventListener('submit', async function(e){
    ===================================================================== */
 var state = { user:null, org:[], screen:null, type:'proposal', grade:null, photos:{proposal:null, nearmiss:null, risk:null}, riskLevel:null, all:[], employees:[],
   filter:{ chip:'all', status:'all', org:null, q:'', emp:null }, empSel:null };
-if (DEMO) window.__ehs = { state:state };   /* 데모 모드 점검용 */
+if (DEMO) window.__ehs = { state:state, api:api };   /* 데모 모드 점검용 */
 function isStaff(){ return state.user && state.user.role !== 'worker'; }
 /* 조직표(state.org): 부서코드 트리 — 사업팀(depth 1) › 그룹(2) › 팀(3) › 파트(4). 사업팀이 아닌 최상위는 '본사' */
 function teams(){ var t = []; state.org.forEach(function(o){ if (o.depth === 1 && o.team && t.indexOf(o.team) < 0) t.push(o.team); });
@@ -1758,7 +1783,7 @@ async function enterApp(user){
   go(isStaff() ? 'dash' : 'write');
 }
 function leaveApp(){
-  state.user = null; state.all = []; state.employees = []; state.filter.emp = null;
+  state.user = null; state.all = []; state.employees = []; state.filter.emp = null; DESK.impLast = undefined;
   closeSheet(); leaveDesk(); document.body.classList.add('login-mode');
   $('#view-main').classList.add('hidden'); $('#view-login').classList.remove('hidden');
   setAuthMode('login'); $('#empId').value = saveIdEl.checked ? (lsGet(PREF.savedId) || '') : '';
@@ -2046,6 +2071,7 @@ var LV_LABEL = { team:'사업팀', site:'그룹', dept:'팀', part:'파트' };
 function maskName(v){ var c = Array.from(String(v == null ? '' : v).trim().replace(/\s+/g, '')).slice(0, 20); if (!c.length) return null;
   return c.length === 1 ? c[0] : c.length === 2 ? c[0] + '*' : c[0] + new Array(c.length - 1).join('*') + c[c.length - 1]; }
 function nameOf(hash){ if (!hash || !state.employees) return ''; var e = state.employees.find(function(x){ return x.emp_hash === hash; }); return e && e.name_mask ? e.name_mask : ''; }
+function authorName(r){ return nameOf(r.emp_hash) || r.author_mask || ''; }   // 퇴직·삭제된 인원은 제출 당시 성명(가림)
 function fullUnit(o){ var a = [o.site, o.dept, o.part].filter(Boolean); return a.length ? a.join(' › ') : (o.team || '본사'); }
 function pathLabel(o){ return [o.team || '본사'].concat([o.site, o.dept, o.part].filter(Boolean)).join(' › '); }
 
@@ -2163,10 +2189,11 @@ function orgPicker(box, opts){
 
 function setupStaffUI(){
   var u = state.user;
-  state.filter = { chip:'all', status:'all', org:newOrgSel(), q:'', emp:null };
+  state.filter = { chip:'all', status:'all', org:newOrgSel(), q:'', emp:null, year:'all', month:'all' };
   state.empSel = newOrgSel();
   $('#fQ').value = ''; $$('#typeChips .chip').forEach(function(c){ c.classList.toggle('on', c.dataset.v === 'all'); });
   $('#fStatus').innerHTML = '<option value="all">상태 전체</option>' + STATUS_ORDER.map(function(s){ return '<option value="'+s+'">'+STATUS[s]+'</option>'; }).join('');
+  fillPeriodSelects();
   $('#peopleScope').textContent = '관리 범위 · ' + scopeLabel(u);
   $('#regRole').innerHTML = allowedRoles(u).map(function(r){ return '<option value="'+r+'">'+ROLE[r].ko+' 권한</option>'; }).join('');
   if (!state.regPick) state.regPick = orgPicker($('#regOrg'), { role:function(){ return $('#regRole').value; } });
@@ -2243,6 +2270,9 @@ function filtered(){
     if (f.chip === 'open' && OPEN.indexOf(r.status) < 0) return false;
     if (f.chip === 'committee' && r.status !== 'committee') return false;
     if (f.status !== 'all' && r.status !== f.status) return false;
+    if (f.year !== 'all'){ var d = new Date(r.created_at);
+      if (d.getFullYear() !== +f.year) return false;
+      if (f.month !== 'all' && d.getMonth() + 1 !== +f.month) return false; }
     if (!matchOrg(r, f.org)) return false;
     if (f.emp && r.emp_hash !== f.emp.hash) return false;
     if (q && searchText(r).indexOf(q) < 0) return false;
@@ -2256,12 +2286,13 @@ function renderList(){
   var L = filtered();
   var ec = $('#typeChips .chip.x'); if (ec) ec.remove();
   if (state.filter.emp) $('#typeChips').insertAdjacentHTML('afterbegin', '<button class="chip x" data-clear-emp>ID '+esc(state.filter.emp.code)+' ✕</button>');
-  $('#listCount').innerHTML = '조회 <b>'+L.length+'</b>건 / 전체 '+scoped().length+'건';
+  var pf = state.filter, per = pf.year === 'all' ? '' : pf.year + '년' + (pf.month === 'all' ? '' : ' ' + pf.month + '월') + ' · ';
+  $('#listCount').innerHTML = per + '조회 <b>'+L.length+'</b>건 / 전체 '+scoped().length+'건';
   $('#adminList').innerHTML = L.length ? L.map(function(r){ return itemHtml(r, true); }).join('') : emptyBox('조건에 맞는 건이 없습니다');
 }
 async function loadList(){
   if (!state.all.length) $('#adminList').innerHTML = '<div class="loading"><span class="spin"></span>불러오는 중</div>';
-  try { await fetchAll(); renderOrgSelects($('#fOrg'), scoped(), levelsFor(state.user), state.filter.org, renderList); renderList(); updateOpenBadges(scoped()); }
+  try { await fetchAll(); fillPeriodSelects(); renderOrgSelects($('#fOrg'), scoped(), levelsFor(state.user), state.filter.org, renderList); renderList(); updateOpenBadges(scoped()); }
   catch(e){ $('#adminList').innerHTML = emptyBox('불러오지 못했습니다'); fail(e); }
 }
 $('#typeChips').addEventListener('click', function(e){
@@ -2272,6 +2303,21 @@ $('#typeChips').addEventListener('click', function(e){
   renderList();
 });
 $('#fStatus').addEventListener('change', function(){ state.filter.status = this.value; renderList(); });
+/* 접수 연·월 (접수일 기준) — 연도는 데이터가 있는 해 + 올해 */
+function fillPeriodSelects(){
+  var f = state.filter, ys = {}, now = new Date().getFullYear(); ys[now] = 1;
+  (state.all || []).forEach(function(r){ var y = new Date(r.created_at).getFullYear(); if (y) ys[y] = 1; });
+  var years = Object.keys(ys).map(Number).sort(function(a,b){ return b - a; });
+  if (f.year !== 'all' && years.indexOf(+f.year) < 0) f.year = 'all';
+  $('#fYear').innerHTML = '<option value="all">연도 전체</option>' + years.map(function(y){ return '<option value="'+y+'">'+y+'년</option>'; }).join('');
+  $('#fMonth').innerHTML = '<option value="all">월 전체</option>' + [1,2,3,4,5,6,7,8,9,10,11,12].map(function(m){ return '<option value="'+m+'">'+m+'월</option>'; }).join('');
+  if (f.year === 'all') f.month = 'all';
+  $('#fYear').value = f.year; $('#fMonth').value = f.month; $('#fMonth').disabled = f.year === 'all';
+}
+$('#fYear').addEventListener('change', function(){ var f = state.filter; f.year = this.value;
+  if (f.year === 'all') f.month = 'all';
+  $('#fMonth').value = f.month; $('#fMonth').disabled = f.year === 'all'; renderList(); });
+$('#fMonth').addEventListener('change', function(){ state.filter.month = this.value; renderList(); });
 $('#fQ').addEventListener('input', function(){ state.filter.q = this.value; renderList(); });
 $('#listRefresh').addEventListener('click', loadList);
 $('#adminList').addEventListener('click', function(e){ var b = e.target.closest('.item'); if(!b) return;
@@ -2321,7 +2367,7 @@ function openEmpSheet(emp){
       '<button class="btn btn-ghost btn-block" data-a="reports">이 사람의 제출건 보기</button>' +
       (emp.registered_at ? '<button class="btn btn-ghost btn-block" data-a="reset">비밀번호 초기화</button>' : '') +
       '<button class="btn btn-danger btn-block" data-a="remove">사번 등록 삭제</button>' +
-    '</div><p class="note">비밀번호 초기화 후 해당 직원이 [최초 등록]으로 다시 가입합니다. 등록 삭제 시 제출 기록은 남고 식별코드 연결만 끊어집니다.</p>');
+    '</div><p class="note">비밀번호 초기화 후 해당 직원이 [최초 등록]으로 다시 가입합니다. 등록을 삭제해도 이 직원의 제출 기록은 식별코드·성명(가림)과 함께 <b>제출 당시 소속 조직</b>에 그대로 남습니다.</p>');
   $('[data-close]', sheet).onclick = closeSheet;
   var mvPick = orgPicker($('#mvOrg'), { role:function(){ return $('#mvRole').value; }, value:emp.org_code });
   $('#mvRole').addEventListener('change', function(){ mvPick.refresh(); });
@@ -2427,7 +2473,7 @@ function reportRows(L){
   return [['접수번호','유형','상태','사업팀','그룹','팀','파트','장소','제안등급','결정등급','위험정도(제출)','위험정도(반영)','사고유형/위험요인','발생일시','상세내용/상황설명','조치요청사항','재발방지의견','처리의견','제출자식별코드','제출자성명(마스킹)','제출일시','종료일시']]
     .concat(L.map(function(r){ return [noOf(r.report_no), TYPE[r.type] ? TYPE[r.type].short : r.type, stLabel(r.status, r.type), r.team || '본사', r.site || '', r.dept || '', r.part || '',
       r.location || '', r.proposed_grade || '', r.final_grade || '', r.risk_level || '', r.final_risk || '', r.category || '', r.occurred_at ? fmt(r.occurred_at) : '', r.detail || '', r.request || '', r.prevention || '',
-      r.admin_comment || '', codeOf(r.emp_hash), nameOf(r.emp_hash), fmt(r.created_at), r.closed_at ? fmt(r.closed_at) : '']; }));
+      r.admin_comment || '', codeOf(r.emp_hash), authorName(r), fmt(r.created_at), r.closed_at ? fmt(r.closed_at) : '']; }));
 }
 function employeeRows(E){
   var cnt = {}; state.all.forEach(function(r){ if (r.emp_hash) cnt[r.emp_hash] = (cnt[r.emp_hash] || 0) + 1; });
@@ -2509,7 +2555,7 @@ function saveCsv(filename, rows){
   a.href = url; a.download = filename; a.style.display = 'none'; document.body.appendChild(a); a.click();
   setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 4000); toast('CSV 파일을 저장했습니다');
 }
-var APP_VER = '2026.11.19-e';
+var APP_VER = '2026.11.19-f';
 function wideScreen(){ return window.matchMedia('(min-width: 900px)').matches; }
 async function openExportSheet(){
   var L = filtered(); if (!L.length) return toast('내보낼 데이터가 없습니다', true);
@@ -2810,7 +2856,7 @@ function reportTable(L){
       '<td><i class="tdot" style="background:'+teamColor(r.team || '본사')+'"></i>'+esc(r.team || '본사')+'</td><td>'+esc(r.site || '-')+'</td><td>'+esc(r.dept || '-')+'</td><td>'+esc(r.part || '-')+'</td>' +
       '<td class="ell">'+(r.type === 'nearmiss' ? (r.location ? esc(r.location) + ' · ' : '') + '발생 ' + fmt(r.occurred_at) : esc(r.location || '-') + (r.type === 'risk' && r.category ? ' · ' + esc(r.category) : ''))+'</td>' +
       '<td>'+(gradeTag(r.proposed_grade) || riskTag(r.risk_level) || '-')+'</td><td>'+(gradeTag(r.final_grade) || riskTag(r.final_risk) || '-')+'</td><td class="ell wide">'+esc(r.detail)+'</td>' +
-      '<td class="mono">'+fmt(r.created_at).slice(0, 10)+'</td><td class="mono">'+(r.closed_at ? fmt(r.closed_at).slice(0, 10) : '-')+'</td><td><span class="mono">'+esc(codeOf(r.emp_hash))+'</span>'+(nameOf(r.emp_hash) ? ' <span class="nm">'+esc(nameOf(r.emp_hash))+'</span>' : '')+'</td></tr>'; }).join('') +
+      '<td class="mono">'+fmt(r.created_at).slice(0, 10)+'</td><td class="mono">'+(r.closed_at ? fmt(r.closed_at).slice(0, 10) : '-')+'</td><td><span class="mono">'+esc(codeOf(r.emp_hash))+'</span>'+(authorName(r) ? ' <span class="nm">'+esc(authorName(r))+'</span>' : '')+'</td></tr>'; }).join('') +
     '</tbody></table>';
 }
 function deskFiltered(){
@@ -2894,6 +2940,7 @@ function deskRenderTree(){
         Object.keys(D.parts).sort(byName).forEach(function(p){ html += node('t4', p, D.parts[p], [t, s, dv, p], isOn(t, s, dv, p)); }); }); }); });
   $('#dTree').innerHTML = html;
   $('#dTreeMeta').textContent = '사업팀 ' + teams().filter(function(t){ return t !== '본사' && T[t]; }).length + ' · 그룹 ' + Object.keys(T).reduce(function(n, t){ return n + Object.keys(T[t].sites).length; }, 0);
+  if (DESK.impLast === undefined && state.user && state.user.role === 'hq'){ DESK.impLast = null; loadImportHist(); } else deskOrgMeta();
 }
 $('#dTree').addEventListener('click', function(e){
   var b = e.target.closest('.tnode'); if (!b) return; var p = JSON.parse(b.dataset.path);
@@ -2961,7 +3008,33 @@ function downloadTemplate(){
       ['직책','권한 자동 설정용 (직책 원문은 서버로 보내지 않음). 사업팀장 → 사업팀 권한 / 그룹장·SE팀장·SE파트장 → 관리자 권한(본인 소속 범위) / 그 외 → 근로자. 사업팀 소속 지원그룹(1~4지원그룹) 인원은 직책과 관계없이 사업팀 권한. 본사 권한은 화면에서 별도 지정'],
       ['참고','인사 시스템에서 내려받은 사원 명단을 그대로 올려도 됩니다. 위 열 외의 정보(주민번호·연락처·주소 등)는 읽지 않습니다.'], ['참고','다시 올리면 직책 기준으로 권한이 다시 맞춰집니다 (화면에서 바꾼 사업팀·관리자 권한도 직책 기준으로 돌아감, 본사 권한은 유지)']] } ]);
 }
-function deskRenderImport(){ if (!DESK.imp) $('#impPreview').innerHTML = ''; $('#impRun').disabled = !DESK.imp || !DESK.imp.valid.length; }
+function deskRenderImport(){ if (!DESK.imp) $('#impPreview').innerHTML = ''; $('#impRun').disabled = !DESK.imp || !DESK.imp.valid.length; loadImportHist(); }
+/* ---- 백데이터 반영 이력 (최근 20회) ---- */
+function impLastLine(l){
+  return '<div class="imp-last"><span class="t">최근 반영 <span class="mono">'+esc(fmt(l.finished_at || l.created_at))+'</span></span>' +
+    '<span>반영 대상 <b>'+(l.file_rows || 0).toLocaleString()+'</b>명</span><span>신규 <b>'+(l.emp_inserted || 0).toLocaleString()+'</b></span><span>갱신 <b>'+(l.emp_updated || 0).toLocaleString()+'</b></span>' +
+    '<span>오류 <b>'+((l.client_invalid || 0) + (l.server_invalid || 0)).toLocaleString()+'</b>행</span><span>반영 후 인원 <b>'+(l.emp_total || 0).toLocaleString()+'</b>명 · 조직 <b>'+(l.units_total || 0).toLocaleString()+'</b>개</span>' +
+    '<span>반영자 <b class="mono">'+esc(l.actor_code || '-')+'</b></span></div>';
+}
+async function loadImportHist(){
+  var box = $('#impHistBody'); if (!box) return;
+  try {
+    var L = await api.importLogs(); DESK.impLast = L[0] || null; deskOrgMeta();
+    if (!L.length){ box.innerHTML = '<div class="note">아직 반영 이력이 없습니다. 백데이터를 반영하면 날짜·인원·반영자가 여기에 남습니다.</div>'; return; }
+    box.innerHTML = impLastLine(L[0]) +
+      '<div class="dtable-wrap" style="max-height:300px"><table class="dtable"><thead><tr><th>반영 일시</th><th>파일</th><th class="num">반영 대상</th><th class="num">신규</th><th class="num">갱신</th><th class="num">오류</th><th class="num">신규·변경 조직</th><th class="num">반영 후 인원</th><th>반영자</th></tr></thead><tbody>' +
+      L.map(function(l){ return '<tr><td class="mono">'+esc(fmt(l.finished_at || l.created_at))+'</td><td>'+esc(l.file_name || '-')+'</td><td class="num">'+(l.file_rows || 0).toLocaleString()+'</td><td class="num">'+(l.emp_inserted || 0).toLocaleString()+'</td><td class="num">'+(l.emp_updated || 0).toLocaleString()+'</td>' +
+        '<td class="num">'+((l.client_invalid || 0) + (l.server_invalid || 0)).toLocaleString()+'</td><td class="num">'+(l.units_sent || 0).toLocaleString()+'</td><td class="num">'+(l.emp_total || 0).toLocaleString()+'</td><td class="mono">'+esc(l.actor_code || '-')+'</td></tr>'; }).join('') +
+      '</tbody></table></div><p class="note">최근 20회까지 표시합니다. 업로드 파일과 사번·성명 원문은 이력에 남지 않습니다.</p>';
+  } catch(e){ box.innerHTML = '<div class="note">반영 이력을 불러오지 못했습니다. 서버 설정(schema.sql 최신본 실행)을 확인해 주세요.</div>'; }
+}
+/* 조직 · 인원 화면 머리말에 마지막 반영 일시 표시 */
+function deskOrgMeta(){
+  var el = $('#dTreeMeta'); if (!el) return;
+  var old = $('.imp-stamp', el.parentNode); if (old) old.remove();
+  var l = DESK.impLast; if (!l) return;
+  el.insertAdjacentHTML('afterend', '<span class="dpanel-meta imp-stamp" title="백데이터 마지막 반영">· 백데이터 반영 '+esc(fmt(l.finished_at || l.created_at))+' (인원 '+(l.emp_total || 0).toLocaleString()+'명)</span>');
+}
 function roleCode(v){ v = String(v || '').trim(); if (!v) return ''; if (/^(근로자|worker|직원)$/i.test(v)) return 'worker'; if (/^(관리자|manager)$/i.test(v)) return 'manager'; return null; }
 /* 부서명 → 부서코드 연결 (상위부서는 이름으로 주어지므로) · 이름으로 못 찾으면 부서코드 모양으로 추정 */
 function guessParentByCode(code, has){
@@ -3052,11 +3125,12 @@ $('#impFile').addEventListener('change', async function(){
 $('#impRun').addEventListener('click', async function(){
   if (!DESK.imp) return;
   var rows = DESK.imp.valid, units = DESK.imp.units, btn = this, tot = { inserted:0, updated:0, units:0, invalid:[] }; btn.disabled = true;
+  var batch = uuid(), meta = { fileName:DESK.imp.name || '', fileRows:rows.length, clientInvalid:(DESK.imp.invalid || []).length };
   try {
     var i = 0;
     do {
       $('#impResult').innerHTML = '<div class="imp-prog"><div style="width:'+(rows.length ? Math.round(i / rows.length * 100) : 50)+'%"></div></div><p class="note">반영 중… '+i.toLocaleString()+' / '+rows.length.toLocaleString()+'</p>';
-      var r = await api.importEmployees(i === 0 ? units : [], rows.slice(i, i + 500));
+      var r = await api.importEmployees(i === 0 ? units : [], rows.slice(i, i + 500), batch, meta);
       tot.inserted += r.inserted || 0; tot.updated += r.updated || 0; tot.units = Math.max(tot.units, r.units || 0); tot.invalid = tot.invalid.concat(r.invalid || []);
       i += 500;
     } while (i < rows.length);
@@ -3064,6 +3138,7 @@ $('#impRun').addEventListener('click', async function(){
       (tot.invalid.length ? '<div class="bad"><b>'+tot.invalid.length+'</b><span>서버 검증 오류</span></div>' : '') + '</div><p class="note">신규 등록된 사번은 본인이 [최초 등록]으로 가입해야 사용할 수 있습니다. 관리자·사업팀 권한은 [조직 · 인원]에서 지정하세요.</p>';
     DESK.imp = null; $('#impPreview').innerHTML = ''; $('#impFileName').textContent = '선택된 파일 없음';
     await deskReloadOrg(); state.employees = []; if (state.regPick) state.regPick.refresh();
+    loadImportHist();
     toast('조직·인원 백데이터가 반영되었습니다');
   } catch(e){ fail(e); btn.disabled = false; }
 });

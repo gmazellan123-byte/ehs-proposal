@@ -414,7 +414,22 @@ async function actImport(req: Request, body: any) {
     if (error) throw new HttpError(500, "인원 반영 중 오류가 발생했습니다");
     result = data as typeof result;
   }
-  return { ...result, units: unitCount, invalid };
+  // 반영 이력 (업로드 1회 = batch 1건으로 누적) — 실패해도 반영 결과에는 영향 없음
+  let log: unknown = null;
+  try {
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const meta = body.meta ?? {};
+    const batch = UUID_RE.test(String(body.batch ?? "")) ? String(body.batch) : crypto.randomUUID();
+    const num = (v: unknown) => Math.max(0, Math.min(1_000_000, Math.floor(Number(v) || 0)));
+    const { data: me } = await db.from("employees").select("emp_code").eq("emp_hash", actor.empHash).maybeSingle();
+    const { data: lg } = await db.rpc("log_import", { p: {
+      batch_id: batch, actor_code: me?.emp_code ?? "", file_name: String(meta.fileName ?? "").slice(0, 120),
+      file_rows: num(meta.fileRows), client_invalid: num(meta.clientInvalid), units_sent: units.length,
+      emp_inserted: result.inserted ?? 0, emp_updated: result.updated ?? 0, server_invalid: invalid.length,
+    } });
+    log = lg;
+  } catch (_) { /* 이력 기록 실패는 무시 */ }
+  return { ...result, units: unitCount, invalid, log };
 }
 
 // ---------------------------------------------------------------------
