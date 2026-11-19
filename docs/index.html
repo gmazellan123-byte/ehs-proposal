@@ -2393,7 +2393,7 @@ function saveCsv(filename, rows){
   a.href = url; a.download = filename; a.style.display = 'none'; document.body.appendChild(a); a.click();
   setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 4000); toast('CSV 파일을 저장했습니다');
 }
-var APP_VER = '2026.11.19-c';
+var APP_VER = '2026.11.19-d';
 function wideScreen(){ return window.matchMedia('(min-width: 900px)').matches; }
 async function openExportSheet(){
   var L = filtered(); if (!L.length) return toast('내보낼 데이터가 없습니다', true);
@@ -2404,7 +2404,8 @@ async function openExportSheet(){
     '<div class="exp-btns"><button class="btn btn-primary" data-x="share">'+ICON.share+'공유하기<small>회사 메일 · 사내 메신저 등</small></button>' +
     '<button class="btn btn-ghost" data-x="save">'+ICON.save+'휴대폰에 저장<small>다운로드 폴더</small></button></div>' +
     '<button class="btn btn-ghost btn-block" data-x="csv" style="margin-top:10px">CSV로 저장 <small style="font-weight:600;opacity:.75">· 휴대폰에 엑셀 앱이 없을 때</small></button>' +
-    (IN_APP ? '<div class="notice warn" style="margin-top:10px"><b>카카오톡·네이버 등 앱 안의 브라우저</b>에서는 파일 저장이 막힐 수 있습니다. 화면의 ⋮ 메뉴에서 <b>다른 브라우저(Chrome)로 열기</b> 후 다시 시도해 주세요.</div>' : '') +
+    (IS_KAKAO ? '<div class="notice warn" style="margin-top:10px"><b>카카오톡 안에서는 파일을 저장·공유할 수 없습니다.</b> 아래 버튼으로 기본 브라우저에서 연 뒤 다시 로그인해서 내보내 주세요.<button class="btn btn-primary btn-block" data-x="ext" style="margin-top:8px">기본 브라우저(Chrome·Safari)로 열기</button></div>'
+      : IN_APP ? '<div class="notice warn" style="margin-top:10px"><b>앱 안의 브라우저</b>에서는 파일 저장이 막힐 수 있습니다. 화면의 ⋮ 메뉴에서 <b>다른 브라우저로 열기</b> 후 다시 시도해 주세요.</div>' : '') +
     '<div class="notice warn" style="margin-top:12px">회사 업무 자료입니다. <b>회사 메일·사내 저장소로만</b> 보내고, 개인 메신저·개인 메일로는 보내지 마세요. 보낸 뒤 휴대폰에 남은 파일은 지워 주세요.</div>' +
     (wideScreen() ? '<button class="btn btn-ghost btn-block" data-x="names" style="margin-top:10px">실명 포함 엑셀 만들기 (PC · 인사명단 대조)</button>' : '') +
     '<p class="note" style="text-align:right;margin-top:8px">화면 버전 '+APP_VER+'</p></div>');
@@ -2412,6 +2413,7 @@ async function openExportSheet(){
   $('.exp-wrap', sheet).addEventListener('click', async function(e){ var b = e.target.closest('[data-x]'); if (!b) return;
     var rows = [{ name:'접수목록', rows:reportRows(L) }];
     if (b.dataset.x === 'save'){ closeSheet(); downloadXlsx(name, rows); }
+    if (b.dataset.x === 'ext'){ openExternal(); return; }
     if (b.dataset.x === 'csv'){ closeSheet(); saveCsv(name.replace(/\.xlsx$/, '.csv'), rows[0].rows); }
     if (b.dataset.x === 'share'){ b.disabled = true; try { await shareFile(name, rows); closeSheet(); } catch(err){ fail(err); } finally { b.disabled = false; } }
     if (b.dataset.x === 'names'){ openNameExport('reports', L); }
@@ -3002,6 +3004,11 @@ var UA = navigator.userAgent || '';
 var IS_IOS = /iPhone|iPad|iPod/i.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 var IS_ANDROID = /Android/i.test(UA);
 var IN_APP = /KAKAOTALK|NAVER\(inapp|Instagram|FBAN|FBAV|Line\/|DaumApps|everytimeApp/i.test(UA);
+/* 카카오톡 안에서 열면 기본 브라우저로 자동 전환 (카카오톡 브라우저는 파일 저장·앱 설치를 지원하지 않음) */
+var IS_KAKAO = /KAKAOTALK/i.test(UA);
+function openExternal(){ location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href); }
+(function(){ if (!IS_KAKAO) return; var k = 'ehs-kakao-ext'; try { if (sessionStorage.getItem(k)) return; sessionStorage.setItem(k, '1'); } catch(e){}
+  setTimeout(openExternal, 300); })();
 var IS_SAMSUNG = /SamsungBrowser/i.test(UA);
 var IS_IOS_OTHER = IS_IOS && /CriOS|FxiOS|EdgiOS|Whale|NAVER/i.test(UA);
 function isStandalone(){ return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true; }
