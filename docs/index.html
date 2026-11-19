@@ -735,6 +735,9 @@ body.desk .dtree{position:static;max-height:none;padding:8px;}
 .gp-empty{padding:16px;font-size:13px;color:var(--ink-soft);text-align:center;}
 .op-sel{font-size:14px;}
 #regRole,#mvRole{margin-top:0;}
+.op-note{font-size:12.5px;line-height:1.55;color:var(--ink-soft);padding:2px 2px 0;}
+.op-note b{color:var(--ink);}
+.op-clear{margin-left:6px;border:1px solid var(--line2);background:#fff;border-radius:7px;padding:2px 8px;font-size:12px;cursor:pointer;color:var(--ink-soft);}
 .imp-roles{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:0 0 8px;padding:8px 10px;border-radius:var(--r-sm);background:var(--bg2);border:1px solid var(--line);font-size:13px;}
 .imp-roles .role-chip{color:#fff;}
 .imp-roles span{color:var(--ink-faint);font-size:12px;}
@@ -1859,13 +1862,12 @@ function orgPicker(box, opts){
       var kids = role === 'team' ? [] : childUnits(t.code).filter(allowed);
       var headOk = allowed(t) && (role === 'team' || actor().role === 'hq' || actor().role === 'team');
       return '<div class="gp-sec" style="--c:'+teamColor(t.team)+'">' +
-        '<button type="button" class="gp-h" data-code="'+esc(t.code)+'"'+(headOk ? '' : ' disabled')+'><i></i>'+esc(t.team)+(t.team === '본사' ? '' : '')+'<small>'+(role === 'team' ? '사업팀' : '사업팀 직속')+'</small></button>' +
+        '<button type="button" class="gp-h" data-code="'+esc(t.code)+'"'+(headOk ? '' : ' disabled')+'><i></i>'+esc(t.team)+(t.team === '본사' ? '' : '')+'<small>'+(role === 'team' ? '사업팀' : t.team === '본사' ? '본사 직속' : '사업팀 직속')+'</small></button>' +
         (kids.length ? '<div class="gp-items">' + kids.map(function(k){ return '<button type="button" data-code="'+esc(k.code)+'"'+(k.code === P.code || chainOf(P.code)[1] === k.code ? ' class="on"' : '')+'>'+esc(k.name)+'</button>'; }).join('') + '</div>' : '') + '</div>'; }).join('')
       : '<div class="gp-empty">조직 정보가 없습니다. 본사 콘솔에서 조직 백데이터를 먼저 업로드하세요.</div>') + '</div>';
   }
   function render(){
     var role = opts.role(), a = actor(), html = '';
-    if (role === 'hq'){ P.code = null; box.innerHTML = '<div class="op-fixed">본사 권한 · 전사 범위 (소속 지정 없음)</div>'; return; }
     var cur = P.code ? unitByCode(P.code) : null;
     if (cur && (!allowed(cur) || (role === 'team' && cur.depth !== 1))) cur = null;
     var base = a.role === 'manager' ? unitByCode(a.org_code) : null;
@@ -1877,7 +1879,7 @@ function orgPicker(box, opts){
       anchor = base;
     } else {
       var top = chain.length ? unitByCode(chain[Math.min(chain.length, 2) - 1]) : null;
-      var label = top ? (top.depth === 1 ? esc(top.team) + ' <small>(사업팀 직속)</small>' : esc(top.team) + ' › <b>' + esc(top.name) + '</b>') : (role === 'team' ? '사업팀 선택' : '사업팀 › 그룹 선택');
+      var label = top ? (top.depth === 1 ? esc(top.team) + ' <small>(' + (top.team === '본사' ? '본사 직속' : '사업팀 직속') + ')</small>' : esc(top.team) + ' › <b>' + esc(top.name) + '</b>') : (role === 'team' ? '사업팀 선택' : role === 'hq' ? '소속 부서 선택 (선택 사항)' : '사업팀 › 그룹 선택');
       html += '<div class="gp'+(P.open ? ' open' : '')+'"><button type="button" class="gp-btn'+(top ? '' : ' ph')+'" style="--c:'+teamColor(top ? top.team : '')+'"><i></i><span>'+label+'</span>'+CHEV+'</button>' + (P.open ? topList(role) : '') + '</div>';
       anchor = top && top.depth === 2 ? top : null;
     }
@@ -1891,12 +1893,14 @@ function orgPicker(box, opts){
         u = picked ? unitByCode(picked) : null;
       }
     }
+    if (role === 'hq') html += '<div class="op-note">본사 권한은 소속과 관계없이 <b>전사 범위</b>입니다. 소속은 조직도·집계 표시용입니다.' + (P.code ? ' <button type="button" class="op-clear">소속 비우기</button>' : '') + '</div>';
     box.innerHTML = html;
   }
   function set(code){ P.code = code || null; P.open = false; render(); if (opts.onChange) opts.onChange(P.code); }
   box.addEventListener('click', function(e){
     var b = e.target.closest('.gp-btn'); if (b){ P.open = !P.open; render(); return; }
-    var it = e.target.closest('.gp-pop [data-code]'); if (it && !it.disabled){ set(it.dataset.code); }
+    var it = e.target.closest('.gp-pop [data-code]'); if (it && !it.disabled){ set(it.dataset.code); return; }
+    if (e.target.closest('.op-clear')) set(null);
   });
   box.addEventListener('change', function(e){ var s = e.target.closest('.op-sel'); if (!s) return; set(s.value || s.dataset.parent); });
   document.addEventListener('click', function(e){ if (P.open && e.target.isConnected && !box.contains(e.target)){ P.open = false; render(); } });
