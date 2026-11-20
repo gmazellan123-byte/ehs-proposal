@@ -1754,8 +1754,12 @@ function makeDemoApi(){
         if (!EMP_RE.test(id)) return invalid.push({ row:r.row, reason:'사번 형식 오류' });
         if (!unitOfCode(r.orgCode)) return invalid.push({ row:r.row, reason:'알 수 없는 부서코드: ' + (r.orgCode || '(빈칸)') });
         var h = h64(id), e = emps[h];
-        if (!e){ addEmp(id, r.role || 'worker', r.orgCode, false, r.nameMask || null); ins++; }
-        else { applyOrg(e, e.role === 'hq' ? 'hq' : (r.role || e.role), r.orgCode); if (r.nameMask) e.name_mask = maskName(r.nameMask); upd++; } });
+        if (!e){ addEmp(id, r.role || 'worker', r.orgCode, false, r.nameMask || null); e = emps[h]; ins++; }
+        else { applyOrg(e, e.role === 'hq' ? 'hq' : (r.role || e.role), r.orgCode); if (r.nameMask) e.name_mask = maskName(r.nameMask); upd++; }
+        if (r.pos !== undefined) e.pos = POS_LV[r.pos] ? r.pos : null; });
+      reports.forEach(function(x){ if (x.type === 'proposal' && x.appr_step){ var ok = x.appr_pos && Object.keys(emps).some(function(k){ var q = emps[k]; return q.active && q.pos === x.appr_pos && q.org_path === x.appr_path; });
+        if (!ok){ var ap = pickAppr(x.org_path, x.emp_hash, x.appr_step); x.appr_pos = ap[0]; x.appr_path = ap[1]; } } });
+      var posCnt = function(p){ return Object.keys(emps).filter(function(k){ return emps[k].active && emps[k].pos === p; }).length; };
       meta = meta || {}; batch = batch || uuid();
       var lg = impLogs.find(function(x){ return x.batch_id === batch; }), nowIso = new Date().toISOString();
       if (!lg){ lg = { id:++impSeq, batch_id:batch, created_at:nowIso, actor_code:a.emp_code, file_name:meta.fileName || '', file_rows:meta.fileRows || 0, client_invalid:meta.clientInvalid || 0,
@@ -1763,7 +1767,7 @@ function makeDemoApi(){
       lg.finished_at = nowIso; lg.units_sent = Math.max(lg.units_sent, (units || []).length); lg.units_total = UNITS.length;
       lg.emp_inserted += ins; lg.emp_updated += upd; lg.server_invalid += invalid.length;
       lg.emp_total = Object.keys(emps).filter(function(k){ return emps[k].active; }).length;
-      return { inserted:ins, updated:upd, skipped:0, units:nu, invalid:invalid, log:clone(lg) }; }
+      return { inserted:ins, updated:upd, skipped:0, units:nu, invalid:invalid, log:clone(lg), pos_part:posCnt('part_lead'), pos_team:posCnt('team_lead'), pos_group:posCnt('group_lead') }; }
   };
 }
 
@@ -2067,7 +2071,8 @@ async function openDetail(r, staffView){
     else if (r.status === 'rejected'){ s1 = s2 = ''; s3 = 'done'; endLb = '반려'; }
     apprBox = '<div class="appr-line"><span class="kicker" style="margin-right:4px">결재선</span>' +
       '<span class="s '+s1+'">1차 SE파트장</span><span class="ar">→</span><span class="s '+s2+'">2차 SE팀장 <small style="font-weight:600">(가·나·다)</small></span><span class="ar">→</span><span class="s '+s3+'">'+endLb+'</span>' +
-      (r.appr_step ? '<div class="who">지금 결재: <b>'+r.appr_step+'차 · '+esc(r.appr_pos ? posLabel(r.appr_pos) : '결재자 미지정')+'</b>'+(r.appr_path && unitNm(r.appr_path) ? ' ('+esc(unitNm(r.appr_path))+')' : '') +
+      (r.appr_step && !r.appr_pos ? '<div class="who" style="color:#B45309">⚠ 이 소속(상위 포함)에 결재자(SE파트장 · SE팀장 · 그룹장)로 등록된 인원이 없어 <b>그룹장 · 사업팀 · 본사만 처리</b>할 수 있습니다. 본사가 직책이 들어 있는 인사명단을 다시 반영하면 자동 지정됩니다.</div>' : '') +
+      (r.appr_step && r.appr_pos ? '<div class="who">지금 결재: <b>'+r.appr_step+'차 · '+esc(posLabel(r.appr_pos))+'</b>'+(r.appr_path && unitNm(r.appr_path) ? ' ('+esc(unitNm(r.appr_path))+')' : '') +
         (mine ? ' · <b style="color:#3949AB">내 차례입니다</b>' : !r.appr_pos ? ' · 그룹장 · 사업팀 · 본사가 대행 결재' : proxy ? ' · 대행 결재 가능' : '') + '</div>' : '') + '</div>';
     if (canProc && !(r.appr_step ? (mine || proxy) : proxy)) canProc = false;
     if (!proxy) canLog = false;
@@ -2718,7 +2723,7 @@ function saveCsv(filename, rows){
   a.href = url; a.download = filename; a.style.display = 'none'; document.body.appendChild(a); a.click();
   setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 4000); toast('CSV 파일을 저장했습니다');
 }
-var APP_VER = '2026.11.20-e';
+var APP_VER = '2026.11.20-f';
 $$('[data-ver]').forEach(function(el){ el.textContent = APP_VER; });
 function wideScreen(){ return window.matchMedia('(min-width: 900px)').matches; }
 async function openExportSheet(){
@@ -3147,11 +3152,17 @@ var IMP_COLS = { empId:['사원번호','사번','empid','emp_id'], name:['성명
 var TITLE_TEAM = ['사업팀장'], TITLE_MANAGER = ['그룹장','SE팀장','SE파트장'];
 function isSupportGroup(u, bc){ for (var x = u, g = 0; x && g < 12; x = bc[x.parent_code], g++){ if (x.team !== '본사' && /지원그룹$/.test(x.name)) return true; } return false; }
 /* 결재선 직책 단계: SE파트장(1차) · SE팀장(2차) · 그룹장(대행) — 직책 원문 대신 이 값만 서버로 보냄 */
-function posByTitle(title){ var t = String(title || '').replace(/\s+/g, '');
-  return t === 'SE파트장' ? 'part_lead' : t === 'SE팀장' ? 'team_lead' : t === '그룹장' ? 'group_lead' : ''; }
-function roleByTitle(title, u, bc){ var t = String(title || '').replace(/\s+/g, '');
+/*   표기 차이 허용: 공백 · 괄호 · 직무대행/겸직 표기 제거 (예: "SE 파트장", "SE파트장(겸)", "그룹장 직무대행") */
+function titleNorm(title){ return String(title || '').replace(/\s+/g, '').replace(/[(\[（][^)\]）]*[)\]）]/g, '').replace(/(직무대행|대행|겸직|겸)$/, '').toUpperCase(); }
+function posByTitle(title){ var t = titleNorm(title);
+  if (!t || /사업팀장/.test(t)) return '';
+  if (/그룹장$/.test(t)) return 'group_lead';
+  if (/파트장$/.test(t)) return 'part_lead';
+  if (/팀장$/.test(t)) return 'team_lead';
+  return ''; }
+function roleByTitle(title, u, bc){ var t = titleNorm(title);
   if (TITLE_TEAM.indexOf(t) > -1 || (u && isSupportGroup(u, bc))) return 'team';
-  if (TITLE_MANAGER.indexOf(t) > -1) return 'manager';
+  if (TITLE_MANAGER.indexOf(t) > -1 || posByTitle(title)) return 'manager';
   return 'worker'; }
 function downloadTemplate(){
   var U = state.org.slice().sort(function(a,b){ return a.sort - b.sort; });
@@ -3442,7 +3453,8 @@ $('#impFile').addEventListener('change', async function(){
     });
     picked = null;
     var units = resolveUnits(fileUnits), built = buildOrg(units), bc = {}; built.forEach(function(u){ bc[u.code] = u; });
-    var hasTitle = col.title > -1;
+    var hasTitle = col.title > -1, titleSeen = {};
+    if (hasTitle) Object.keys(byId).forEach(function(k){ var tt = String(byId[k].title || '').trim(); if (tt) titleSeen[tt] = (titleSeen[tt] || 0) + 1; });
     var valid = Object.keys(byId).map(function(k){ var v = byId[k];
       if (hasTitle){ v.role = roleByTitle(v.title, bc[v.orgCode], bc); v.pos = posByTitle(v.title); }   /* 직책 열이 있으면 직책 기준 권한 · 결재선 */
       v.titleShown = v.title; delete v.title; return v; });   /* 직책 원문은 서버로 보내지 않음 */
@@ -3456,7 +3468,9 @@ $('#impFile').addEventListener('change', async function(){
     $('#impPreview').innerHTML =
       '<div class="imp-sum"><div><b>'+valid.length.toLocaleString()+'</b><span>반영 대상 인원</span></div><div><b>'+built.length.toLocaleString()+'</b><span>조직 단위 (신규·변경 '+newUnits.length+')</span></div><div class="'+(invalid.length ? 'bad' : '')+'"><b>'+invalid.length+'</b><span>오류 행 (제외)</span></div>'+(retired ? '<div><b>'+retired+'</b><span>재직 외 (제외)</span></div>' : '')+'</div>' +
       '<p class="note" style="margin:0 0 8px">사업팀 '+lv[1]+' · 그룹 '+lv[2]+' · 팀 '+lv[3]+' · 파트 '+lv[4]+' 단위로 정리됩니다. 읽은 열 '+usedCols+'개 · <b>나머지 '+ignored+'개 열은 읽지 않고 버렸습니다.</b></p>' +
-      (hasTitle ? '<div class="imp-roles">직책 기준 권한 · '+roleChip('team')+' <b>'+rc.team+'</b>명 '+roleChip('manager')+' <b>'+rc.manager+'</b>명 '+roleChip('worker')+' <b>'+rc.worker+'</b>명 <span>(본사 권한 계정은 변경하지 않음)</span></div>'+'<div class="imp-roles">결재선 · SE파트장 <b>'+pc.part_lead+'</b>명 · SE팀장 <b>'+pc.team_lead+'</b>명 · 그룹장 <b>'+pc.group_lead+'</b>명 <span>(개선제안 1차 SE파트장 → 2차 SE팀장)</span></div>'
+      (hasTitle ? '<div class="imp-roles">직책 기준 권한 · '+roleChip('team')+' <b>'+rc.team+'</b>명 '+roleChip('manager')+' <b>'+rc.manager+'</b>명 '+roleChip('worker')+' <b>'+rc.worker+'</b>명 <span>(본사 권한 계정은 변경하지 않음)</span></div>'+'<div class="imp-roles">결재선 · SE파트장 <b>'+pc.part_lead+'</b>명 · SE팀장 <b>'+pc.team_lead+'</b>명 · 그룹장 <b>'+pc.group_lead+'</b>명 <span>(개선제안 1차 SE파트장 → 2차 SE팀장)</span></div>' +
+        (pc.part_lead + pc.team_lead + pc.group_lead ? '' : '<div class="notice warn" style="margin:0 0 8px"><b>결재자로 지정될 직책을 찾지 못했습니다.</b> 직책 열에 SE파트장 · SE팀장 · 그룹장(…파트장 · …팀장 · …그룹장)이 있어야 합니다. 이 파일의 직책 값: ' +
+          Object.keys(titleSeen).sort(function(a, b){ return titleSeen[b] - titleSeen[a]; }).slice(0, 12).map(function(x){ return esc(x) + '(' + titleSeen[x] + ')'; }).join(', ') + '</div>')
         : '<div class="notice warn" style="margin:0 0 8px">"직책" 열이 없어 권한은 바꾸지 않습니다 (신규는 근로자). 직책 열을 포함해서 올리면 직책 기준으로 권한이 자동 설정됩니다.</div>') +
       '<div class="dtable-wrap" style="max-height:260px"><table class="dtable"><thead><tr><th>행</th><th>사번</th><th>성명(마스킹)</th><th>부서코드</th><th>소속 (사업팀 › 그룹 › 팀 › 파트)</th><th>직책</th><th>권한</th></tr></thead><tbody>' +
         valid.slice().sort(function(a,b){ return (ROLE_RANK[a.role] || 3) - (ROLE_RANK[b.role] || 3); }).slice(0, 15).map(function(v){ var u = bc[v.orgCode]; return '<tr><td class="num">'+v.row+'</td><td class="mono">'+esc(v.empId.replace(/.(?=.{2})/g, '•'))+'</td><td>'+esc(v.nameMask || '-')+'</td><td class="mono">'+esc(v.orgCode)+'</td><td>'+(u ? '<i class="tdot" style="background:'+teamColor(u.team)+'"></i>'+esc(pathLabel(u)) : '-')+'</td><td>'+esc(v.titleShown || '-')+'</td><td>'+(v.role ? roleChip(v.role) : '<span style="color:var(--ink-faint)">유지/근로자</span>')+'</td></tr>'; }).join('') +
@@ -3476,11 +3490,17 @@ $('#impRun').addEventListener('click', async function(){
       $('#impResult').innerHTML = '<div class="imp-prog"><div style="width:'+(rows.length ? Math.round(i / rows.length * 100) : 50)+'%"></div></div><p class="note">반영 중… '+i.toLocaleString()+' / '+rows.length.toLocaleString()+'</p>';
       var r = await api.importEmployees(i === 0 ? units : [], rows.slice(i, i + 500), batch, meta);
       tot.inserted += r.inserted || 0; tot.updated += r.updated || 0; tot.units = Math.max(tot.units, r.units || 0); tot.invalid = tot.invalid.concat(r.invalid || []);
+      if (r.pos_part !== undefined) tot.pos = { part:r.pos_part, team:r.pos_team, group:r.pos_group };
       i += 500;
     } while (i < rows.length);
     doneAt = new Date();
     $('#impResult').innerHTML = '<p class="note" style="margin:12px 0 0;font-weight:700;color:#0E6B37">✓ '+esc(fmtDay(doneAt))+' 반영 완료</p><div class="imp-sum done"><div><b>'+tot.inserted.toLocaleString()+'</b><span>신규 등록</span></div><div><b>'+tot.updated.toLocaleString()+'</b><span>소속 갱신</span></div><div><b>'+tot.units.toLocaleString()+'</b><span>조직 단위 반영</span></div>' +
-      (tot.invalid.length ? '<div class="bad"><b>'+tot.invalid.length+'</b><span>서버 검증 오류</span></div>' : '') + '</div><p class="note">신규 등록된 사번은 본인이 [최초 등록]으로 가입해야 사용할 수 있습니다. 관리자·사업팀 권한은 [조직 · 인원]에서 지정하세요.</p>';
+      (tot.invalid.length ? '<div class="bad"><b>'+tot.invalid.length+'</b><span>서버 검증 오류</span></div>' : '') + '</div>' +
+      (function(){ var sent = rows.filter(function(v){ return v.pos; }).length;
+        if (!sent) return '';
+        if (!tot.pos) return '<div class="notice warn" style="margin-top:10px"><b>결재자(직책)가 서버에 반영되지 않았습니다.</b> 서버 함수(api)나 DB가 최신이 아닙니다. schema.sql 실행 → api 함수 다시 배포 후 이 명단을 다시 올려 주세요.</div>';
+        return '<div class="notice info" style="margin-top:10px">결재자 등록 현황(서버 기준) · SE파트장 <b>'+tot.pos.part+'</b>명 · SE팀장 <b>'+tot.pos.team+'</b>명 · 그룹장 <b>'+tot.pos.group+'</b>명 — 결재 대기 건의 결재자도 다시 지정했습니다.</div>'; })() +
+      '<p class="note">신규 등록된 사번은 본인이 [최초 등록]으로 가입해야 사용할 수 있습니다. 관리자·사업팀 권한은 [조직 · 인원]에서 지정하세요.</p>';
     DESK.imp = null; $('#impPreview').innerHTML = ''; $('#impFileName').textContent = (KEYS.fileName || '') + ' (반영 완료)';
     KEYS.all = null; KEYS.groups = null; keyStepState();   /* 반영 후 KEY는 새 인원까지 다시 대조 */
     await deskReloadOrg(); state.employees = []; if (state.regPick) state.regPick.refresh();

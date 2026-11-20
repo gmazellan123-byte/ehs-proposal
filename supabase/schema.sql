@@ -299,7 +299,10 @@ begin
     end if;
   end loop;
   perform public.refresh_approvers();   -- 직책 · 소속이 바뀌었으면 결재 대기 건의 결재자도 다시 찾기
-  return jsonb_build_object('inserted', ins, 'updated', upd, 'skipped', 0);
+  return jsonb_build_object('inserted', ins, 'updated', upd, 'skipped', 0,
+    'pos_part',  (select count(*) from public.employees where active and pos = 'part_lead'),
+    'pos_team',  (select count(*) from public.employees where active and pos = 'team_lead'),
+    'pos_group', (select count(*) from public.employees where active and pos = 'group_lead'));
 end $$;
 revoke all on function public.import_employees(jsonb) from public, anon, authenticated;
 grant execute on function public.import_employees(jsonb) to service_role;
