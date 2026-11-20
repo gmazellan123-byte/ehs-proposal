@@ -756,6 +756,54 @@ do $$ begin
   perform public.seed_form_options('phrase', 'cmt.rejected', array['이미 개선 일정이 잡혀 있습니다.', '고객사 시설로 당사 조치가 어렵습니다.', '중복 접수된 건입니다.', '현장 확인 결과 위험요인이 확인되지 않았습니다.', '내용 보완 후 다시 제출해 주세요.']);
 end $$;
 
+-- 6-7) 데이터 초기화 (본사 콘솔 [데이터 초기화] → 서버 함수(api)만 호출 · 본사 계정과 입력 항목 설정은 항상 유지)
+--      reports : 접수건 · 처리 이력 · 접수번호 일련번호 · 실명 대조 기록 (사진은 서버 함수가 저장소에서 먼저 삭제)
+--      people  : 본사 외 인원 · 가입 계정(로그인 정보) · 백데이터 반영 이력
+--      all     : 위 둘 + 조직도
+create table if not exists public.reset_logs (
+  id          bigint generated always as identity primary key,
+  scope       text not null,
+  actor_code  text,
+  counts      jsonb,
+  created_at  timestamptz not null default now()
+);
+create or replace function public.wipe_counts()
+returns jsonb language sql stable security definer set search_path = public as $$
+  select jsonb_build_object(
+    'reports',   (select count(*) from public.reports),
+    'logs',      (select count(*) from public.report_logs),
+    'photos',    (select count(*) from public.reports where photo_path is not null),
+    'people',    (select count(*) from public.employees where role <> 'hq'),
+    'accounts',  (select count(*) from public.employees where role <> 'hq' and user_id is not null),
+    'hq',        (select count(*) from public.employees where role = 'hq'),
+    'units',     (select count(*) from public.org_units),
+    'imports',   (select count(*) from public.import_logs))
+$$;
+create or replace function public.wipe_data(p_scope text, p_actor text)
+returns jsonb language plpgsql security definer set search_path = public, auth as $$
+declare c jsonb := public.wipe_counts();
+begin
+  if p_scope not in ('reports','people','all') then raise exception '초기화 범위가 올바르지 않습니다'; end if;
+  if p_scope in ('reports','all') then
+    truncate public.report_logs, public.reports, public.rcpt_counters, public.export_logs;
+  end if;
+  if p_scope in ('people','all') then
+    delete from auth.users u where u.id in (select user_id from public.employees where role <> 'hq' and user_id is not null);
+    delete from public.employees where role <> 'hq';
+    truncate public.import_logs;
+  end if;
+  if p_scope = 'all' then
+    update public.employees set org_code = null where role = 'hq';
+    delete from public.org_units;
+  end if;
+  insert into public.reset_logs (scope, actor_code, counts) values (p_scope, p_actor, c);
+  return jsonb_build_object('before', c, 'after', public.wipe_counts());
+end $$;
+revoke all on function public.wipe_counts() from public, anon, authenticated;
+revoke all on function public.wipe_data(text, text) from public, anon, authenticated;
+grant execute on function public.wipe_counts() to service_role;
+grant execute on function public.wipe_data(text, text) to service_role;
+
 -- ---------------------------------------------------------------------
 -- 7. 행 단위 보안(RLS)
 --    근로자 : 본인 제출건만
@@ -769,7 +817,8 @@ alter table public.report_logs enable row level security;
 alter table public.export_logs enable row level security;
 alter table public.import_logs enable row level security;
 alter table public.rcpt_counters enable row level security;
-alter table public.form_options enable row level security;   -- 정책 없음 = 앱에서 직접 접근 불가 (트리거만 사용)
+alter table public.form_options enable row level security;
+alter table public.reset_logs enable row level security;   -- 정책 없음 = 앱에서 직접 접근 불가 (트리거만 사용)
 revoke all on public.rcpt_counters from anon, authenticated;
 
 revoke all on public.org_units, public.employees, public.reports, public.report_logs from anon, authenticated;
@@ -826,6 +875,8 @@ create policy exp_select on public.export_logs for select to authenticated using
 drop policy if exists imp_select on public.import_logs;
 create policy imp_select on public.import_logs for select to authenticated using (public.my_role() = 'hq');   -- 백데이터 반영 이력은 본사만 열람
 
+drop policy if exists rst_select on public.reset_logs;
+create policy rst_select on public.reset_logs for select to authenticated using (public.my_role() = 'hq');   -- 초기화 이력은 본사만 열람
 drop policy if exists opt_select on public.form_options;
 create policy opt_select on public.form_options for select to authenticated using (true);   -- 목록은 로그인한 누구나 읽기 · 변경은 set_form_options(본사)만
 grant select on public.form_options to authenticated;

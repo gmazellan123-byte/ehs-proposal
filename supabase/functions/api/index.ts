@@ -302,6 +302,37 @@ async function actRemove(req: Request, body: any) {
   return { ok: true };
 }
 
+// [본사] 데이터 초기화 — scope: reports(접수 데이터) / people(인원 · 계정) / all(전체 + 조직도)
+//   dry=true 이면 지울 건수만 돌려줌. 실행은 확인 문구를 정확히 입력해야 함. 본사 계정 · 입력 항목 설정은 유지
+const WIPE_PHRASE: Record<string, string> = { reports: "접수 데이터 초기화", people: "인원 데이터 초기화", all: "전체 데이터 초기화" };
+async function actWipe(req: Request, body: any) {
+  const actor = await getActor(req);
+  if (actor.role !== "hq") throw new HttpError(403, "데이터 초기화는 본사만 할 수 있습니다");
+  const { data: counts, error: ce } = await db.rpc("wipe_counts");
+  if (ce) throw new HttpError(500, "서버에 초기화 기능이 없습니다. schema.sql을 다시 실행해 주세요");
+  const { data: hist } = await db.from("reset_logs").select("scope, actor_code, counts, created_at").order("created_at", { ascending: false }).limit(10);
+  if (body.dry) return { counts, history: hist ?? [] };
+  const scope = String(body.scope ?? "");
+  if (!WIPE_PHRASE[scope]) throw new HttpError(400, "초기화 범위가 올바르지 않습니다");
+  if (String(body.confirm ?? "").trim() !== WIPE_PHRASE[scope]) throw new HttpError(400, `확인 문구 '${WIPE_PHRASE[scope]}'를 정확히 입력해 주세요`);
+  let photos = 0;
+  if (scope === "reports" || scope === "all") {
+    // 사진 파일 먼저 삭제 (저장소는 SQL로 지울 수 없음)
+    const paths: string[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data: rows } = await db.from("reports").select("photo_path").not("photo_path", "is", null).order("id").range(from, from + 999);
+      for (const r of rows ?? []) if (r.photo_path) paths.push(r.photo_path);
+      if (!rows || rows.length < 1000) break;
+    }
+    for (let i = 0; i < paths.length; i += 100) await db.storage.from("report-photos").remove(paths.slice(i, i + 100));
+    photos = paths.length;
+  }
+  const { data: me } = await db.from("employees").select("emp_code").eq("emp_hash", actor.empHash).maybeSingle();
+  const { data, error } = await db.rpc("wipe_data", { p_scope: scope, p_actor: me?.emp_code ?? null });
+  if (error) { console.error("wipe", error.message); throw new HttpError(500, "초기화 중 오류가 발생했습니다: " + error.message); }
+  return { ok: true, scope, photos, ...(data as any) };
+}
+
 // [관리자 이상] 실명 대조용 사번 확인
 //   PC 브라우저가 인사명단의 사번 목록을 보내면, 관리 범위 안의 인원(또는 범위 안 제출건의 작성자)만
 //   { i: 목록 순번, h: 사번해시 } 로 돌려줌. 성명은 받지도 보내지도 않음(대조는 브라우저 안에서).
@@ -472,6 +503,7 @@ Deno.serve(async (req) => {
       case "admin_remove":   result = await actRemove(req, body); break;
       case "admin_import":   result = await actImport(req, body); break;
       case "match_names":    result = await actMatch(req, body); break;
+      case "admin_wipe":     result = await actWipe(req, body); break;
       default: throw new HttpError(400, "알 수 없는 요청입니다");
     }
     return new Response(JSON.stringify(result), { status: 200, headers });

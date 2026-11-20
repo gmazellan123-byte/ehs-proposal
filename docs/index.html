@@ -444,6 +444,26 @@ input[type=datetime-local]{min-height:46px;}
 .grade-pick.sm button{padding:8px 9px;}
 
 .st-committee{background:#FDEBF3;color:#B4235F;border-color:#F5C2DA;}
+.side-nav button.nav-danger{color:#FFC9C9;}.side-nav button.nav-danger.on{color:#B42318;}
+.wipe-wrap{padding:18px 20px;display:flex;flex-direction:column;gap:16px;}
+.wipe-now{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;}
+.wipe-now div{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#FBFCFE;}
+.wipe-now span{display:block;font-size:12px;color:var(--ink-soft);font-weight:700;}.wipe-now b{font-size:22px;font-weight:900;font-family:var(--mono);}
+.wipe-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.wcard{border:1px solid #F1C9C9;border-radius:16px;padding:16px 18px;background:#fff;display:flex;flex-direction:column;gap:6px;}.wcard h4,.wcard .lb{margin:0;}.wcard h4{margin-bottom:4px;}.wcard .lb.k{margin-top:6px;}.wcard .btn{margin-top:auto;}
+.wcard.all{border-color:#E7A1A1;background:linear-gradient(180deg,#FFF9F9,#fff);}
+.wcard h4{font-size:16px;font-weight:900;color:#B42318;display:flex;align-items:center;gap:8px;}
+.wcard h4 small{font-size:12px;color:var(--ink-faint);font-weight:700;}
+.wcard ul{margin:0;padding:0;list-style:none;font-size:13px;line-height:1.65;color:var(--ink-soft);}
+.wcard li b{color:var(--ink);font-family:var(--mono);}
+.wcard .lb{font-size:11.5px;font-weight:800;letter-spacing:.3px;margin-top:2px;}.wcard .lb.d{color:#B42318;}.wcard .lb.k{color:#0E6B37;}
+.wcard .btn{margin-top:auto;}
+.wipe-hist table{width:100%;border-collapse:collapse;font-size:13px;}.wipe-hist th,.wipe-hist td{padding:8px 10px;border-bottom:1px solid var(--line2);text-align:left;}
+.wipe-hist th{font-size:12px;color:var(--ink-soft);background:#F8FAFD;}
+.wipe-cf{display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:1.6;}
+.wipe-cf input[type=text]{padding:10px 12px;border:1.5px solid #F3B7B7;border-radius:10px;font:inherit;font-size:15px;}
+.wipe-cf code{background:#FEE2E2;color:#B42318;padding:2px 8px;border-radius:6px;font-weight:800;}
+.wipe-cf label.ck{display:flex;gap:8px;align-items:center;font-size:13.5px;cursor:pointer;}.wipe-cf label.ck input{width:18px;height:18px;min-height:0;flex:none;padding:0;margin:0;box-shadow:none;accent-color:#D62C2C;appearance:auto;-webkit-appearance:checkbox;border:0;background:none;}
 .qchips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-top:7px;padding:1px 18px 3px 1px;-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent);}
 .qchips::-webkit-scrollbar{display:none;}.qchips:empty{display:none;}
 .qc{flex:none;border:1px dashed #B6C4D8;background:#fff;color:var(--ink-soft);font:inherit;font-size:12.5px;font-weight:700;padding:5px 10px;border-radius:999px;white-space:nowrap;cursor:pointer;}
@@ -1208,6 +1228,7 @@ span.rt-hi{background:#DC2626;} span.rt-md{background:#EA7A0C;} span.rt-lo{backg
           <button data-dgo="dpw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.8-9.8"/><path d="m16 6 3 3"/><path d="m19 3 2 2"/></svg>비밀번호 관리</button>
           <button data-dgo="dopts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M4 12h16M4 18h7"/><circle cx="17" cy="6" r="2"/><circle cx="14" cy="18" r="2"/></svg>입력 항목 관리</button>
           <button data-dgo="dimport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>데이터/KEY 관리</button>
+          <button data-dgo="dreset" class="nav-danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>데이터 초기화</button>
         </nav>
         <div class="side-foot">
           <div class="side-user"><span id="dRole"></span><span class="mono" id="dCode"></span><span class="role-chip demo-chip hidden" id="dDemo">DEMO</span></div>
@@ -1288,6 +1309,13 @@ span.rt-hi{background:#DC2626;} span.rt-md{background:#EA7A0C;} span.rt-lo{backg
           <div class="dpanel">
             <div class="dpanel-h"><span class="dpanel-t">입력 항목 관리 <span class="mono">FORM OPTIONS</span></span><span class="dpanel-meta">위험요인 · 사고 유형 목록과 입력칸 빠른 문구 · 저장하면 모든 휴대폰에 바로 반영 (다음 로그인 · 새로고침 시)</span></div>
             <div class="dpanel-b"><div class="opt-grid"><nav class="opt-nav" id="optNav"></nav><div class="opt-ed" id="optEd"></div></div></div>
+          </div>
+        </section>
+
+        <section data-dscreen="dreset" class="hidden">
+          <div class="dpanel">
+            <div class="dpanel-h"><span class="dpanel-t">데이터 초기화 <span class="mono">RESET</span></span><span class="dpanel-meta">되돌릴 수 없습니다 · 본사 계정과 입력 항목 설정은 항상 유지 · 실행 전 필요한 자료는 엑셀로 받아 두세요</span></div>
+            <div class="dpanel-b"><div class="wipe-wrap" id="wipeWrap"></div></div>
           </div>
         </section>
 
@@ -1592,6 +1620,7 @@ function makeRealApi(){
     options: async function(){ var r = await sb.from('form_options').select('kind, field, label, sort').eq('active', true).order('sort').order('id'); return r.error ? null : (r.data || []); },
     setOptions: async function(kind, field, labels){ var r = await sb.rpc('set_form_options', { p_kind:kind, p_field:field || '', p_labels:labels });
       if (r.error){ if (/set_form_options|function/i.test(r.error.message || '')) throw new Error('서버에 입력 항목 기능이 없습니다. schema.sql을 다시 실행해 주세요.'); throw dbErr(r.error); } return r.data; },
+    wipe: function(scope, confirm, dry){ return fn('admin_wipe', { scope:scope || '', confirm:confirm || '', dry:!!dry }); },
     importLogs: async function(){ var r = await sb.from('import_logs').select('*').order('created_at', { ascending:false }).limit(20); if (r.error) throw dbErr(r.error); return r.data || []; },
     matchNames: function(ids, kind, withPaths){ return fn('match_names', { empIds:ids, kind:kind, withPaths:!!withPaths }); },
     lookup:   function(empId){ return fn('admin_lookup', { empId:empId }); },
@@ -1620,7 +1649,7 @@ function makeDemoApi(){
   function pickOne(a){ return a[Math.floor(rnd() * a.length)]; }
   function h64(s){ var out=''; for (var k=0;k<8;k++){ var x = 0x811c9dc5 ^ (k*0x9e3779b1); var t='demo|'+k+'|'+s;
       for (var i=0;i<t.length;i++){ x ^= t.charCodeAt(i); x = Math.imul(x, 0x01000193) >>> 0; } out += x.toString(16).padStart(8,'0'); } return out; }
-  var emps = {}, pw = {}, me = null, reports = [], logs = [], seq = 200, logSeq = 0, impLogs = [], impSeq = 0, rcptCnt = {}, demoOpts = JSON.parse(JSON.stringify(OPT_DEFAULT));
+  var emps = {}, pw = {}, me = null, reports = [], logs = [], seq = 200, logSeq = 0, impLogs = [], impSeq = 0, rcptCnt = {}, wipeLogs = [], demoOpts = JSON.parse(JSON.stringify(OPT_DEFAULT));
   /* 접수번호 (서버 트리거와 같은 규칙): 그룹명(그룹 제외)-연도2자리-그룹별 일련번호 4자리 */
   function rcptAssign(r){ var lbl = r.site ? String(r.site).replace(/그룹$/, '') : (r.team && r.team !== '본사' ? r.team : '본사');
     var yr = new Date(r.created_at).getFullYear(), k = lbl + '|' + yr; rcptCnt[k] = (rcptCnt[k] || 0) + 1;
@@ -1821,6 +1850,18 @@ function makeDemoApi(){
         if (withPaths && a.role === 'hq'){ var ps = []; if (e && e.org_path) ps.push(e.org_path); reports.forEach(function(r){ if (r.emp_hash === h && r.org_path && ps.indexOf(r.org_path) < 0) ps.push(r.org_path); }); out.push({ i:i, h:h, p:ps }); }
         else out.push({ i:i, h:h }); });
       return { matches:out }; },
+    wipe: async function(scope, confirm, dry){ await wait(); var a = actor(); if (a.role !== 'hq') throw new Error('데이터 초기화는 본사만 할 수 있습니다');
+      var cnt = function(){ var P = Object.keys(emps).filter(function(k){ return emps[k].role !== 'hq'; });
+        return { reports:reports.length, logs:logs.length, photos:reports.filter(function(r){ return r.photo_path; }).length, people:P.length,
+          accounts:P.filter(function(k){ return emps[k].registered_at; }).length, hq:Object.keys(emps).length - P.length, units:(UNITS || []).length, imports:impLogs.length }; };
+      if (dry) return { counts:cnt(), history:clone(wipeLogs) };
+      var PH = { reports:'접수 데이터 초기화', people:'인원 데이터 초기화', all:'전체 데이터 초기화' };
+      if (!PH[scope]) throw new Error('초기화 범위가 올바르지 않습니다'); if (String(confirm || '').trim() !== PH[scope]) throw new Error("확인 문구 '" + PH[scope] + "'를 정확히 입력해 주세요");
+      var before = cnt();
+      if (scope !== 'people'){ reports.length = 0; logs.length = 0; rcptCnt = {}; }
+      if (scope !== 'reports'){ Object.keys(emps).forEach(function(k){ if (emps[k].role !== 'hq'){ delete emps[k]; delete pw[k]; } }); impLogs.length = 0; }
+      wipeLogs.unshift({ scope:scope, actor_code:a.emp_code, counts:before, created_at:new Date().toISOString() });
+      return { ok:true, scope:scope, photos:before.photos, before:before, after:cnt() }; },
     importLogs: async function(){ await wait(); if (actor().role !== 'hq') return []; return clone(impLogs.slice().sort(function(a,b){ return b.id - a.id; }).slice(0, 20)); },
     importEmployees: async function(units, rows, batch, meta){ await wait(300); var a = actor(); if (!a || a.role !== 'hq') throw new Error('조직 백데이터 업로드는 본사만 가능합니다');
       var nu = 0;
@@ -2803,7 +2844,7 @@ function saveCsv(filename, rows){
   a.href = url; a.download = filename; a.style.display = 'none'; document.body.appendChild(a); a.click();
   setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 4000); toast('CSV 파일을 저장했습니다');
 }
-var APP_VER = '2026.11.20-g';
+var APP_VER = '2026.11.20-h';
 $$('[data-ver]').forEach(function(el){ el.textContent = APP_VER; });
 function wideScreen(){ return window.matchMedia('(min-width: 900px)').matches; }
 async function openExportSheet(){
@@ -2902,7 +2943,7 @@ var DESK = { sort:null, on:false, screen:'ddash', sel:newOrgSel(), f:{ type:'all
   dash:dashDefault(), empSel:newOrgSel(), empQ:'', empRole:'all', empPage:1, imp:null, home:null,
   pw:{ role:'all', join:'joined', q:'', sel:newOrgSel(), page:1, checked:{} } };
 var PAGE = 50;
-var DTITLE = { dopts:['입력 항목 관리','위험요인 · 사고 유형 선택 목록과 작성 · 결재 화면의 빠른 입력 문구'], ddash:['대시보드','사업장 · 유형 · 기간별 개선제안 · 위험성평가 · 아차사고 접수 현황'], dlist:['접수 관리','전사 접수건 조회 · 처리 · 엑셀 다운로드'],
+var DTITLE = { dreset:['데이터 초기화','시범 운영 · 테스트 데이터 정리용 — 접수 데이터 · 인원 데이터 · 전체 초기화'], dopts:['입력 항목 관리','위험요인 · 사고 유형 선택 목록과 작성 · 결재 화면의 빠른 입력 문구'], ddash:['대시보드','사업장 · 유형 · 기간별 개선제안 · 위험성평가 · 아차사고 접수 현황'], dlist:['접수 관리','전사 접수건 조회 · 처리 · 엑셀 다운로드'],
   dorg:['조직 · 인원','본사 › 사업팀 › 그룹 › 팀 › 파트 별 인원과 권한 관리'], dpw:['비밀번호 관리','근로자 · 관리자 · 사업팀 계정의 비밀번호 초기화'], dimport:['데이터/KEY 관리','인사명단 한 번으로 조직 · 인원 반영과 실명 확인용 KEY 발급'] };
 var WEEK = ['일','월','화','수','목','금','토'];
 function tickClock(){ var d = new Date(), a = $('#dClockD'), b = $('#dClockT'); if (!a) return;
@@ -2928,6 +2969,43 @@ function leaveDesk(){
 }
 $$('.side-nav button').forEach(function(b){ b.addEventListener('click', function(){ dgo(b.dataset.dgo); }); });
 $('#dLogout').addEventListener('click', function(){ $('#logoutBtn').click(); });
+
+/* ---- 본사: 데이터 초기화 ---- */
+var WIPE = {
+  reports:{ t:'접수 데이터 초기화', sub:'시범 운영 접수건 정리', del:[['reports','접수건 (개선제안 · 위험성평가 · 아차사고)'],['logs','처리 · 결재 이력'],['photos','첨부 사진']], del2:['접수번호 일련번호 (다시 0001부터)','실명 대조 기록'], keep:['인원 · 가입 계정 · 조직도','입력 항목 설정'] },
+  people:{ t:'인원 데이터 초기화', sub:'인사명단 다시 시작', del:[['people','본사 외 인원'],['accounts','가입 계정 (비밀번호 · 로그인)'],['imports','백데이터 반영 이력']], del2:['결재자 지정 (직책)'], keep:['접수건 (제출 당시 소속에 그대로)','조직도 · 본사 계정 · 입력 항목 설정'] },
+  all:{ t:'전체 데이터 초기화', sub:'처음 설치 상태로', del:[['reports','접수건 · 이력 · 사진'],['people','본사 외 인원 · 계정'],['units','조직도']], del2:['접수번호 일련번호 · 반영 · 대조 기록'], keep:['본사 계정 · 입력 항목 설정'] } };
+var WIPE_SCOPE_KO = { reports:'접수 데이터', people:'인원 데이터', all:'전체' };
+async function deskWipe(){
+  var w = $('#wipeWrap'); w.innerHTML = '<div class="loading"><span class="spin"></span>현재 데이터 확인 중</div>';
+  var info; try { info = await api.wipe('', '', true); } catch(e){ w.innerHTML = emptyBox(e.message || '불러오지 못했습니다'); return; }
+  var C = info.counts || {}, n = function(k){ return '<b>' + Number(C[k] || 0).toLocaleString() + '</b>'; };
+  w.innerHTML = '<div class="wipe-now">' + [['접수건','reports'],['처리 이력','logs'],['첨부 사진','photos'],['인원 (본사 제외)','people'],['가입 계정','accounts'],['조직 단위','units']].map(function(x){ return '<div><span>' + x[0] + '</span>' + n(x[1]) + '</div>'; }).join('') + '</div>' +
+    '<div class="wipe-cards">' + ['reports','people','all'].map(function(s){ var W = WIPE[s];
+      return '<div class="wcard' + (s === 'all' ? ' all' : '') + '"><h4>' + W.t + ' <small>' + W.sub + '</small></h4>' +
+        '<div class="lb d">삭제</div><ul>' + W.del.map(function(d){ return '<li>· ' + d[1] + ' ' + n(d[0]) + '</li>'; }).join('') + W.del2.map(function(d){ return '<li>· ' + d + '</li>'; }).join('') + '</ul>' +
+        '<div class="lb k">유지</div><ul>' + W.keep.map(function(d){ return '<li>· ' + d + '</li>'; }).join('') + '</ul>' +
+        '<button class="btn btn-danger" data-wipe="' + s + '">' + W.t + '</button></div>'; }).join('') + '</div>' +
+    '<div class="wipe-hist"><div class="kicker" style="margin-bottom:8px">최근 초기화 이력</div>' + ((info.history || []).length ? '<table><thead><tr><th>일시</th><th>범위</th><th>실행</th><th>삭제 전 접수건</th><th>삭제 전 인원</th></tr></thead><tbody>' +
+      info.history.map(function(h){ var c = h.counts || {}; return '<tr><td class="mono">' + esc(fmt(h.created_at)) + '</td><td>' + esc(WIPE_SCOPE_KO[h.scope] || h.scope) + '</td><td class="mono">' + esc(h.actor_code || '-') + '</td><td class="mono">' + Number(c.reports || 0).toLocaleString() + '</td><td class="mono">' + Number(c.people || 0).toLocaleString() + '</td></tr>'; }).join('') + '</tbody></table>' : '<p class="note">초기화 이력이 없습니다.</p>') + '</div>';
+}
+document.addEventListener('click', function(e){
+  if (e.target.closest('[data-da=wipeRefresh]')) return deskWipe();
+  var b = e.target.closest('[data-wipe]'); if (!b) return;
+  var s = b.dataset.wipe, W = WIPE[s];
+  deskConfirm(W.t, '<div class="wipe-cf"><p><b style="color:#B42318">되돌릴 수 없습니다.</b> ' + (s === 'reports' ? '모든 접수건 · 처리 이력 · 첨부 사진이 지워지고 접수번호가 0001부터 다시 시작됩니다.' : s === 'people' ? '본사 외 모든 인원과 가입 계정이 지워집니다. 다시 쓰려면 인사명단을 새로 반영하고 각자 [최초 등록]을 해야 합니다.' : '접수 데이터 · 인원 · 계정 · 조직도가 모두 지워집니다. 본사 계정과 입력 항목 설정만 남습니다.') +
+    (s !== 'reports' ? ' 이전에 나눠 준 KEY는 지우지 않으므로 기한까지 계속 쓸 수 있습니다.' : '') + '</p>' +
+    '<label class="ck"><input type="checkbox" id="wipeBk"> 필요한 자료는 엑셀 · 오프라인 도구로 받아 두었습니다</label>' +
+    '<div>계속하려면 <code>' + W.t + '</code> 를 그대로 입력하세요.</div><input type="text" id="wipePh" autocomplete="off" placeholder="' + W.t + '"></div>', W.t + ' 실행',
+    async function(){
+      try { var r = await api.wipe(s, $('#wipePh').value, false);
+        toast(W.t + ' 완료 · ' + (s !== 'people' ? '접수건 ' + Number((r.before || {}).reports || 0).toLocaleString() + '건' : '') + (s === 'all' ? ' · ' : '') + (s !== 'reports' ? '인원 ' + Number((r.before || {}).people || 0).toLocaleString() + '명' : '') + ' 삭제');
+        if (s !== 'reports') state.employees = null; if (s !== 'people'){ state.all = []; updateOpenBadges([]); } if (s === 'all') await deskReloadOrg();
+      } catch(err){ fail(err); }
+      deskWipe(); });
+  var ok = $('[data-c=ok]', $('#dConfirm')), sync = function(){ ok.disabled = !($('#wipeBk').checked && $('#wipePh').value.trim() === W.t); };
+  sync(); $('#wipeBk').addEventListener('change', sync); $('#wipePh').addEventListener('input', sync); setTimeout(function(){ $('#wipePh').focus(); }, 60);
+});
 
 /* ---- 본사: 입력 항목 관리 ---- */
 var OPTED = { i:0, draft:null, dirty:false };
@@ -2984,6 +3062,7 @@ function dgo(s){
   if (s === 'dimport') act.innerHTML = '<button class="btn btn-ghost dbtn" data-da="tpl">업로드 양식</button><a class="btn btn-primary dbtn dl-tool" href="ehs-offline.html" download="안전보건 개선제안 현황.html">오프라인 정리 도구 받기</a>';
   if (s === 'dpw') act.innerHTML = '<button class="btn btn-ghost" data-da="refresh">새로고침</button>';
   if (s === 'dopts'){ act.innerHTML = ''; deskOpts(true); }
+  if (s === 'dreset'){ act.innerHTML = '<button class="btn btn-ghost" data-da="wipeRefresh">새로고침</button>'; deskWipe(); }
   if (s === 'ddash') deskLoadDash();
   if (s === 'dlist') deskLoadList();
   if (s === 'dorg') deskLoadOrg();
