@@ -162,7 +162,7 @@ details.paste .btn{margin-top:6px}
 .warnbar .btn{margin-left:auto}
 #saveBtn:disabled{opacity:.45;cursor:not-allowed}
 .sstore{margin-top:14px;padding:9px 11px;border-radius:10px;background:rgba(255,255,255,.08);font-size:12px;line-height:1.5}.sstore i{display:inline-block;width:8px;height:8px;border-radius:50%;background:#94A3B8;margin-right:6px}.sstore i.on{background:#4ADE80}.sstore small{opacity:.75}
-.ph .acts{margin-left:auto;display:flex;gap:6px}#storeBtn.on{background:#EEF9F2;border-color:#9ED8B4;color:#166534}#storeDelBtn{color:#B91C1C;border-color:#FCA5A5}#storeDelBtn:hover{background:#FEF2F2}
+.ph .acts{margin-left:auto;display:flex;gap:6px}#storeBtn.on{background:#EEF9F2;border-color:#9ED8B4;color:#166534}#stDelSel{color:#B91C1C;border-color:#FCA5A5}#stDelSel:hover:not(:disabled){background:#FEF2F2}td.ck,th.ck{width:34px;text-align:center}.mfoot{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}.btn.danger{color:#B91C1C;border-color:#FCA5A5}.btn.danger:hover{background:#FEF2F2}
 .savedbar{display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px 14px;border-radius:11px;background:#EFF6FF;border:1px solid #BFDBFE;font-size:13px}.savedbar .r{margin-left:auto;display:flex;gap:6px}
 .mm{position:fixed;inset:0;background:rgba(15,25,45,.45);display:none;align-items:center;justify-content:center;padding:24px;z-index:60}.mm.open{display:flex}
 .mmbox{width:640px;max-width:96vw;background:#fff;border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,.3);overflow:hidden}.mmbox.sm{width:420px}
@@ -290,7 +290,7 @@ tr.vdone td{background:#F3FBF6}.st.sv{background:#DCFCE7;color:#166534}b.xg{colo
 </section>
 <section id="vStat" class="hidden">
  <div class="ph"><h1>② 데이터 현황</h1><p>조회 · 현황 · 백업 · 보고서</p>
-  <div class="acts"><button class="btn" id="ioBtn">📥 불러오기 · 머지</button><button class="btn" id="bkBtn">📤 백업 내보내기</button><button class="btn" id="storeBtn">💾 브라우저 저장</button><button class="btn sm" id="saveNowBtn" title="지금 저장">지금 저장</button><button class="btn sm del hidden" id="storeDelBtn" title="이 PC 브라우저에 저장한 데이터 삭제">🗑 저장 삭제</button></div></div>
+  <div class="acts"><button class="btn" id="ioBtn">📥 불러오기 · 머지</button><button class="btn" id="bkBtn">📤 백업 내보내기</button><button class="btn" id="storeBtn">💾 브라우저 저장</button><button class="btn sm" id="saveNowBtn" title="지금 저장">지금 저장</button></div></div>
  <div class="savedSlot"></div>
  <div id="statLock" class="lock"><b>아직 넣은 데이터가 없습니다</b><p>① 복호화 탭에서 데이터 파일을 넣으면 여기에서 유형 · 소속 · 기간별 현황을 볼 수 있습니다.</p><button class="btn pri" data-go="dec">① 복호화로 가기</button></div>
  <div id="statMain" class="hidden">
@@ -316,7 +316,7 @@ tr.vdone td{background:#F3FBF6}.st.sv{background:#DCFCE7;color:#166534}b.xg{colo
    <div class="panel"><div class="bar"><b class="pt">월별 현황</b><span class="lg"><i class="b"></i>개선제안 <i class="t"></i>위험성평가 <i class="o"></i>아차사고</span></div><div class="tw s" id="monTbl"></div></div>
   </div>
   <div class="panel">
-   <div class="bar"><div class="tabs"><button class="subtab on" data-sub="list">접수 내역</button><button class="subtab" data-sub="people">제출자별 집계</button></div><span class="dim">머리글을 누르면 정렬 · 저장 엑셀에도 같은 순서로 들어갑니다</span></div>
+   <div class="bar"><div class="tabs"><button class="subtab on" data-sub="list">접수 내역</button><button class="subtab" data-sub="people">제출자별 집계</button></div><span class="dim">머리글을 누르면 정렬 · 저장 엑셀에도 같은 순서로 들어갑니다</span><button class="btn sm" id="stDelSel" disabled style="margin-left:auto">🗑 선택 삭제</button></div>
    <div class="tw" id="stTbl"></div><div id="stPager" class="pagerx"></div>
   </div>
   <p class="foot">소속은 제출 당시(최초 등록 부서) 기준입니다. 완료 = 조치완료 · 반영 완료 · 위원회 의결. 개선제안 등급 = 제안등급 → 결정등급(1 · 2차 결재) → 최종등급(산안위 의결). 미확인 = KEY 범위 밖 인원(KEY 발급 이후 신규 인원 등).</p>

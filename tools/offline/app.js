@@ -11,7 +11,7 @@ function toast(msg, err){ var t = $('#toast'); t.textContent = msg; t.className 
 
 var S = { key:null, keyMeta:null, rows:[], files:[], view:'dec',
   dec:{ q:'', page:1, sort:null },
-  st:{ f:{ type:'all', team:'all', site:'all', dept:'all', part:'all', status:'all', only:'all', from:'', to:'', q:'' }, lv:'auto', sub:'list', page:1, sort:{} } };
+  st:{ del:{}, f:{ type:'all', team:'all', site:'all', dept:'all', part:'all', status:'all', only:'all', from:'', to:'', q:'' }, lv:'auto', sub:'list', page:1, sort:{} } };
 var PAGE = 100;
 var TYPES = ['개선제안','위험성평가','아차사고'];
 
@@ -146,9 +146,9 @@ function mergeRows(list){
     var o = idx[n.no];
     if (!o){ idx[n.no] = n; S.rows.push(n); added++; return; }
     dup++; var ch = false;
-    var newer = stRank(n.status) > stRank(o.status) || (stRank(n.status) === stRank(o.status) && (n.closed || '') > (o.closed || ''));
-    if (newer) ['status','fg','fr','cmt','closed'].forEach(function(k){ if (n[k] && n[k] !== o[k]){ o[k] = n[k]; ch = true; } });
-    M_FIELDS.forEach(function(k){ if (!o[k] && n[k]){ o[k] = n[k]; ch = true; } });
+    /* 새로 넣은 데이터가 같거나 더 진행된 상태면 저장 내역을 덮어씀 (빈 칸은 기존 값 유지) · 더 예전 상태면 빈 칸만 채움 */
+    var notOlder = stRank(n.status) > stRank(o.status) || (stRank(n.status) === stRank(o.status) && (n.closed || '') >= (o.closed || ''));
+    M_FIELDS.forEach(function(k){ if (n[k] && n[k] !== o[k] && (notOlder || !o[k])){ o[k] = n[k]; ch = true; } });
     if (ch) upd++;
   });
   if (added || upd) markDirty();
@@ -159,6 +159,7 @@ async function finishData(){
   S.rows.sort(function(a, b){ return a.at < b.at ? 1 : a.at > b.at ? -1 : 0; });
   setDone('data', '<b>' + S.rows.length.toLocaleString() + '건</b> · ' + S.files.length + '개 묶음' + (DUP ? ' <span class="dim">(같은 접수번호 ' + DUP + '건은 합침)</span>' : ''));
   if (SHARED) await resolveShared(); else rematch();
+  if (STORE.on && STORE.dirty) await saveNow(true);   /* 브라우저 저장이 켜져 있으면 저장 내역에 바로 반영 */
 }
 async function openData(list){
   var files = Array.prototype.slice.call(list && list.length ? list : $('#dataFile').files); if (!files.length) return;
@@ -254,6 +255,7 @@ function decRows(){ var q = S.dec.q.trim().toLowerCase();
   return S.rows.filter(function(r){ return !q || [r.no, r.loc, r.detail, r.cat, r.empId, r.name, r.code, r.mask, unit(r)].join(' ').toLowerCase().indexOf(q) > -1; }); }
 function listCols(t, st){ return th(t,'no','접수번호',st) + th(t,'type','유형',st) + th(t,'status','상태',st) + th(t,'unit','소속 (제출 당시)',st) + th(t,'loc','장소',st) + th(t,'grade','등급 · 위험정도',st) +
   th(t,'detail','내용',st) + th(t,'code','식별코드',st) + th(t,'emp','사번',st) + th(t,'name','성명',st) + th(t,'at','제출일시',st); }
+function listRowCk(r){ var i = S.rows.indexOf(r); return listRow(r).replace('<tr data-i="' + i + '">', '<tr data-i="' + i + '"><td class="ck"><input type="checkbox" class="stChk" data-no="' + esc(r.no) + '"' + (S.st.del[r.no] ? ' checked' : '') + '></td>'); }
 function listRow(r){ return '<tr data-i="' + S.rows.indexOf(r) + '"><td class="mono">' + esc(r.no) + '</td><td>' + tagType(r.type) + '</td><td>' + tagSt(stDisp(r)) + '</td><td class="ell">' + esc(unit(r)) + '</td><td class="ell">' + esc(r.loc) + '</td><td>' + grade(r) + '</td>' +
   '<td class="ell w">' + esc(r.detail) + '</td><td class="mono dim">' + esc(r.code || '-') + '</td><td class="mono">' + (r.empId ? esc(r.empId) : '<span class="dim">미확인</span>') + '</td><td>' + (r.name ? '<b>' + esc(r.name) + '</b>' : '<span class="dim">' + esc(r.mask || '미확인') + '</span>') + '</td><td class="mono">' + esc(r.at) + '</td></tr>'; }
 function renderDec(){
@@ -354,10 +356,13 @@ function renderStat(){
     : '<div class="none">기간에 해당하는 건이 없습니다</div>';
   /* 접수 내역 / 제출자별 */
   $$('.subtab').forEach(function(b){ b.classList.toggle('on', b.dataset.sub === S.st.sub); });
+  Object.keys(S.st.del).forEach(function(no){ if (!S.rows.some(function(r){ return r.no === no; })) delete S.st.del[no]; });
+  var nd = Object.keys(S.st.del).length; $('#stDelSel').disabled = !nd; $('#stDelSel').textContent = '🗑 선택 삭제' + (nd ? ' (' + nd + ')' : ''); $('#stDelSel').classList.toggle('hidden', S.st.sub !== 'list');
   if (S.st.sub === 'list'){
     var LS = sorted(L, S.st.sort.list), pages = Math.max(1, Math.ceil(LS.length / PAGE)); if (S.st.page > pages) S.st.page = pages;
     var P = LS.slice((S.st.page - 1) * PAGE, S.st.page * PAGE);
-    $('#stTbl').innerHTML = P.length ? '<table><thead><tr>' + listCols('list', S.st.sort.list) + '</tr></thead><tbody>' + P.map(listRow).join('') + '</tbody></table>' : '<div class="none">조건에 맞는 건이 없습니다</div>';
+    var allOn = P.length && P.every(function(r){ return S.st.del[r.no]; });
+    $('#stTbl').innerHTML = P.length ? '<table><thead><tr><th class="ck"><input type="checkbox" id="stAll" title="이 페이지 전체 선택"' + (allOn ? ' checked' : '') + '></th>' + listCols('list', S.st.sort.list) + '</tr></thead><tbody>' + P.map(listRowCk).join('') + '</tbody></table>' : '<div class="none">조건에 맞는 건이 없습니다</div>';
     $('#stPager').innerHTML = pager(S.st.page, pages, 'st');
   } else {
     var PP = sorted(peopleOf(L), S.st.sort.people, pGet), sp = S.st.sort.people;
@@ -375,6 +380,19 @@ function condText(){ var f = S.st.f, a = [];
   if (f.status !== 'all') a.push('상태 ' + f.status); if (f.only !== 'all') a.push(f.only === 'yes' ? '실명 확인 건' : '미확인 건'); if (f.q) a.push('검색 "' + f.q + '"');
   return a.join(' · '); }
 
+/* 개별 내역 삭제: 화면 데이터에서 빼고, 브라우저 저장이 켜져 있으면 저장 내역에도 바로 반영
+   (같은 접수번호가 들어 있는 데이터를 다시 넣으면 그 건은 다시 들어옴) */
+async function deleteRows(nos){
+  nos = nos.filter(function(no){ return S.rows.some(function(r){ return r.no === no; }); }); if (!nos.length) return;
+  var L = S.rows.filter(function(r){ return nos.indexOf(r.no) > -1; });
+  var head = L.slice(0, 5).map(function(r){ return '· ' + r.no + ' ' + (r.type || '') + ' ' + (r.loc || '').slice(0, 20); }).join('\n') + (L.length > 5 ? '\n… 외 ' + (L.length - 5) + '건' : '');
+  if (!confirm('선택한 ' + L.length + '건을 삭제할까요?\n\n' + head + '\n\n' + (STORE.on ? '브라우저 저장 내역에서도 바로 지워집니다.' : '브라우저 저장을 켜 두지 않았다면 화면에서만 지워집니다.'))) return;
+  S.rows = S.rows.filter(function(r){ return nos.indexOf(r.no) < 0; });
+  nos.forEach(function(no){ delete S.st.del[no]; delete S.com.sel[no]; });
+  markDirty(); if (STORE.on) await saveNow(true);
+  $('#modal').classList.remove('open'); render();
+  toast(L.length + '건을 삭제했습니다' + (STORE.on ? ' · 저장 내역에 반영' : ''));
+}
 function openDetail(r){
   var kv = [['접수번호', r.no], ['유형', r.type], ['상태', stDisp(r)], ['소속 (제출 당시)', unit(r)], ['장소', r.loc], ['사고유형 · 위험요인', r.cat], ['발생일시', r.occ],
     ['제안등급', r.pg], ['결정등급', r.fg], ['산안위 의결', r.vote ? r.vote + (r.vq ? ' (' + r.vq + ')' : '') : ''], ['최종등급', voted(r) ? (r.xg || '-') : ''], ['위험정도 (제출)', r.rl], ['위험정도 (반영)', r.fr], ['제출일시', r.at], ['종료일시', r.closed],
@@ -382,6 +400,7 @@ function openDetail(r){
   var blk = [['상세 내용 · 상황 설명', r.detail], ['조치 요청사항', r.req], ['재발 방지 의견', r.prev], ['처리 의견', r.cmt]].filter(function(x){ return x[1]; });
   $('#mBody').innerHTML = '<div class="kv">' + kv.map(function(x){ return '<span>' + x[0] + '</span><b>' + esc(x[1]) + '</b>'; }).join('') + '</div>' +
     blk.map(function(x){ return '<div class="blk"><div>' + x[0] + '</div><p>' + esc(x[1]) + '</p></div>'; }).join('');
+  $('#mBody').insertAdjacentHTML('beforeend', '<div class="mfoot"><button class="btn danger" data-delno="' + esc(r.no) + '">🗑 이 건 삭제</button></div>');
   $('#mTitle').innerHTML = tagType(r.type) + ' ' + esc(r.no) + ' · ' + esc(r.loc || '');
   $('#modal').classList.add('open');
 }
@@ -412,7 +431,7 @@ function saveXlsx(){
   XLSX.writeFile(wb, TITLE + '_' + today() + '.xlsx');
   toast('데이터 현황 엑셀을 저장했습니다 (시트 5개)');
 }
-function clearAll(){ STORE.on = false; STORE.pw = null; S.com.sel = {}; S.key = null; S.keyMeta = null; KEYSRC = null; SHARED = null; DUP = 0; $('#keyPick').innerHTML = ''; S.rows = []; S.files = []; S.dec.page = 1; S.st.page = 1; S.view = 'dec';
+function clearAll(){ STORE.on = false; STORE.pw = null; S.com.sel = {}; S.st.del = {}; S.key = null; S.keyMeta = null; KEYSRC = null; SHARED = null; DUP = 0; $('#keyPick').innerHTML = ''; S.rows = []; S.files = []; S.dec.page = 1; S.st.page = 1; S.view = 'dec';
   $$('.step').forEach(function(c){ c.classList.remove('done'); $('.st', c).innerHTML = c.dataset.ph; }); render(); toast('불러온 내용을 모두 지웠습니다'); }
 
 
@@ -515,7 +534,6 @@ function storeUi(){
   var side = $('#sideStore'); if (side) side.innerHTML = STORE.on ? '<i class="on"></i>자동 저장 켜짐 · 3분마다' + (STORE.last ? '<br><small>마지막 ' + esc(STORE.last) + '</small>' : '') : STORE.saved ? '<i></i>저장된 데이터 있음' : '<i></i>브라우저 저장 꺼짐';
   var bn = STORE.saved && !STORE.on ? '<div class="savedbar">💾 이 브라우저에 저장된 데이터 <b>' + (STORE.saved.count || 0).toLocaleString() + '건</b> (' + esc(STORE.saved.saved || '') + ' 저장)<span class="r"><button class="btn pri sm" data-store="load">불러오기</button><button class="btn sm" data-store="del">저장 삭제</button></span></div>' : '';
   $$('.savedSlot').forEach(function(el){ el.innerHTML = bn; });
-  var db = $('#storeDelBtn'); if (db) db.classList.toggle('hidden', !(STORE.saved || STORE.on));
 }
 /* 비밀번호 입력 창 */
 function askPw(title, desc, confirmMode){
@@ -676,7 +694,6 @@ document.addEventListener('click', function(e){
 $('#saveBtn').addEventListener('click', saveXlsx);
 $('#reportBtn').addEventListener('click', printReport);
 $('#storeBtn').addEventListener('click', toggleStore);
-$('#storeDelBtn').addEventListener('click', deleteStore);
 $('#saveNowBtn').addEventListener('click', function(){ if (!STORE.on) return toggleStore(); saveNow(); });
 $('#bkBtn').addEventListener('click', function(){ if (!S.rows.length) return toast('내보낼 데이터가 없습니다', true); $('#bkModal').classList.add('open'); });
 $('#ioBtn').addEventListener('click', function(){ $('#ioModal').classList.add('open'); });
@@ -692,11 +709,16 @@ $('#comNames').addEventListener('change', function(){ S.com.names = this.checked
 document.addEventListener('change', function(e){
   if (e.target.id === 'comAll'){ var on = e.target.checked; comRows().forEach(function(r){ if (on) S.com.sel[r.no] = 1; else delete S.com.sel[r.no]; }); render(); }
   if (e.target.classList.contains('vsel')){ var vr = S.rows[+e.target.dataset.vi]; if (vr){ setVote(vr, e.target.dataset.vk, e.target.value); render(); toast(vr.no + ' · ' + (vr.vote ? stDisp(vr) + (voted(vr) && vr.xg ? ' · 최종 ' + vr.xg + '등급' : '') : '의결 결과를 지웠습니다')); } return; }
+  if (e.target.id === 'stAll'){ var on = e.target.checked, Pg = sorted(statRows(), S.st.sort.list).slice((S.st.page - 1) * PAGE, S.st.page * PAGE);
+    Pg.forEach(function(r){ if (on) S.st.del[r.no] = 1; else delete S.st.del[r.no]; }); render(); return; }
+  if (e.target.classList.contains('stChk')){ if (e.target.checked) S.st.del[e.target.dataset.no] = 1; else delete S.st.del[e.target.dataset.no]; render(); return; }
   if (e.target.classList.contains('comChk')){ if (e.target.checked) S.com.sel[e.target.dataset.no] = 1; else delete S.com.sel[e.target.dataset.no]; render(); }
 });
 document.addEventListener('click', function(e){
   var t = e.target;
-  if (t.closest('.comChk') || t.id === 'comAll' || t.closest('.vsel')){ e.stopPropagation(); return; }
+  if (t.closest('.comChk') || t.id === 'comAll' || t.closest('.vsel') || t.closest('.stChk') || t.id === 'stAll' || t.closest('td.ck')){ if (t.closest('td.ck') && !t.closest('input')){ var cb = $('input', t.closest('td.ck')); if (cb){ cb.checked = !cb.checked; cb.dispatchEvent(new Event('change', { bubbles:true })); } } e.stopPropagation(); return; }
+  if (t.closest('#stDelSel')){ deleteRows(Object.keys(S.st.del)); return; }
+  var dn = t.closest('[data-delno]'); if (dn){ deleteRows([dn.dataset.delno]); return; }
   var y = t.closest('[data-cy]'); if (y){ S.com.year = +y.dataset.cy; if (y.dataset.qone){ S.com.qs = {}; S.com.qs[y.dataset.qone] = 1; } render(); return; }
   if (t.closest('#comQAll')){ S.com.qs = { 1:1, 2:1, 3:1, 4:1 }; render(); return; }
   var q = t.closest('[data-cq]'); if (q){ var k = q.dataset.cq;
