@@ -1650,7 +1650,12 @@ function makeDemoApi(){
       var P = logs.filter(function(x){ return x.report_id === r.id && (x.kind || (x.from_status ? 'process' : 'submit')) === 'process'; }), latest = P[P.length - 1];
       logs = logs.filter(function(x){ return x !== l; });
       if (latest === l){ var prev = P[P.length - 2] || null, sub = logs.find(function(x){ return x.report_id === r.id && (x.kind || (x.from_status ? 'process' : 'submit')) === 'submit'; });
-        if (r.type === 'proposal'){ var src = prev || sub || {}; r.appr_step = prev ? prev.appr_step || null : (sub && sub.appr_step) || 1; r.appr_pos = src.appr_pos || null; r.appr_path = src.appr_path || null; }
+        var vst = l.from_status || 'received';
+        if (r.type === 'proposal' && (vst === 'received' || vst === 'reviewing')){ var src = prev || sub || {};
+          r.appr_step = src.appr_step || (vst === 'reviewing' && prev && COMMITTEE.indexOf(prev.final_grade) > -1 ? 2 : 1); r.appr_pos = src.appr_step ? src.appr_pos || null : null; r.appr_path = src.appr_step ? src.appr_path || null : null;
+          var still = r.appr_pos && Object.keys(emps).some(function(k){ var e = emps[k]; return e.active && e.pos === r.appr_pos && e.org_path === r.appr_path; });
+          if (!still){ var ap = pickAppr(r.org_path, r.emp_hash, r.appr_step); r.appr_pos = ap[0]; r.appr_path = ap[1]; } }
+        else if (r.type === 'proposal'){ r.appr_step = null; r.appr_pos = null; r.appr_path = null; }
         r.status = l.from_status || 'received'; r.final_grade = r.type === 'proposal' && prev ? prev.final_grade || null : null; r.final_risk = r.type === 'risk' && prev ? prev.final_grade || null : null;
         r.admin_comment = prev ? prev.comment || null : null; r.closed_at = CLOSED.indexOf(r.status) > -1 ? r.closed_at : null; r.updated_at = new Date().toISOString(); }
       return clone(r); },
@@ -2713,7 +2718,7 @@ function saveCsv(filename, rows){
   a.href = url; a.download = filename; a.style.display = 'none'; document.body.appendChild(a); a.click();
   setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 4000); toast('CSV 파일을 저장했습니다');
 }
-var APP_VER = '2026.11.20-d';
+var APP_VER = '2026.11.20-e';
 $$('[data-ver]').forEach(function(el){ el.textContent = APP_VER; });
 function wideScreen(){ return window.matchMedia('(min-width: 900px)').matches; }
 async function openExportSheet(){

@@ -644,6 +644,7 @@ create trigger trg_reports_after_change
 create or replace function public.delete_report_log(p_log_id bigint)
 returns public.reports language plpgsql security definer set search_path = public as $$
 declare l public.report_logs; r public.reports; latest bigint; prev public.report_logs; sub public.report_logs; v_role text;
+        v_st text; v_step smallint; v_pos text; v_path text; v_ap text[];
 begin
   select * into l from public.report_logs where id = p_log_id;
   if not found then raise exception '이력을 찾을 수 없습니다'; end if;
@@ -665,6 +666,18 @@ begin
      order by id desc limit 1;
     select * into sub from public.report_logs
      where report_id = r.id and coalesce(kind, case when from_status is null then 'submit' else 'process' end) = 'submit' order by id limit 1;
+    -- 되돌릴 결재 단계: 직전 처리 기록(없으면 최초 접수 기록) 기준
+    --   진행 중(접수 · 검토중)으로 돌아가면 결재 단계는 반드시 있어야 하고(구버전 기록은 1차),
+    --   그 결재자가 없거나(직책 등록 전 접수 · 구버전 기록) 퇴직 · 직책 변경으로 사라졌으면 지금 기준으로 다시 찾음
+    v_st := coalesce(l.from_status, 'received');
+    if r.type = 'proposal' and v_st in ('received','reviewing') then
+      if prev.id is not null then v_step := prev.appr_step; v_pos := prev.appr_pos; v_path := prev.appr_path;
+      else v_step := sub.appr_step; v_pos := sub.appr_pos; v_path := sub.appr_path; end if;
+      if v_step is null then v_step := case when v_st = 'reviewing' and prev.final_grade in ('가','나','다') then 2 else 1 end; v_pos := null; v_path := null; end if;
+      if v_pos is null or not exists (select 1 from public.employees e where e.active and e.pos = v_pos and e.org_path = v_path) then
+        v_ap := public.pick_approver(r.org_path, r.emp_hash, v_step); v_pos := v_ap[1]; v_path := v_ap[2];
+      end if;
+    end if;
     perform set_config('ehs.skip_log', '1', true);
     perform set_config('ehs.revert', '1', true);
     update public.reports set
@@ -672,9 +685,9 @@ begin
       final_grade   = case when r.type = 'proposal' then prev.final_grade end,
       final_risk    = case when r.type = 'risk' then prev.final_grade end,
       admin_comment = prev.comment,
-      appr_step     = case when r.type <> 'proposal' then null when prev.id is not null then prev.appr_step else coalesce(sub.appr_step, 1) end,
-      appr_pos      = case when r.type <> 'proposal' then null when prev.id is not null then prev.appr_pos else sub.appr_pos end,
-      appr_path     = case when r.type <> 'proposal' then null when prev.id is not null then prev.appr_path else sub.appr_path end
+      appr_step     = v_step,
+      appr_pos      = v_pos,
+      appr_path     = v_path
      where id = r.id returning * into r;
     perform set_config('ehs.revert', '', true);
     perform set_config('ehs.skip_log', '', true);
