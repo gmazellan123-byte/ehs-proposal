@@ -120,7 +120,8 @@ function colOf(head, names){ return head.findIndex(function(h){ return names.ind
 /* ---------- 1. 받은 데이터 (휴대폰·PC에서 내보낸 접수목록 · 여러 개 가능) ---------- */
 var D_COLS = { no:['접수번호'], type:['유형'], status:['상태'], team:['사업팀'], site:['그룹'], dept:['팀'], part:['파트'], loc:['장소'], pg:['제안등급'], fg:['결정등급'],
   rl:['위험정도(제출)'], fr:['위험정도(반영)'], cat:['사고유형/위험요인','사고유형'], occ:['발생일시'], detail:['상세내용/상황설명','상세내용'], req:['조치요청사항'], prev:['재발방지의견'],
-  cmt:['처리의견'], code:['제출자식별코드','식별코드'], lcode:['대조코드'], mask:['제출자성명(마스킹)','성명(마스킹)'], at:['제출일시'], closed:['종료일시'], empId:['사번'], realName:['성명(실명)','성명'] };
+  cmt:['처리의견'], code:['제출자식별코드','식별코드'], lcode:['대조코드'], mask:['제출자성명(마스킹)','성명(마스킹)'], at:['제출일시'], closed:['종료일시'], empId:['사번'], realName:['성명(실명)','성명'],
+  vote:['산안위의결','의결결과'], xg:['최종등급'], vq:['의결회차'] };
 function ingest(aoa){
   var hi = findHeader(aoa, D_COLS.no); if (hi < 0) return null;
   var head = aoa[hi].map(low), c = {}; Object.keys(D_COLS).forEach(function(k){ c[k] = colOf(head, D_COLS[k]); });
@@ -130,13 +131,14 @@ function ingest(aoa){
     var no = g('no'); if (!no) return;
     rows.push({ no:no, type:g('type'), status:g('status'), team:g('team'), site:g('site'), dept:g('dept'), part:g('part'), loc:g('loc'),
       pg:g('pg'), fg:g('fg'), rl:g('rl'), fr:g('fr'), cat:g('cat'), occ:g('occ'), detail:g('detail'), req:g('req'), prev:g('prev'), cmt:g('cmt'),
-      code:g('code').toUpperCase(), lcode:g('lcode').toUpperCase(), mask:g('mask'), at:g('at'), closed:g('closed'), fileId:g('empId'), fileName:g('realName') });
+      code:g('code').toUpperCase(), lcode:g('lcode').toUpperCase(), mask:g('mask'), at:g('at'), closed:g('closed'), fileId:g('empId'), fileName:g('realName'),
+      vote:g('vote'), xg:g('xg'), vq:g('vq') });
   });
   return mergeRows(rows);
 }
 /* 머지: 여러 관리자 · 여러 날짜의 데이터를 접수번호 기준으로 하나로 합침
    같은 건이면 처리가 더 진행된 쪽(검토중 < 결과)의 상태 · 등급 · 의견을 쓰고, 빈 칸은 서로 채움 */
-var M_FIELDS = ['type','status','team','site','dept','part','loc','pg','fg','rl','fr','cat','occ','detail','req','prev','cmt','code','lcode','mask','at','closed','fileId','fileName'];
+var M_FIELDS = ['type','status','team','site','dept','part','loc','pg','fg','rl','fr','cat','occ','detail','req','prev','cmt','code','lcode','mask','at','closed','fileId','fileName','vote','xg','vq'];
 function stRank(s){ return /접수/.test(s || '') ? 0 : /검토/.test(s || '') ? 1 : s ? 2 : -1; }
 function mergeRows(list){
   var idx = {}, added = 0, dup = 0, upd = 0; S.rows.forEach(function(r){ idx[r.no] = r; });
@@ -203,8 +205,13 @@ function decrypted(){ return S.rows.some(function(r){ return r.matched; }); }
 function opts(sel, vals, label, cur){ sel.innerHTML = '<option value="all">' + label + ' 전체</option>' + vals.map(function(v){ return '<option' + (v === cur ? ' selected' : '') + '>' + esc(v) + '</option>'; }).join(''); if (cur !== 'all' && vals.indexOf(cur) < 0) sel.value = 'all'; }
 function uniq(rows, k){ var v = []; rows.forEach(function(r){ if (r[k] && v.indexOf(r[k]) < 0) v.push(r[k]); }); return v.sort(function(a, b){ return a.localeCompare(b, 'ko', { numeric:true }); }); }
 function tagType(t){ var c = t === '개선제안' ? 'p' : t === '위험성평가' ? 'r' : t === '아차사고' ? 'n' : 'x'; return '<span class="tt t-' + c + '">' + esc(t || '-') + '</span>'; }
-function tagSt(s){ return '<span class="st">' + esc(s || '-') + '</span>'; }
-function grade(r){ if (r.type === '개선제안') return (r.pg ? '제안 ' + esc(r.pg) : '') + (r.fg ? ' · 결정 <b>' + esc(r.fg) + '</b>' : '');
+function tagSt(s){ return '<span class="st' + (/^산안위/.test(s || '') ? ' sv' : '') + '">' + esc(s || '-') + '</span>'; }
+/* 개선제안 등급: 제안등급 → 결정등급(1 · 2차 결재) → 최종등급(산안위 의결) */
+var VOTES = ['원안 의결','수정 의결','부결','보류'];
+function voted(r){ return !!r.vote && r.vote !== '보류'; }
+function stDisp(r){ return r.type === '개선제안' && voted(r) ? '산안위 ' + r.vote : (r.status || ''); }
+function gradeTxt(r){ return [r.pg ? '제안 ' + r.pg : '', r.fg ? '결정 ' + r.fg : '', voted(r) ? '최종 ' + (r.xg || (r.vote === '부결' ? '부결' : '-')) : ''].filter(Boolean).join(' → '); }
+function grade(r){ if (r.type === '개선제안') return [r.pg ? '제안 ' + esc(r.pg) : '', r.fg ? '결정 ' + esc(r.fg) : '', voted(r) ? '최종 <b class="xg">' + esc(r.xg || (r.vote === '부결' ? '부결' : '-')) + '</b>' : ''].filter(Boolean).join(' → ');
   if (r.type === '위험성평가') return (r.rl ? '제출 ' + esc(r.rl) : '') + (r.fr ? ' · 반영 <b>' + esc(r.fr) + '</b>' : ''); return ''; }
 function unit(r){ return [r.team, r.site, r.dept, r.part].filter(Boolean).join(' › '); }
 function ym(r){ var m = /^(\d{4})[.\-\/](\d{1,2})/.exec(r.at || ''); return m ? m[1] + '-' + pad(+m[2]) : ''; }
@@ -220,8 +227,9 @@ function cmp(a, b){ if (typeof a === 'number' && typeof b === 'number') return a
 var RANK = { '가':1, '나':2, '다':3, '라':4, '상':1, '중':2, '하':3 };
 function rv(r, k){
   switch(k){
-    case 'no': return +String(r.no).replace(/\D/g, '') || 0;
-    case 'unit': return unit(r); case 'grade': return RANK[r.fg || r.fr || r.pg || r.rl] || 9;
+    case 'no': var mm = /^(.+)-(\d{2})-(\d{4})$/.exec(r.no || ''); return mm ? 'B|' + mm[1] + '|' + mm[2] + '|' + mm[3] : 'A|' + String(+String(r.no).replace(/\D/g, '') || 0).padStart(9, '0');
+    case 'status': return stDisp(r);
+    case 'unit': return unit(r); case 'grade': return RANK[(voted(r) && r.xg) || r.fg || r.fr || r.pg || r.rl] || 9;
     case 'emp': return r.empId || ('~' + r.code); case 'name': return r.name || ('~' + (r.mask || ''));
     default: return r[k] == null ? '' : r[k];
   }
@@ -246,7 +254,7 @@ function decRows(){ var q = S.dec.q.trim().toLowerCase();
   return S.rows.filter(function(r){ return !q || [r.no, r.loc, r.detail, r.cat, r.empId, r.name, r.code, r.mask, unit(r)].join(' ').toLowerCase().indexOf(q) > -1; }); }
 function listCols(t, st){ return th(t,'no','접수번호',st) + th(t,'type','유형',st) + th(t,'status','상태',st) + th(t,'unit','소속 (제출 당시)',st) + th(t,'loc','장소',st) + th(t,'grade','등급 · 위험정도',st) +
   th(t,'detail','내용',st) + th(t,'code','식별코드',st) + th(t,'emp','사번',st) + th(t,'name','성명',st) + th(t,'at','제출일시',st); }
-function listRow(r){ return '<tr data-i="' + S.rows.indexOf(r) + '"><td class="mono">' + esc(r.no) + '</td><td>' + tagType(r.type) + '</td><td>' + tagSt(r.status) + '</td><td class="ell">' + esc(unit(r)) + '</td><td class="ell">' + esc(r.loc) + '</td><td>' + grade(r) + '</td>' +
+function listRow(r){ return '<tr data-i="' + S.rows.indexOf(r) + '"><td class="mono">' + esc(r.no) + '</td><td>' + tagType(r.type) + '</td><td>' + tagSt(stDisp(r)) + '</td><td class="ell">' + esc(unit(r)) + '</td><td class="ell">' + esc(r.loc) + '</td><td>' + grade(r) + '</td>' +
   '<td class="ell w">' + esc(r.detail) + '</td><td class="mono dim">' + esc(r.code || '-') + '</td><td class="mono">' + (r.empId ? esc(r.empId) : '<span class="dim">미확인</span>') + '</td><td>' + (r.name ? '<b>' + esc(r.name) + '</b>' : '<span class="dim">' + esc(r.mask || '미확인') + '</span>') + '</td><td class="mono">' + esc(r.at) + '</td></tr>'; }
 function renderDec(){
   var has = S.rows.length;
@@ -272,7 +280,7 @@ function statRows(){
     if (f.site !== 'all' && r.site !== f.site) return false;
     if (f.dept !== 'all' && r.dept !== f.dept) return false;
     if (f.part !== 'all' && r.part !== f.part) return false;
-    if (f.status !== 'all' && r.status !== f.status) return false;
+    if (f.status !== 'all' && stDisp(r) !== f.status) return false;
     if (f.only === 'yes' && !r.matched) return false; if (f.only === 'no' && r.matched) return false;
     var k = ym(r); if (f.from && (!k || k < f.from)) return false; if (f.to && (!k || k > f.to)) return false;
     if (q && [r.no, r.loc, r.detail, r.req, r.prev, r.cmt, r.cat, r.empId, r.name, r.code, unit(r)].join(' ').toLowerCase().indexOf(q) < 0) return false;
@@ -287,8 +295,8 @@ function autoLevel(L){ var f = S.st.f; if (S.st.lv !== 'auto') return S.st.lv;
   while (lv !== 'part'){ var v = {}; L.forEach(function(r){ v[r[lv] || ''] = 1; }); if (Object.keys(v).length > 1) break; lv = LV_ORDER[LV_ORDER.indexOf(lv) + 1]; }
   return lv; }
 function orgKey(r, lv){ var idx = LV_ORDER.indexOf(lv), parts = []; for (var i = 0; i <= idx; i++) parts.push(r[LV_ORDER[i]] || (i === 0 ? '본사' : '(직속)')); return parts.join(' › '); }
-function agg(L){ var m = { p:0, r:0, n:0, t:L.length, open:0, done:0, rej:0, ppl:{} };
-  L.forEach(function(x){ if (x.type === '개선제안') m.p++; else if (x.type === '위험성평가') m.r++; else if (x.type === '아차사고') m.n++;
+function agg(L){ var m = { p:0, r:0, n:0, t:L.length, open:0, done:0, rej:0, ppl:{}, vote:0 };
+  L.forEach(function(x){ if (voted(x)) m.vote++; if (x.type === '개선제안') m.p++; else if (x.type === '위험성평가') m.r++; else if (x.type === '아차사고') m.n++;
     if (isOpen(x.status)) m.open++; else if (isDone(x.status)) m.done++; else if (isRej(x.status)) m.rej++; m.ppl[x.empId || x.code || x.mask] = 1; });
   m.people = Object.keys(m.ppl).length; m.rate = m.t ? Math.round((m.done + m.rej) / m.t * 100) : 0; return m; }
 function orgRows(L, lv){ var by = {}; L.forEach(function(r){ var k = orgKey(r, lv); (by[k] = by[k] || []).push(r); });
@@ -303,7 +311,7 @@ function peopleOf(L){
   L.forEach(function(r){ var k = r.empId || ('code:' + (r.code || '?'));
     var p = by[k] = by[k] || { empId:r.empId, name:r.name, mask:r.mask, code:r.code, unit:unit(r), p:0, r:0, n:0, t:0, comm:0, done:0 };
     if (r.type === '개선제안') p.p++; else if (r.type === '위험성평가') p.r++; else if (r.type === '아차사고') p.n++;
-    p.t++; if (/위원회|의결/.test(r.status)) p.comm++; if (/완료/.test(r.status)) p.done++; });
+    p.t++; if (/위원회|의결/.test(r.status) || voted(r)) p.comm++; if (/완료/.test(r.status)) p.done++; });
   return Object.keys(by).map(function(k){ return by[k]; }).sort(function(a, b){ return b.t - a.t || (a.name || '').localeCompare(b.name || '', 'ko'); });
 }
 function mGet(m, k){ return k === 'name' ? m.name : m[k]; }
@@ -325,11 +333,11 @@ function renderStat(){
   var R1 = R.filter(function(r){ return f.team === 'all' || r.team === f.team; }); opts($('#sSite'), uniq(R1, 'site'), '그룹', f.site);
   var R2 = R1.filter(function(r){ return f.site === 'all' || r.site === f.site; }); opts($('#sDept'), uniq(R2, 'dept'), '팀', f.dept);
   var R3 = R2.filter(function(r){ return f.dept === 'all' || r.dept === f.dept; }); opts($('#sPart'), uniq(R3, 'part'), '파트', f.part);
-  opts($('#sStatus'), uniq(R, 'status'), '상태', f.status);
+  opts($('#sStatus'), uniq(R.map(function(r){ return { s:stDisp(r) }; }), 's'), '상태', f.status);
   $('#sType').value = f.type; $('#sOnly').value = f.only; $('#sFrom').value = f.from; $('#sTo').value = f.to; $('#sLv').value = S.st.lv;
   var L = statRows(), m = agg(L), mt = L.filter(function(r){ return r.matched; }).length;
   $('#sCond').textContent = condText();
-  $('#statKpis').innerHTML = kpi('조회 건수', m.t, '전체 ' + R.length.toLocaleString() + '건') + kpi('개선제안', m.p, '', 'b') + kpi('위험성평가', m.r, '', 't') + kpi('아차사고', m.n, '', 'o') +
+  $('#statKpis').innerHTML = kpi('조회 건수', m.t, '전체 ' + R.length.toLocaleString() + '건') + kpi('개선제안', m.p, m.vote ? '산안위 의결 ' + m.vote + '건' : '', 'b') + kpi('위험성평가', m.r, '', 't') + kpi('아차사고', m.n, '', 'o') +
     kpi('처리 완료율', m.rate + '%', '완료 ' + m.done + ' · 반려 ' + m.rej + ' · 대기 ' + m.open, 'g') + kpi('제출 인원', m.people, '실명 확인 ' + (L.length ? Math.round(mt / L.length * 100) : 0) + '%');
   /* 소속별 */
   var lv = autoLevel(L), O = sorted(orgRows(L, lv), S.st.sort.org || { k:'t', dir:-1 }, mGet), tot = agg(L);
@@ -368,8 +376,8 @@ function condText(){ var f = S.st.f, a = [];
   return a.join(' · '); }
 
 function openDetail(r){
-  var kv = [['접수번호', r.no], ['유형', r.type], ['상태', r.status], ['소속 (제출 당시)', unit(r)], ['장소', r.loc], ['사고유형 · 위험요인', r.cat], ['발생일시', r.occ],
-    ['제안등급', r.pg], ['결정등급', r.fg], ['위험정도 (제출)', r.rl], ['위험정도 (반영)', r.fr], ['제출일시', r.at], ['종료일시', r.closed],
+  var kv = [['접수번호', r.no], ['유형', r.type], ['상태', stDisp(r)], ['소속 (제출 당시)', unit(r)], ['장소', r.loc], ['사고유형 · 위험요인', r.cat], ['발생일시', r.occ],
+    ['제안등급', r.pg], ['결정등급', r.fg], ['산안위 의결', r.vote ? r.vote + (r.vq ? ' (' + r.vq + ')' : '') : ''], ['최종등급', voted(r) ? (r.xg || '-') : ''], ['위험정도 (제출)', r.rl], ['위험정도 (반영)', r.fr], ['제출일시', r.at], ['종료일시', r.closed],
     ['식별코드', r.code], ['사번', r.empId || '미확인'], ['성명', r.name || r.mask || '미확인']].filter(function(x){ return x[1]; });
   var blk = [['상세 내용 · 상황 설명', r.detail], ['조치 요청사항', r.req], ['재발 방지 의견', r.prev], ['처리 의견', r.cmt]].filter(function(x){ return x[1]; });
   $('#mBody').innerHTML = '<div class="kv">' + kv.map(function(x){ return '<span>' + x[0] + '</span><b>' + esc(x[1]) + '</b>'; }).join('') + '</div>' +
@@ -397,8 +405,8 @@ function saveXlsx(){
   XLSX.utils.book_append_sheet(wb, sum, '현황 요약');
   XLSX.utils.book_append_sheet(wb, sheet([[LV[lv]].concat(mHead)].concat(O.map(function(x){ return [x.name].concat(mVals(x)); })).concat([['합계'].concat(mVals(m))])), LV[lv] + '별현황');
   XLSX.utils.book_append_sheet(wb, sheet([['월','개선제안','위험성평가','아차사고','합계']].concat(MR.map(function(x){ return [x.name, x.p, x.r, x.n, x.t]; }))), '월별현황');
-  XLSX.utils.book_append_sheet(wb, sheet([['접수번호','유형','상태','사업팀','그룹','팀','파트','장소','사고유형/위험요인','발생일시','제안등급','결정등급','위험정도(제출)','위험정도(반영)','상세내용/상황설명','조치요청사항','재발방지의견','처리의견','식별코드','사번','성명','제출일시','종료일시']]
-    .concat(L.map(function(r){ return [r.no, r.type, r.status, r.team, r.site, r.dept, r.part, r.loc, r.cat, r.occ, r.pg, r.fg, r.rl, r.fr, r.detail, r.req, r.prev, r.cmt, r.code, r.empId, r.name, r.at, r.closed]; }))), '접수내역(실명)');
+  XLSX.utils.book_append_sheet(wb, sheet([['접수번호','유형','상태','사업팀','그룹','팀','파트','장소','사고유형/위험요인','발생일시','제안등급','결정등급','산안위의결','최종등급','의결회차','위험정도(제출)','위험정도(반영)','상세내용/상황설명','조치요청사항','재발방지의견','처리의견','식별코드','사번','성명','제출일시','종료일시']]
+    .concat(L.map(function(r){ return [r.no, r.type, stDisp(r), r.team, r.site, r.dept, r.part, r.loc, r.cat, r.occ, r.pg, r.fg, r.vote, voted(r) ? r.xg : '', r.vq, r.rl, r.fr, r.detail, r.req, r.prev, r.cmt, r.code, r.empId, r.name, r.at, r.closed]; }))), '접수내역(실명)');
   XLSX.utils.book_append_sheet(wb, sheet([['순위','사번','성명','소속(제출 당시)','개선제안','위험성평가','아차사고','합계','위원회의결','조치·반영완료']]
     .concat(P.map(function(p, i){ return [i + 1, p.empId || '', p.name || p.mask || '', p.unit, p.p, p.r, p.n, p.t, p.comm, p.done]; }))), '제출자별집계');
   XLSX.writeFile(wb, TITLE + '_' + today() + '.xlsx');
@@ -412,7 +420,8 @@ function clearAll(){ STORE.on = false; STORE.pw = null; S.com.sel = {}; S.key = 
 function nowText(){ var d = new Date(); return d.getFullYear() + '.' + pad(d.getMonth() + 1) + '.' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()); }
 function B64(buf){ var u = new Uint8Array(buf), s = ''; for (var i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); }
 function rowOut(r){ return { no:r.no, type:r.type, status:r.status, team:r.team, site:r.site, dept:r.dept, part:r.part, loc:r.loc, pg:r.pg, fg:r.fg, rl:r.rl, fr:r.fr, cat:r.cat, occ:r.occ,
-  detail:r.detail, req:r.req, prev:r.prev, cmt:r.cmt, code:r.code, lcode:r.lcode, mask:r.mask, at:r.at, closed:r.closed, empId:r.empId || r.fileId || '', name:r.name || r.fileName || '' }; }
+  detail:r.detail, req:r.req, prev:r.prev, cmt:r.cmt, code:r.code, lcode:r.lcode, mask:r.mask, at:r.at, closed:r.closed, empId:r.empId || r.fileId || '', name:r.name || r.fileName || '',
+  vote:r.vote || '', xg:r.xg || '', vq:r.vq || '' }; }
 function rowIn(o){ var r = { no:String(o.no) }; M_FIELDS.forEach(function(k){ r[k] = o[k] == null ? '' : String(o[k]); }); r.fileId = o.empId || ''; r.fileName = o.name || ''; return r; }
 function isBackupText(t){ try { var o = JSON.parse(t); return !!o && o.format === 'ehs-offline-backup'; } catch(e){ return false; } }
 async function pwKey(pw, salt, iter){ var base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey']);
@@ -442,8 +451,8 @@ async function loadBackup(text, name){
   DUP += res.dup; S.files.push(name); toast(name + ' · ' + res.added.toLocaleString() + '건 추가' + (res.dup ? ' · 같은 접수번호 ' + res.dup + '건 합침' : ''));
   return true;
 }
-var BK_HEAD = ['접수번호','유형','상태','사업팀','그룹','팀','파트','장소','제안등급','결정등급','위험정도(제출)','위험정도(반영)','사고유형/위험요인','발생일시','상세내용/상황설명','조치요청사항','재발방지의견','처리의견','제출자식별코드','대조코드','제출자성명(마스킹)','제출일시','종료일시','사번','성명(실명)'];
-function bkRow(r){ var o = rowOut(r); return [o.no, o.type, o.status, o.team, o.site, o.dept, o.part, o.loc, o.pg, o.fg, o.rl, o.fr, o.cat, o.occ, o.detail, o.req, o.prev, o.cmt, o.code, o.lcode, o.mask, o.at, o.closed, o.empId, o.name]; }
+var BK_HEAD = ['접수번호','유형','상태','사업팀','그룹','팀','파트','장소','제안등급','결정등급','위험정도(제출)','위험정도(반영)','사고유형/위험요인','발생일시','상세내용/상황설명','조치요청사항','재발방지의견','처리의견','제출자식별코드','대조코드','제출자성명(마스킹)','제출일시','종료일시','사번','성명(실명)','산안위의결','최종등급','의결회차'];
+function bkRow(r){ var o = rowOut(r); return [o.no, o.type, o.status, o.team, o.site, o.dept, o.part, o.loc, o.pg, o.fg, o.rl, o.fr, o.cat, o.occ, o.detail, o.req, o.prev, o.cmt, o.code, o.lcode, o.mask, o.at, o.closed, o.empId, o.name, o.vote, o.xg, o.vq]; }
 function download(name, blob){ var a = document.createElement('a'), u = URL.createObjectURL(blob); a.href = u; a.download = name; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(u); a.remove(); }, 3000); }
 async function exportBackup(kind){
   if (!S.rows.length) return toast('내보낼 데이터가 없습니다', true);
@@ -456,7 +465,8 @@ async function exportBackup(kind){
   $('#bkModal').classList.remove('open'); toast('백업을 내보냈습니다 (' + S.rows.length.toLocaleString() + '건)');
 }
 
-/* 브라우저 저장: 이 PC의 브라우저 저장소(IndexedDB)에 '저장 비밀번호'로 암호화해 보관 · 켜 두면 3분마다 자동 저장 */
+/* 브라우저 저장: 이 PC의 브라우저 저장소(IndexedDB)에 보관 (비밀번호 없음) · 켜 두면 3분마다 자동 저장
+   예전 버전에서 비밀번호로 잠가 저장한 데이터는 불러올 때 한 번만 비밀번호를 묻고, 이후에는 비밀번호 없이 저장 */
 var STORE = { on:false, pw:null, last:null, dirty:false, timer:null, saved:null };
 function markDirty(){ STORE.dirty = true; }
 var IDB = null;
@@ -472,25 +482,26 @@ async function stDel(){
   try { var db = await idb(); await new Promise(function(res){ var t = db.transaction('kv', 'readwrite'); t.objectStore('kv').delete('data'); t.oncomplete = res; t.onerror = res; }); } catch(e){}
   try { localStorage.removeItem('ehs-offline-data'); } catch(_){} }
 async function saveNow(silent){
-  if (!STORE.on || !STORE.pw || !S.rows.length) return;
-  if (await stPut(await packRows(S.rows, STORE.pw))){ STORE.last = nowText(); STORE.dirty = false; STORE.saved = { saved:STORE.last, count:S.rows.length }; storeUi(); if (!silent) toast('브라우저에 저장했습니다 (' + S.rows.length.toLocaleString() + '건)'); }
+  if (!STORE.on || !S.rows.length) return;
+  if (await stPut(await packRows(S.rows, null))){ STORE.last = nowText(); STORE.dirty = false; STORE.saved = { saved:STORE.last, count:S.rows.length }; storeUi(); if (!silent) toast('브라우저에 저장했습니다 (' + S.rows.length.toLocaleString() + '건)'); }
   else toast('브라우저 저장에 실패했습니다. [백업 내보내기]를 이용해 주세요', true);
 }
 function startAuto(){ if (!STORE.timer) STORE.timer = setInterval(function(){ if (STORE.on && STORE.dirty) saveNow(true); }, 180000); }
 async function toggleStore(){
   if (STORE.on){ await saveNow(true); STORE.on = false; storeUi(); return toast('자동 저장을 껐습니다. 저장된 데이터는 남아 있습니다'); }
   if (!S.rows.length) return toast('저장할 데이터가 없습니다. 먼저 데이터를 넣어 주세요', true);
-  var pw = STORE.pw || await askPw('브라우저 저장 켜기', '이 PC 브라우저에 데이터를 <b>암호화해서</b> 저장하고, 켜 두는 동안 <b>3분마다 자동 저장</b>합니다. 다음에 열 때 이 저장 비밀번호가 필요합니다.', true);
-  if (pw == null) return;
-  STORE.pw = pw; STORE.on = true; startAuto(); await saveNow();
+  STORE.on = true; startAuto(); await saveNow();
+  toast('브라우저 저장을 켰습니다 · 3분마다 자동 저장 (공용 PC에서는 사용하지 마세요)');
 }
 async function restoreStore(){
   var p = await stGet(); if (!p) return toast('저장된 데이터가 없습니다', true);
-  var pw = await askPw('브라우저 저장 불러오기', p.saved + ' 저장 · ' + (p.count || 0) + '건 · 저장할 때 정한 비밀번호를 입력하세요.', false); if (pw == null) return;
-  var data; try { data = await unpack(p, pw); } catch(e){ return toast('저장 비밀번호가 올바르지 않습니다', true); }
+  var data;
+  if (p.enc){ var pw = await askPw('브라우저 저장 불러오기', p.saved + ' 저장 · ' + (p.count || 0) + '건 · 예전 버전에서 비밀번호로 잠근 데이터입니다. 저장할 때 정한 비밀번호를 입력하세요. (이후에는 비밀번호 없이 저장됩니다)', false); if (pw == null) return;
+    try { data = await unpack(p, pw); } catch(e){ return toast('저장 비밀번호가 올바르지 않습니다', true); } }
+  else data = p.data || {};
   var res = mergeRows((data.rows || []).map(rowIn)); if (data.keyMeta && !S.keyMeta) S.keyMeta = data.keyMeta;
   DUP += res.dup; S.files.push('브라우저 저장(' + p.saved + ')');
-  STORE.pw = pw; STORE.on = true; STORE.last = p.saved; startAuto(); STORE.dirty = false;
+  STORE.on = true; STORE.last = p.saved; startAuto(); STORE.dirty = !!p.enc;   /* 잠긴 저장본은 다음 자동 저장 때 비밀번호 없는 형식으로 바뀜 */
   toast('저장된 데이터 ' + res.added.toLocaleString() + '건을 불러왔습니다' + (res.dup ? ' · ' + res.dup + '건 합침' : '') + ' · 자동 저장 켜짐');
   await finishData();
 }
@@ -532,8 +543,8 @@ window.addEventListener('afterprint', function(){ document.body.classList.remove
 /* 데이터 현황 보고서 (A4 세로) */
 function reportHtml(){
   var L = statRows(), m = agg(L), lv = autoLevel(L), O = sorted(orgRows(L, lv), { k:'t', dir:-1 }, mGet), MR = monthRows(L), maxT = Math.max.apply(null, MR.map(function(x){ return x.t; }).concat([1]));
-  var ST = {}; L.forEach(function(r){ var t = r.type || '-', st = r.status || '-'; (ST[t] = ST[t] || {})[st] = (ST[t][st] || 0) + 1; });
-  var sts = uniq(L, 'status');
+  var ST = {}; L.forEach(function(r){ var t = r.type || '-', st = stDisp(r) || '-'; (ST[t] = ST[t] || {})[st] = (ST[t][st] || 0) + 1; });
+  var sts = uniq(L.map(function(r){ return { s:stDisp(r) || '-' }; }), 's');
   var LS = L.slice().sort(function(a, b){ return a.at < b.at ? 1 : -1; });
   return '<div class="rp">' +
     '<div class="rp-h">' + (LOGO ? '<img src="' + LOGO + '">' : '') + '<div><h1>안전보건 개선제안 현황</h1><p>' + esc(condText()) + '</p></div><div class="rp-d">출력 ' + esc(nowText()) + '</div></div>' +
@@ -546,7 +557,7 @@ function reportHtml(){
     '<h2>유형별 처리 상태</h2><table><thead><tr><th>유형</th>' + sts.map(function(x){ return '<th>' + esc(x) + '</th>'; }).join('') + '<th>합계</th></tr></thead><tbody>' +
       Object.keys(ST).map(function(t){ var tt = 0; return '<tr><td class="l">' + esc(t) + '</td>' + sts.map(function(x){ var v = ST[t][x] || 0; tt += v; return '<td>' + v + '</td>'; }).join('') + '<td><b>' + tt + '</b></td></tr>'; }).join('') + '</tbody></table>' +
     '<h2>접수 내역 <small>(' + LS.length + '건' + (LS.length > 300 ? ', 최근 300건 표시' : '') + ')</small></h2><table class="list"><thead><tr><th>접수번호</th><th>유형</th><th>소속</th><th>장소</th><th>내용</th><th>상태</th><th>제출자</th><th>제출일</th></tr></thead><tbody>' +
-      LS.slice(0, 300).map(function(r){ return '<tr><td>' + esc(r.no) + '</td><td>' + esc(r.type) + '</td><td class="l">' + esc([r.site, r.dept, r.part].filter(Boolean).join(' › ') || r.team) + '</td><td class="l">' + esc(r.loc) + '</td><td class="l">' + esc((r.detail || '').slice(0, 60)) + ((r.detail || '').length > 60 ? '…' : '') + '</td><td>' + esc(r.status) + '</td><td>' + esc(r.name || r.mask || '') + '</td><td>' + esc((r.at || '').slice(0, 10)) + '</td></tr>'; }).join('') + '</tbody></table>' +
+      LS.slice(0, 300).map(function(r){ return '<tr><td>' + esc(r.no) + '</td><td>' + esc(r.type) + '</td><td class="l">' + esc([r.site, r.dept, r.part].filter(Boolean).join(' › ') || r.team) + '</td><td class="l">' + esc(r.loc) + '</td><td class="l">' + esc((r.detail || '').slice(0, 60)) + ((r.detail || '').length > 60 ? '…' : '') + '</td><td>' + esc(stDisp(r)) + '</td><td>' + esc(r.name || r.mask || '') + '</td><td>' + esc((r.at || '').slice(0, 10)) + '</td></tr>'; }).join('') + '</tbody></table>' +
     '<div class="rp-f">㈜휴먼티에스에스 · 안전보건 제안 시스템 · 소속은 제출 당시(최초 등록 부서) 기준 · 대외비</div></div>';
 }
 function printReport(){
@@ -556,37 +567,47 @@ function printReport(){
 }
 
 /* ===================== ③ 산안위 의결 ===================== */
-S.com = { year:0, q:'all', basis:'closed', per:2, names:true, sel:{} };
-function comBase(){ return S.rows.filter(function(r){ return r.type === '개선제안' && /위원회|의결/.test(r.status || ''); }); }
+S.com = { year:0, qs:{ 1:1, 2:1, 3:1, 4:1 }, basis:'closed', per:2, names:true, sel:{} };
+function comBase(){ return S.rows.filter(function(r){ return r.type === '개선제안' && (/위원회|의결/.test(r.status || '') || !!r.vote); }); }
+function qAll(){ return [1, 2, 3, 4].every(function(q){ return S.com.qs[q]; }); }
+function qList(){ return [1, 2, 3, 4].filter(function(q){ return S.com.qs[q]; }); }
 function qOf(r){ var d = S.com.basis === 'closed' ? (r.closed || r.at) : r.at, m = /^(\d{4})[.\-\/](\d{1,2})/.exec(d || ''); return m ? { y:+m[1], q:Math.ceil(+m[2] / 3), d:d } : null; }
-function comRows(){ var c = S.com; return comBase().filter(function(r){ var k = qOf(r); return k && k.y === c.year && (c.q === 'all' || k.q === +c.q); })
+function comRows(){ var c = S.com; return comBase().filter(function(r){ var k = qOf(r); return k && k.y === c.year && !!c.qs[k.q]; })
   .sort(function(a, b){ var x = qOf(a).d, y = qOf(b).d; return x < y ? -1 : x > y ? 1 : cmp(a.no, b.no); }); }
-function comTitle(){ var c = S.com; return c.year + '년 ' + (c.q === 'all' ? '' : c.q + '분기 ') + '산업안전보건위원회'; }
+function qText(){ return qAll() ? '' : qList().join('·') + '분기 '; }
+function comTitle(){ return S.com.year + '년 ' + qText() + '산업안전보건위원회'; }
 function gradeOf(r){ return r.fg || r.pg || '-'; }
 function renderCom(){
   var B = comBase(), c = S.com, years = {}; B.forEach(function(r){ var k = qOf(r); if (k) years[k.y] = 1; });
   var Y = Object.keys(years).map(Number).sort(function(a, b){ return b - a; }); if (!Y.length) Y = [new Date().getFullYear()];
   if (!c.year || Y.indexOf(c.year) < 0) c.year = Y[0];
   $('#comYears').innerHTML = Y.map(function(y){ return '<button class="tg' + (y === c.year ? ' on' : '') + '" data-cy="' + y + '">' + y + '</button>'; }).join('');
-  $$('#comQs .tg').forEach(function(b){ b.classList.toggle('on', b.dataset.cq === String(c.q)); });
+  $$('#comQs .tg').forEach(function(b){ b.classList.toggle('on', !!c.qs[b.dataset.cq]); });
   $$('#comBasis .tg').forEach(function(b){ b.classList.toggle('on', b.dataset.cb === c.basis); });
   $$('#comPer .tg').forEach(function(b){ b.classList.toggle('on', +b.dataset.cp === c.per); });
   $('#comNames').checked = c.names;
   var L = comRows(), sel = L.filter(function(r){ return c.sel[r.no]; });
   $('#comCount').innerHTML = '선택 <b>' + sel.length + '</b>건 / ' + L.length + '건';
-  $('#comPrint').disabled = !sel.length;
+  $('#comPrint').disabled = !sel.length; $('#comVoteAll').disabled = !sel.length;
+  var vd = L.filter(voted).length, vh = L.filter(function(r){ return r.vote === '보류'; }).length;
   /* 연도 × 분기 현황 */
   var mx = {}; B.forEach(function(r){ var k = qOf(r); if (!k) return; var row = mx[k.y] = mx[k.y] || [0, 0, 0, 0]; row[k.q - 1]++; });
   var gr = { '가':0, '나':0, '다':0 }, byTeam = {}; L.forEach(function(r){ var g = gradeOf(r); if (gr[g] != null) gr[g]++; var t = r.team || '본사'; byTeam[t] = (byTeam[t] || 0) + 1; });
+  var vc = {}; L.forEach(function(r){ if (r.vote) vc[r.vote] = (vc[r.vote] || 0) + 1; });
   $('#comSum').innerHTML =
-    '<div class="kpis k4">' + kpi(comTitle().replace(' 산업안전보건위원회', '') + ' 의결 안건', L.length, c.basis === 'closed' ? '의결예정 결정일 기준' : '제출일 기준', 'b') + kpi('가 등급', gr['가'], '', 'g') + kpi('나 등급', gr['나'], '', 't') + kpi('다 등급', gr['다'], '', 'o') + '</div>' +
+    '<div class="kpis k4">' + kpi(comTitle().replace(' 산업안전보건위원회', '') + ' 의결 안건', L.length, c.basis === 'closed' ? '의결예정 결정일 기준' : '제출일 기준', 'b') +
+      kpi('의결 완료', vd, VOTES.slice(0, 3).map(function(v){ return v.replace(' 의결', '') + ' ' + (vc[v] || 0); }).join(' · '), 'g') + kpi('미의결', L.length - vd, vh ? '보류 ' + vh + '건 포함' : '의결 결과 입력 대기', L.length - vd ? 'o' : '') +
+      kpi('결정 등급', gr['가'] + gr['나'] + gr['다'], '가 ' + gr['가'] + ' · 나 ' + gr['나'] + ' · 다 ' + gr['다'], 't') + '</div>' +
     '<div class="grid2"><div class="panel"><div class="bar"><b class="pt">연도 · 분기별 의결 안건</b><span class="dim">칸을 누르면 그 분기로 이동</span></div><div class="tw s"><table><thead><tr><th>연도</th><th class="num">1분기</th><th class="num">2분기</th><th class="num">3분기</th><th class="num">4분기</th><th class="num">합계</th></tr></thead><tbody>' +
-      Object.keys(mx).sort().reverse().map(function(y){ var row = mx[y]; return '<tr><td class="mono"><b>' + y + '</b></td>' + row.map(function(v, i){ return '<td class="num qcell' + (+y === c.year && String(c.q) === String(i + 1) ? ' on' : '') + '" data-cy="' + y + '" data-cq="' + (i + 1) + '">' + (v || '-') + '</td>'; }).join('') + '<td class="num"><b>' + row.reduce(function(a, b){ return a + b; }, 0) + '</b></td></tr>'; }).join('') +
+      Object.keys(mx).sort().reverse().map(function(y){ var row = mx[y]; return '<tr><td class="mono"><b>' + y + '</b></td>' + row.map(function(v, i){ return '<td class="num qcell' + (+y === c.year && !qAll() && qList().length === 1 && qList()[0] === i + 1 ? ' on' : '') + '" data-cy="' + y + '" data-qone="' + (i + 1) + '">' + (v || '-') + '</td>'; }).join('') + '<td class="num"><b>' + row.reduce(function(a, b){ return a + b; }, 0) + '</b></td></tr>'; }).join('') +
       (Object.keys(mx).length ? '' : '<tr><td colspan="6" class="none">위원회 의결예정 건이 없습니다</td></tr>') + '</tbody></table></div></div>' +
     '<div class="panel"><div class="bar"><b class="pt">사업팀별 (선택 기간)</b></div><div class="tw s"><table><thead><tr><th>사업팀</th><th class="num">안건</th></tr></thead><tbody>' +
       Object.keys(byTeam).sort().map(function(t){ return '<tr><td>' + esc(t) + '</td><td class="num"><b>' + byTeam[t] + '</b></td></tr>'; }).join('') + (L.length ? '' : '<tr><td colspan="2" class="none">-</td></tr>') + '</tbody></table></div></div></div>';
-  $('#comList').innerHTML = L.length ? '<table><thead><tr><th style="width:34px"><input type="checkbox" id="comAll"' + (sel.length && sel.length === L.length ? ' checked' : '') + '></th><th>순번</th><th>접수번호</th><th>소속</th><th>장소</th><th>내용</th><th>등급</th><th>제안자</th><th>' + (c.basis === 'closed' ? '의결예정 결정일' : '제출일') + '</th></tr></thead><tbody>' +
-    L.map(function(r, i){ return '<tr data-i="' + S.rows.indexOf(r) + '"><td><input type="checkbox" class="comChk" data-no="' + esc(r.no) + '"' + (c.sel[r.no] ? ' checked' : '') + '></td><td class="num">' + (i + 1) + '</td><td class="mono">' + esc(r.no) + '</td><td class="ell">' + esc(unit(r)) + '</td><td class="ell">' + esc(r.loc) + '</td><td class="ell w">' + esc(r.detail) + '</td><td>제안 ' + esc(r.pg || '-') + ' → <b>' + esc(r.fg || '-') + '</b></td><td>' + (r.name ? '<b>' + esc(r.name) + '</b>' : '<span class="dim">' + esc(r.mask || '-') + '</span>') + '</td><td class="mono">' + esc((qOf(r).d || '').slice(0, 10)) + '</td></tr>'; }).join('') + '</tbody></table>'
+  $('#comList').innerHTML = L.length ? '<table><thead><tr><th style="width:34px"><input type="checkbox" id="comAll"' + (sel.length && sel.length === L.length ? ' checked' : '') + '></th><th>순번</th><th>접수번호</th><th>소속</th><th>장소</th><th>내용</th><th>제안 → 결정</th><th>의결 결과</th><th>최종등급</th><th>제안자</th><th>' + (c.basis === 'closed' ? '의결예정 결정일' : '제출일') + '</th></tr></thead><tbody>' +
+    L.map(function(r, i){ var vi = S.rows.indexOf(r);
+      return '<tr data-i="' + vi + '" class="' + (voted(r) ? 'vdone' : '') + '"><td><input type="checkbox" class="comChk" data-no="' + esc(r.no) + '"' + (c.sel[r.no] ? ' checked' : '') + '></td><td class="num">' + (i + 1) + '</td><td class="mono">' + esc(r.no) + '</td><td class="ell" title="' + esc(unit(r)) + '">' + esc([r.site, r.dept, r.part].filter(Boolean).join(' › ') || r.team) + '</td><td class="ell">' + esc(r.loc) + '</td><td class="ell w">' + esc(r.detail) + '</td><td style="white-space:nowrap">' + esc(r.pg || '-') + ' → <b>' + esc(r.fg || '-') + '</b></td>' +
+        '<td><select class="vsel" data-vi="' + vi + '" data-vk="vote"><option value="">미입력</option>' + VOTES.map(function(v){ return '<option' + (r.vote === v ? ' selected' : '') + '>' + v + '</option>'; }).join('') + '</select></td>' +
+        '<td><select class="vsel xg" data-vi="' + vi + '" data-vk="xg"' + (voted(r) && r.vote !== '부결' ? '' : ' disabled') + '><option value="">-</option>' + ['가','나','다','라'].map(function(g){ return '<option' + (r.xg === g ? ' selected' : '') + '>' + g + '</option>'; }).join('') + '</select></td><td>' + (r.name ? '<b>' + esc(r.name) + '</b>' : '<span class="dim">' + esc(r.mask || '-') + '</span>') + '</td><td class="mono">' + esc((qOf(r).d || '').slice(0, 10)) + '</td></tr>'; }).join('') + '</tbody></table>'
     : '<div class="none">' + comTitle() + ' 의결예정 개선제안이 없습니다. 연도 · 분기를 바꿔 보세요.</div>';
   var pv = $('#comPreview');
   if (!sel.length){ pv.innerHTML = '<div class="none">목록에서 체크한 안건이 여기에 의안 보고서(가로 · PT 형식)로 미리 보입니다.</div>'; return; }
@@ -604,18 +625,26 @@ function comPages(list, per){
 }
 function agendaHtml(r, no){
   var nm = S.com.names ? (r.name || r.mask || '-') : (r.mask || '-');
-  return '<article class="ag"><div class="ag-h"><span class="ano">의안 제' + no + '호</span><span class="grd">제안 등급 ' + esc(r.pg || '-') + ' → 결정 등급 <b>' + esc(r.fg || '-') + '</b></span></div>' +
+  var box = function(v){ return '<span class="' + (r.vote === v ? 'on' : '') + '">' + (r.vote === v ? '☑' : '□') + ' ' + v + '</span>'; };
+  return '<article class="ag"><div class="ag-h"><span class="ano">의안 제' + no + '호</span><span class="grd">제안 ' + esc(r.pg || '-') + ' → 결정 <b>' + esc(r.fg || '-') + '</b> → 최종 <b class="fx">' + esc(voted(r) ? (r.xg || (r.vote === '부결' ? '부결' : '-')) : '　') + '</b></span></div>' +
     '<h3>' + esc(r.loc || '(장소 미기재)') + '</h3>' +
     '<div class="meta"><span>소속 <b>' + esc(unit(r) || '-') + '</b></span><span>제안자 <b>' + esc(nm) + '</b>' + (S.com.names && r.empId ? ' <i>' + esc(r.empId) + '</i>' : '') + '</span><span>접수 <b>' + esc(r.no) + '</b> · ' + esc((r.at || '').slice(0, 10)) + '</span></div>' +
     '<div class="ab main"><label>제안 내용</label><p>' + esc(r.detail || '-') + '</p></div>' +
     (r.req ? '<div class="ab"><label>조치 요청사항</label><p>' + esc(r.req) + '</p></div>' : '') +
-    (r.cmt ? '<div class="ab cmt"><label>검토 의견</label><p>' + esc(r.cmt) + '</p></div>' : '') +
-    '<div class="vote"><label>의결</label><span>□ 원안 의결</span><span>□ 수정 의결</span><span>□ 부결</span><em>비고</em></div></article>';
+    '<div class="vote"><label>의결</label>' + box('원안 의결') + box('수정 의결') + box('부결') + '<em>최종등급 <b>' + esc(voted(r) ? (r.xg || '') : '') + '</b></em></div></article>';
 }
+/* 의결 결과 입력: 원안 의결 → 최종등급 = 결정등급 / 수정 의결 → 최종등급 직접 선택 / 부결 → 최종등급 없음 / 보류 → 다음 회차 */
+function setVote(r, k, v){
+  if (k === 'vote'){ r.vote = v;
+    if (!v || v === '보류'){ r.xg = ''; r.vq = v ? qOfText(r) : ''; }
+    else { r.vq = qOfText(r); if (v === '부결') r.xg = ''; else if (v === '원안 의결' || !r.xg) r.xg = r.fg || r.pg || ''; } }
+  else r.xg = v;
+  markDirty(); }
+function qOfText(r){ var k = qOf(r); return k ? k.y + '년 ' + k.q + '분기' : S.com.year + '년'; }
 function printCom(){
   var L = comRows().filter(function(r){ return S.com.sel[r.no]; });
   if (!L.length) return toast('출력할 안건을 체크해 주세요', true);
-  printWith(comPages(L, S.com.per), true, '산안위 의안 보고서_' + S.com.year + (S.com.q === 'all' ? '' : '_' + S.com.q + '분기'));
+  printWith(comPages(L, S.com.per), true, '산안위 의안 보고서_' + S.com.year + (qAll() ? '' : '_' + qList().join('·') + '분기'));
   toast('인쇄 창에서 "PDF로 저장" · 용지 방향 가로로 저장됩니다');
 }
 
@@ -659,13 +688,17 @@ $('#comPrint').addEventListener('click', printCom);
 $('#comNames').addEventListener('change', function(){ S.com.names = this.checked; render(); });
 document.addEventListener('change', function(e){
   if (e.target.id === 'comAll'){ var on = e.target.checked; comRows().forEach(function(r){ if (on) S.com.sel[r.no] = 1; else delete S.com.sel[r.no]; }); render(); }
+  if (e.target.classList.contains('vsel')){ var vr = S.rows[+e.target.dataset.vi]; if (vr){ setVote(vr, e.target.dataset.vk, e.target.value); render(); toast(vr.no + ' · ' + (vr.vote ? stDisp(vr) + (voted(vr) && vr.xg ? ' · 최종 ' + vr.xg + '등급' : '') : '의결 결과를 지웠습니다')); } return; }
   if (e.target.classList.contains('comChk')){ if (e.target.checked) S.com.sel[e.target.dataset.no] = 1; else delete S.com.sel[e.target.dataset.no]; render(); }
 });
 document.addEventListener('click', function(e){
   var t = e.target;
-  if (t.closest('.comChk') || t.id === 'comAll'){ e.stopPropagation(); return; }
-  var y = t.closest('[data-cy]'); if (y){ S.com.year = +y.dataset.cy; if (y.dataset.cq) S.com.q = y.dataset.cq; render(); return; }
-  var q = t.closest('[data-cq]'); if (q){ S.com.q = q.dataset.cq === 'all' ? 'all' : q.dataset.cq; render(); return; }
+  if (t.closest('.comChk') || t.id === 'comAll' || t.closest('.vsel')){ e.stopPropagation(); return; }
+  var y = t.closest('[data-cy]'); if (y){ S.com.year = +y.dataset.cy; if (y.dataset.qone){ S.com.qs = {}; S.com.qs[y.dataset.qone] = 1; } render(); return; }
+  if (t.closest('#comQAll')){ S.com.qs = { 1:1, 2:1, 3:1, 4:1 }; render(); return; }
+  var q = t.closest('[data-cq]'); if (q){ var k = q.dataset.cq;
+    if (S.com.qs[k]){ if (qList().length === 1) return toast('분기는 하나 이상 선택해야 합니다', true); delete S.com.qs[k]; } else S.com.qs[k] = 1; render(); return; }
+  if (t.closest('#comVoteAll')){ var VS = comRows().filter(function(r){ return S.com.sel[r.no]; }); VS.forEach(function(r){ setVote(r, 'vote', '원안 의결'); }); render(); toast('선택 안건 ' + VS.length + '건을 원안 의결로 입력했습니다'); return; }
   var bs = t.closest('[data-cb]'); if (bs){ S.com.basis = bs.dataset.cb; render(); return; }
   var pp = t.closest('[data-cp]'); if (pp){ S.com.per = +pp.dataset.cp; render(); return; }
   if (t.closest('#comSelAll')){ comRows().forEach(function(r){ S.com.sel[r.no] = 1; }); render(); return; }

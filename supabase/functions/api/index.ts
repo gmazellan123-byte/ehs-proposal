@@ -424,7 +424,9 @@ async function actImport(req: Request, body: any) {
     const code = String(r.orgCode ?? "").trim();
     if (!codes.has(code)) { invalid.push({ row: rowNo, reason: `알 수 없는 부서코드: ${code || "(빈칸)"}` }); continue; }
     const role = ["worker", "manager", "team"].includes(r.role) ? r.role : "";
-    byHash.set(await hmacHex(emp), { org_code: code, role, name_mask: maskName(r.nameMask) ?? "" });
+    // 결재선 직책 단계 (직책 열이 있는 명단만 보냄 — 없으면 기존 값 유지)
+    const posPart = typeof r.pos === "string" ? { pos: ["part_lead", "team_lead", "group_lead"].includes(r.pos) ? r.pos : "" } : {};
+    byHash.set(await hmacHex(emp), { org_code: code, role, name_mask: maskName(r.nameMask) ?? "", ...posPart });
   }
   const rows = [...byHash.entries()].map(([h, v]: [string, any]) => ({ ...v, emp_hash: h }));
   let result = { inserted: 0, updated: 0, skipped: 0 };

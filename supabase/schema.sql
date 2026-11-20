@@ -61,6 +61,8 @@ alter table public.employees add column if not exists part text check (char_leng
 alter table public.employees add column if not exists name_mask text check (char_length(name_mask) <= 20);
 alter table public.employees add column if not exists org_code text references public.org_units(code) on update cascade on delete set null;
 alter table public.employees add column if not exists org_path text;
+-- 직책 단계 (결재선용): part_lead=SE파트장 / team_lead=SE팀장 / group_lead=그룹장 — 인사명단 직책으로 자동 설정 (직책 원문은 저장하지 않음)
+alter table public.employees add column if not exists pos text check (pos in ('part_lead','team_lead','group_lead'));
 create index if not exists employees_team_idx on public.employees (team);
 create index if not exists employees_path_idx on public.employees (org_path text_pattern_ops);
 create index if not exists employees_site_idx on public.employees (site);
@@ -119,6 +121,25 @@ alter table public.reports add column if not exists edited_at timestamptz;   -- 
 --   인원이 퇴직·삭제되어도 식별코드(사번 해시)와 제출 당시 성명(마스킹)은 제출건에 그대로 남음
 alter table public.reports drop constraint if exists reports_emp_hash_fkey;
 alter table public.reports add column if not exists author_mask text check (char_length(author_mask) <= 20);
+-- 접수번호: 그룹 기준 일련번호 (예: 평택-26-0012 = 평택그룹 2026년 12번째) · 제출 순간 정해지고 바뀌지 않는 고유값
+alter table public.reports add column if not exists rcpt_no    text;
+alter table public.reports add column if not exists rcpt_group text;
+alter table public.reports add column if not exists rcpt_year  int;
+alter table public.reports add column if not exists rcpt_seq   int;
+create unique index if not exists reports_rcpt_no_uq on public.reports (rcpt_no);
+create unique index if not exists reports_rcpt_seq_uq on public.reports (rcpt_group, rcpt_year, rcpt_seq);
+-- 개선제안 결재선: 1차 SE파트장 → (가·나·다) 2차 SE팀장 → 위원회 의결예정 / (라) 1차에서 조치완료
+--   appr_step : 1 · 2 = 결재 진행 단계, null = 결재 없음(종료 · 다른 유형)
+--   appr_pos · appr_path : 지금 결재할 사람의 직책 단계와 소속 경로 (없으면 그룹장 · 사업팀 · 본사가 대행)
+alter table public.reports add column if not exists appr_step smallint check (appr_step in (1, 2));
+alter table public.reports add column if not exists appr_pos  text;
+alter table public.reports add column if not exists appr_path text;
+create table if not exists public.rcpt_counters (
+  grp  text not null,
+  yr   int  not null,
+  last int  not null default 0,
+  primary key (grp, yr)
+);
 
 -- ---------------------------------------------------------------------
 -- 4. 처리 이력
@@ -137,6 +158,11 @@ create table if not exists public.report_logs (
 create index if not exists report_logs_report_idx on public.report_logs (report_id, created_at);
 -- kind : submit 접수 / process 처리(상태·등급·의견) / edit 작성자 내용 수정
 alter table public.report_logs add column if not exists kind text;
+-- 결재 기록: 1차 승인 · 2차 상신 · 반려 · 대행 여부 / 처리 직후의 결재 단계 (이력 삭제 시 되돌리기용)
+alter table public.report_logs add column if not exists note text;
+alter table public.report_logs add column if not exists appr_step smallint;
+alter table public.report_logs add column if not exists appr_pos text;
+alter table public.report_logs add column if not exists appr_path text;
 
 -- ---------------------------------------------------------------------
 -- 4-1. 실명 대조 기록 (PC에서 인사명단과 대조해 실명 엑셀을 만들 때마다 서버 함수가 기록)
@@ -257,18 +283,22 @@ begin
     if v_role not in ('worker', 'manager', 'team') then v_role := null; end if;
     if public.is_support_unit(r->>'org_code') then v_role := 'team'; end if;   -- 지원그룹 인원은 직책과 관계없이 사업팀
     if v_cur is null then
-      insert into public.employees (emp_hash, role, org_code, name_mask)
-      values (r->>'emp_hash', coalesce(v_role, 'worker'), r->>'org_code', nullif(r->>'name_mask', ''));
+      insert into public.employees (emp_hash, role, org_code, name_mask, pos)
+      values (r->>'emp_hash', coalesce(v_role, 'worker'), r->>'org_code', nullif(r->>'name_mask', ''),
+              case when r->>'pos' in ('part_lead','team_lead','group_lead') then r->>'pos' end);
       ins := ins + 1;
     else
       update public.employees
          set org_code  = r->>'org_code',
              role      = case when v_cur = 'hq' then role else coalesce(v_role, role) end,
-             name_mask = coalesce(nullif(r->>'name_mask', ''), name_mask)
+             name_mask = coalesce(nullif(r->>'name_mask', ''), name_mask),
+             pos       = case when not (r ? 'pos') then pos   -- 직책 정보가 없는 업로드(구버전)면 그대로
+                              when r->>'pos' in ('part_lead','team_lead','group_lead') then r->>'pos' else null end
        where emp_hash = r->>'emp_hash';
       upd := upd + 1;
     end if;
   end loop;
+  perform public.refresh_approvers();   -- 직책 · 소속이 바뀌었으면 결재 대기 건의 결재자도 다시 찾기
   return jsonb_build_object('inserted', ins, 'updated', upd, 'skipped', 0);
 end $$;
 revoke all on function public.import_employees(jsonb) from public, anon, authenticated;
@@ -325,10 +355,54 @@ create trigger trg_employees_fill_unit
   before insert or update on public.employees
   for each row execute function public.employees_fill_unit();
 
+-- 6-1b) 접수번호 · 결재선 도움 함수
+create or replace function public.rcpt_label(p_site text, p_team text)
+returns text language sql immutable as $$
+  select case when nullif(regexp_replace(btrim(coalesce(p_site, '')), '그룹$', ''), '') is not null then regexp_replace(btrim(p_site), '그룹$', '')
+              when nullif(btrim(coalesce(p_team, '')), '') is not null and btrim(p_team) <> '본사' then btrim(p_team)
+              else '본사' end
+$$;
+create or replace function public.pos_level(p text) returns int language sql immutable as $$
+  select case p when 'part_lead' then 1 when 'team_lead' then 2 when 'group_lead' then 3 end
+$$;
+create or replace function public.pos_label(p text) returns text language sql immutable as $$
+  select case p when 'part_lead' then 'SE파트장' when 'team_lead' then 'SE팀장' when 'group_lead' then '그룹장' else '그룹장 · 사업팀 · 본사' end
+$$;
+-- 결재자 찾기: 제출건 소속 경로를 포함하는 가장 가까운 결재자 (p_from 단계 이상, 작성자 본인 제외)
+--   SE파트장이 없으면 SE팀장, SE팀장도 없으면 그룹장이 결재 · 아무도 없으면 null (그룹장 · 사업팀 · 본사가 대행)
+create or replace function public.pick_approver(p_path text, p_author text, p_from int)
+returns text[] language sql stable security definer set search_path = public as $$
+  select array[e.pos, e.org_path] from public.employees e
+   where e.active and e.pos is not null and public.pos_level(e.pos) >= p_from and e.org_path is not null
+     and left(coalesce(p_path, ''), length(e.org_path)) = e.org_path and e.emp_hash is distinct from p_author
+   order by public.pos_level(e.pos), length(e.org_path) desc limit 1
+$$;
+revoke all on function public.pick_approver(text, text, int) from public, anon;
+grant execute on function public.pick_approver(text, text, int) to authenticated;
+-- 결재 대기 건의 결재자 다시 찾기: 결재자가 없거나(직책 미등록) 퇴직 · 직책 변경 · 조직 개편으로 사라진 경우
+--   인원 백데이터 반영 직후와 이 파일 실행 시 자동 호출 (서버 전용)
+create or replace function public.refresh_approvers()
+returns int language plpgsql security definer set search_path = public as $$
+declare r record; v_ap text[]; n int := 0;
+begin
+  perform set_config('ehs.org_sync', '1', true);
+  for r in select id, org_path, emp_hash, appr_step, appr_pos, appr_path from public.reports x
+            where x.type = 'proposal' and x.appr_step is not null
+              and not exists (select 1 from public.employees e where e.active and e.pos = x.appr_pos and e.org_path = x.appr_path) loop
+    v_ap := public.pick_approver(r.org_path, r.emp_hash, case when r.appr_step = 2 then 2 else 1 end);
+    if v_ap[1] is distinct from r.appr_pos or v_ap[2] is distinct from r.appr_path then
+      update public.reports set appr_pos = v_ap[1], appr_path = v_ap[2] where id = r.id; n := n + 1;
+    end if;
+  end loop;
+  perform set_config('ehs.org_sync', '', true);
+  return n;
+end $$;
+revoke all on function public.refresh_approvers() from public, anon, authenticated;
+
 -- 6-2) 등록: 작성자·소속·상태를 서버가 강제로 채움 (조작 방지)
 create or replace function public.reports_before_insert()
 returns trigger language plpgsql security definer set search_path = public as $$
-declare e public.employees;
+declare e public.employees; v_lbl text; v_yr int; v_seq int; v_ap text[];
 begin
   select * into e from public.employees where user_id = auth.uid() and active;
   if not found then raise exception '등록되지 않았거나 사용이 중지된 계정입니다'; end if;
@@ -364,6 +438,19 @@ begin
     if new.occurred_at > now() + interval '5 minutes' then raise exception '발생 일시가 미래입니다'; end if;
     new.proposed_grade := null; new.request := null;
   end if;
+  -- 접수번호: 그룹 기준 · 연도별 일련번호 (동시에 여러 건이 와도 번호가 겹치지 않음)
+  v_lbl := public.rcpt_label(e.site, e.team);
+  v_yr  := extract(year from (now() at time zone 'Asia/Seoul'))::int;
+  insert into public.rcpt_counters as c (grp, yr, last) values (v_lbl, v_yr, 1)
+    on conflict (grp, yr) do update set last = c.last + 1 returning c.last into v_seq;
+  new.rcpt_group := v_lbl; new.rcpt_year := v_yr; new.rcpt_seq := v_seq;
+  new.rcpt_no := v_lbl || '-' || lpad((v_yr % 100)::text, 2, '0') || '-' || lpad(v_seq::text, 4, '0');
+  -- 결재선: 개선제안은 1차(SE파트장)부터
+  if new.type = 'proposal' then
+    new.appr_step := 1; v_ap := public.pick_approver(e.org_path, e.emp_hash, 1); new.appr_pos := v_ap[1]; new.appr_path := v_ap[2];
+  else
+    new.appr_step := null; new.appr_pos := null; new.appr_path := null;
+  end if;
   return new;
 end $$;
 
@@ -372,13 +459,19 @@ create trigger trg_reports_before_insert
   before insert on public.reports
   for each row execute function public.reports_before_insert();
 
--- 6-3) 처리: 결정등급 규칙 적용
---      개선제안을 '조치완료'로 처리할 때 결정등급 필수
---      결정등급 가·나·다 → 상태가 자동으로 '위원회 의결예정(committee)'으로 종료
+-- 6-3) 처리: 결정등급 · 결재선 규칙 적용
+--      개선제안: 1차 SE파트장이 결정등급 확정 → 라 = 조치완료 / 가·나·다 = 2차 SE팀장 → 승인 시 '위원회 의결예정(committee)'
+--      어느 단계에서든 반려 가능 · 지금 차례가 아닌 사람은 그룹장 · 사업팀 · 본사만 대행 (이력에 '대행' 표시)
 create or replace function public.reports_before_update()
 returns trigger language plpgsql security definer set search_path = public as $$
 declare v_staff boolean; v_author boolean; v_content boolean; v_proc boolean;
+        v_me public.employees; v_desig boolean; v_proxy boolean; v_step int; v_note text; v_ap text[]; v_revert boolean;
 begin
+  v_revert := current_setting('ehs.revert', true) = '1';   -- 이력 삭제로 직전 단계 되돌리기 (delete_report_log 안에서만)
+  -- 접수번호는 어떤 경우에도 바뀌지 않음 (최초 부여 이후)
+  if old.rcpt_no is not null then
+    new.rcpt_no := old.rcpt_no; new.rcpt_group := old.rcpt_group; new.rcpt_year := old.rcpt_year; new.rcpt_seq := old.rcpt_seq;
+  end if;
   -- 서버 내부 정리 작업(제출 당시 성명 채우기)만 허용 — 그 외 항목·수정시각은 그대로
   if auth.uid() is null and current_setting('ehs.org_sync', true) = '1' then
     new.team := old.team; new.site := old.site; new.dept := old.dept; new.part := old.part;
@@ -411,6 +504,7 @@ begin
     new.type := old.type; new.created_at := old.created_at; new.author_id := old.author_id; new.emp_hash := old.emp_hash;
     new.team := old.team; new.site := old.site; new.dept := old.dept; new.part := old.part; new.org_code := old.org_code; new.org_path := old.org_path;
     new.author_mask := old.author_mask;
+    new.appr_step := old.appr_step; new.appr_pos := old.appr_pos; new.appr_path := old.appr_path;
     new.edited_at := now(); new.updated_at := now();
     return new;
   end if;
@@ -424,6 +518,8 @@ begin
   new.org_code := old.org_code; new.org_path := old.org_path;
   new.emp_hash := old.emp_hash; new.author_mask := old.author_mask;     -- 식별코드·제출 당시 성명은 영구 보존 (인원 삭제와 무관)
   new.risk_level := old.risk_level;
+  if not v_revert then new.appr_step := old.appr_step; new.appr_pos := old.appr_pos; new.appr_path := old.appr_path; end if;
+  if new.type <> 'proposal' then new.appr_step := null; new.appr_pos := null; new.appr_path := null; end if;
   if new.type = 'nearmiss' then
     if new.status not in ('received','reviewing','done') then
       raise exception '아차사고는 접수/검토중/조치완료 상태만 사용할 수 있습니다';
@@ -441,11 +537,52 @@ begin
     end if;
   else
     new.final_risk := null;
-    if new.status in ('done','committee') then
-      if new.final_grade is null then raise exception '조치완료 처리 시 결정 등급을 선택해야 합니다'; end if;
-      new.status := case when new.final_grade in ('가','나','다') then 'committee' else 'done' end;
-    else
-      new.final_grade := null;
+    if v_revert then
+      null;   -- 되돌리기: delete_report_log 가 지정한 상태 · 등급 · 결재 단계 그대로
+    elsif v_proc then
+      -- 결재 권한: 지금 차례의 결재자(직책 단계 + 소속) 또는 대행(그룹장 · 사업팀 · 본사 · 서버)
+      select * into v_me from public.employees where user_id = auth.uid();
+      v_desig := old.appr_step is not null and v_me.pos is not null and v_me.pos = old.appr_pos and v_me.org_path = old.appr_path;
+      v_proxy := auth.uid() is null or v_me.role in ('team','hq') or v_me.pos = 'group_lead';
+      if old.appr_step is null and old.status in ('done','committee','rejected') and not v_proxy then
+        raise exception '결재가 끝난 건은 그룹장 · 사업팀 · 본사만 다시 열 수 있습니다';
+      end if;
+      if old.appr_step is not null and not (v_desig or v_proxy) then
+        raise exception '지금은 %차 결재(%) 차례입니다', old.appr_step, public.pos_label(old.appr_pos);
+      end if;
+      v_step := coalesce(old.appr_step, 1);
+      if old.appr_step is null and old.status in ('done','committee','rejected') and new.status = old.status then
+        new.final_grade := old.final_grade; v_note := '처리 의견 수정';   -- 결재가 끝난 건: 의견만 고침 (상태 · 등급 그대로)
+      elsif new.status in ('received','reviewing') then
+        if old.appr_step is null and old.status in ('done','committee','rejected') then   -- 다시 열기 → 1차부터
+          new.status := 'reviewing'; new.final_grade := null; new.appr_step := 1;
+          v_ap := public.pick_approver(old.org_path, old.emp_hash, 1); new.appr_pos := v_ap[1]; new.appr_path := v_ap[2];
+          v_note := '다시 열기 · 1차 결재';
+        elsif v_step = 2 then
+          new.status := 'reviewing'; new.final_grade := coalesce(new.final_grade, old.final_grade); v_note := '2차 검토';
+        else
+          new.final_grade := null; v_note := '1차 검토';
+        end if;
+      elsif new.status = 'rejected' then
+        new.final_grade := null; new.appr_step := null; new.appr_pos := null; new.appr_path := null; v_note := v_step || '차 반려';
+      else   -- 승인 (done · committee)
+        if new.final_grade is null then raise exception '결재 시 결정 등급을 선택해야 합니다'; end if;
+        if new.final_grade = '라' then
+          new.status := 'done'; new.appr_step := null; new.appr_pos := null; new.appr_path := null; v_note := v_step || '차 승인 · 조치완료(라 등급)';
+        elsif v_step = 1 and coalesce(public.pos_level(old.appr_pos), 1) >= 2 then
+          -- SE파트장이 없어 SE팀장(이상)이 1차를 맡은 경우: 같은 단계 결재를 두 번 받지 않고 바로 위원회 의결예정
+          new.status := 'committee'; new.appr_step := null; new.appr_pos := null; new.appr_path := null;
+          v_note := '1차 승인(' || public.pos_label(old.appr_pos) || ') · 위원회 의결예정';
+        elsif v_step = 1 then
+          new.status := 'reviewing'; new.appr_step := 2;
+          v_ap := public.pick_approver(old.org_path, old.emp_hash, 2);
+          new.appr_pos := v_ap[1]; new.appr_path := v_ap[2]; v_note := '1차 승인 · 2차 결재(' || public.pos_label(v_ap[1]) || ') 상신';
+        else
+          new.status := 'committee'; new.appr_step := null; new.appr_pos := null; new.appr_path := null; v_note := '2차 승인 · 위원회 의결예정';
+        end if;
+      end if;
+      if auth.uid() is not null and not v_desig and old.appr_step is not null then v_note := v_note || ' · 대행'; end if;
+      perform set_config('ehs.appr_note', v_note, true);
     end if;
   end if;
 
@@ -475,19 +612,23 @@ returns trigger language plpgsql security definer set search_path = public as $$
 declare v_code text; v_role text;
 begin
   if current_setting('ehs.skip_log', true) = '1' then return null; end if;   -- 이력 삭제로 되돌릴 때는 기록하지 않음
+  if auth.uid() is null and current_setting('ehs.org_sync', true) = '1' then return null; end if;   -- 서버 정리 작업은 기록하지 않음
   select emp_code, role into v_code, v_role from public.employees where user_id = auth.uid();
   if tg_op = 'INSERT' then
-    insert into public.report_logs (report_id, from_status, to_status, comment, changed_by_code, changed_by_role, kind)
-    values (new.id, null, new.status, '접수', v_code, v_role, 'submit');
+    insert into public.report_logs (report_id, from_status, to_status, comment, changed_by_code, changed_by_role, kind, appr_step, appr_pos, appr_path)
+    values (new.id, null, new.status, '접수', v_code, v_role, 'submit', new.appr_step, new.appr_pos, new.appr_path);
   elsif new.edited_at is distinct from old.edited_at then
     insert into public.report_logs (report_id, from_status, to_status, comment, changed_by_code, changed_by_role, kind)
     values (new.id, old.status, new.status, '작성자가 내용을 수정했습니다', v_code, v_role, 'edit');
   elsif new.status is distinct from old.status
         or new.final_grade is distinct from old.final_grade
         or new.final_risk is distinct from old.final_risk
-        or new.admin_comment is distinct from old.admin_comment then
-    insert into public.report_logs (report_id, from_status, to_status, final_grade, comment, changed_by_code, changed_by_role, kind)
-    values (new.id, old.status, new.status, coalesce(new.final_grade, new.final_risk), new.admin_comment, v_code, v_role, 'process');
+        or new.admin_comment is distinct from old.admin_comment
+        or new.appr_step is distinct from old.appr_step then
+    insert into public.report_logs (report_id, from_status, to_status, final_grade, comment, changed_by_code, changed_by_role, kind, note, appr_step, appr_pos, appr_path)
+    values (new.id, old.status, new.status, coalesce(new.final_grade, new.final_risk), new.admin_comment, v_code, v_role, 'process',
+            nullif(current_setting('ehs.appr_note', true), ''), new.appr_step, new.appr_pos, new.appr_path);
+    perform set_config('ehs.appr_note', '', true);
   end if;
   return null;
 end $$;
@@ -502,7 +643,7 @@ create trigger trg_reports_after_change
 --      ('검토중'을 지우면 다시 '접수' → 작성자가 다시 수정 가능). 최초 '접수' 기록은 지울 수 없음
 create or replace function public.delete_report_log(p_log_id bigint)
 returns public.reports language plpgsql security definer set search_path = public as $$
-declare l public.report_logs; r public.reports; latest bigint; prev public.report_logs; v_role text;
+declare l public.report_logs; r public.reports; latest bigint; prev public.report_logs; sub public.report_logs; v_role text;
 begin
   select * into l from public.report_logs where id = p_log_id;
   if not found then raise exception '이력을 찾을 수 없습니다'; end if;
@@ -510,6 +651,11 @@ begin
   v_role := public.my_role();
   if v_role is null or v_role = 'worker' or not public.in_scope(r.org_path) then raise exception '이력을 삭제할 권한이 없습니다'; end if;
   if coalesce(l.kind, case when l.from_status is null then 'submit' else 'process' end) = 'submit' then raise exception '최초 접수 기록은 삭제할 수 없습니다'; end if;
+  -- 결재선이 적용된 개선제안: 결재를 되돌리는 것이므로 그룹장 · 사업팀 · 본사만
+  if r.type = 'proposal' and r.rcpt_no is not null and v_role not in ('team','hq')
+     and coalesce((select pos from public.employees where user_id = auth.uid()), '') <> 'group_lead' then
+    raise exception '개선제안 결재 이력은 그룹장 · 사업팀 · 본사만 삭제할 수 있습니다';
+  end if;
   select max(id) into latest from public.report_logs
    where report_id = r.id and coalesce(kind, case when from_status is null then 'submit' else 'process' end) = 'process';
   delete from public.report_logs where id = l.id;
@@ -517,13 +663,20 @@ begin
     select * into prev from public.report_logs
      where report_id = r.id and id < l.id and coalesce(kind, case when from_status is null then 'submit' else 'process' end) = 'process'
      order by id desc limit 1;
+    select * into sub from public.report_logs
+     where report_id = r.id and coalesce(kind, case when from_status is null then 'submit' else 'process' end) = 'submit' order by id limit 1;
     perform set_config('ehs.skip_log', '1', true);
+    perform set_config('ehs.revert', '1', true);
     update public.reports set
       status        = coalesce(l.from_status, 'received'),
       final_grade   = case when r.type = 'proposal' then prev.final_grade end,
       final_risk    = case when r.type = 'risk' then prev.final_grade end,
-      admin_comment = prev.comment
+      admin_comment = prev.comment,
+      appr_step     = case when r.type <> 'proposal' then null when prev.id is not null then prev.appr_step else coalesce(sub.appr_step, 1) end,
+      appr_pos      = case when r.type <> 'proposal' then null when prev.id is not null then prev.appr_pos else sub.appr_pos end,
+      appr_path     = case when r.type <> 'proposal' then null when prev.id is not null then prev.appr_path else sub.appr_path end
      where id = r.id returning * into r;
+    perform set_config('ehs.revert', '', true);
     perform set_config('ehs.skip_log', '', true);
   end if;
   return r;
@@ -548,6 +701,8 @@ alter table public.reports     enable row level security;
 alter table public.report_logs enable row level security;
 alter table public.export_logs enable row level security;
 alter table public.import_logs enable row level security;
+alter table public.rcpt_counters enable row level security;   -- 정책 없음 = 앱에서 직접 접근 불가 (트리거만 사용)
+revoke all on public.rcpt_counters from anon, authenticated;
 
 revoke all on public.org_units, public.employees, public.reports, public.report_logs from anon, authenticated;
 
@@ -637,6 +792,29 @@ select set_config('ehs.org_sync', '1', false);
 update public.reports r set author_mask = e.name_mask
   from public.employees e where r.emp_hash = e.emp_hash and r.author_mask is null and e.name_mask is not null;
 select set_config('ehs.org_sync', '', false);
+--    · 접수번호가 없는 기존 건: 그룹별 · 연도별로 제출 순서대로 번호 부여
+--    · 진행 중(접수 · 검토중)인 개선제안: 1차 결재(SE파트장)부터
+do $$
+declare r record; v_lbl text; v_yr int; v_seq int; v_ap text[];
+begin
+  perform set_config('ehs.org_sync', '1', true);
+  for r in select id, site, team, created_at from public.reports where rcpt_no is null order by created_at, report_no loop
+    v_lbl := public.rcpt_label(r.site, r.team);
+    v_yr  := extract(year from (r.created_at at time zone 'Asia/Seoul'))::int;
+    insert into public.rcpt_counters as c (grp, yr, last) values (v_lbl, v_yr, 1)
+      on conflict (grp, yr) do update set last = c.last + 1 returning c.last into v_seq;
+    update public.reports set rcpt_group = v_lbl, rcpt_year = v_yr, rcpt_seq = v_seq,
+           rcpt_no = v_lbl || '-' || lpad((v_yr % 100)::text, 2, '0') || '-' || lpad(v_seq::text, 4, '0')
+     where id = r.id;
+  end loop;
+  for r in select id, org_path, emp_hash from public.reports
+            where type = 'proposal' and status in ('received','reviewing') and appr_step is null loop
+    v_ap := public.pick_approver(r.org_path, r.emp_hash, 1);
+    update public.reports set appr_step = 1, appr_pos = v_ap[1], appr_path = v_ap[2] where id = r.id;
+  end loop;
+  perform set_config('ehs.org_sync', '', true);
+  perform public.refresh_approvers();
+end $$;
 
 -- 완료 확인: 4개 테이블이 보이면 정상 (org_units 는 본사 콘솔에서 인사 명단을 올리면 채워짐)
 select 'org_units' as t, count(*) from public.org_units

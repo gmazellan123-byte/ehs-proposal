@@ -67,7 +67,7 @@ td{padding:8px 10px;border-bottom:1px solid #EDF1F6;white-space:nowrap;vertical-
 tbody tr:hover td{background:#F4F9FE}
 #tbl tbody tr{cursor:pointer}
 td.ell{max-width:180px;overflow:hidden;text-overflow:ellipsis}
-td.ell.w{max-width:300px;color:var(--soft)}
+td.ell.w{max-width:300px;color:var(--soft)}#comList .ell{max-width:120px}#comList .ell.w{max-width:190px}#comList td,#comList th{padding-left:7px;padding-right:7px}
 td.num{text-align:right;font-family:Consolas,monospace}
 .mono{font-family:Consolas,monospace}
 .tt{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11.5px;font-weight:800}
@@ -181,6 +181,10 @@ details.paste .btn{margin-top:6px}
 .ccount{margin:12px 0 8px;font-size:13px;color:var(--soft)}.ccount b{color:var(--brand);font-size:16px}
 .btn.big{width:100%;padding:12px;font-size:14.5px}.btn:disabled{opacity:.45;cursor:not-allowed}
 .ctrl .hint{font-size:11.5px;color:var(--faint);margin-top:8px;line-height:1.5}
+.ctrl h4{display:flex;align-items:center;justify-content:space-between}.lk{border:0;background:none;color:var(--brand);font-size:11.5px;font-weight:800;cursor:pointer;padding:0}
+.tgs.q4{display:grid;grid-template-columns:repeat(4,1fr)}.tgs.q4 .tg{padding:7px 0}
+.vsel{padding:4px 6px;border:1px solid #C9D6E5;border-radius:7px;font-size:12.5px;font-weight:700;background:#fff;color:var(--ink)}.vsel.xg{width:54px}.vsel:disabled{background:#F1F5F9;color:#94A3B8}
+tr.vdone td{background:#F3FBF6}.st.sv{background:#DCFCE7;color:#166534}b.xg{color:#C2410C}
 .cview{display:flex;flex-direction:column;gap:12px;min-width:0}.cview .panel{margin-top:0}.kpis.k4{grid-template-columns:repeat(4,1fr)}
 .qcell{cursor:pointer}.qcell:hover{background:#EEF6FD}.qcell.on{background:#DBEAFE;font-weight:800}
 .pv{padding:12px;background:#E9EEF5;min-height:120px}.pvwrap{display:flex;flex-direction:column;align-items:center;gap:12px}.pvbox{overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.18);background:#fff}.pvbox .agpage{transform-origin:0 0}
@@ -200,6 +204,15 @@ details.paste .btn{margin-top:6px}
 .pt1 .ab.main p{-webkit-line-clamp:12;font-size:12.5pt}.pt1 .ab p{-webkit-line-clamp:4}.pt2 .ab.main p{-webkit-line-clamp:10}.pt2 .ab p{-webkit-line-clamp:3}
 .pt4 .ab.main p{-webkit-line-clamp:3;font-size:10pt}.pt4 .ab p{-webkit-line-clamp:1;font-size:9.5pt}.pt4 .ab{margin-bottom:1mm}.pt4 .ab.cmt{display:none}.pt4 .ag{padding:3mm 4mm}.pt4 .ag-h{margin-bottom:1mm}.pt4 .ano{font-size:10pt}.pt4 .grd{font-size:9pt}.pt4 .grd b{font-size:11pt}.pt4 .ag h3{font-size:12pt;margin:.5mm 0 1mm}.pt4 .meta{font-size:8pt;padding-bottom:1.5mm;margin-bottom:1.5mm}.pt4 .ab label{font-size:8pt;margin-bottom:.3mm}.pt4 .vote{padding-top:1.5mm;font-size:9pt}.pt4 .items{gap:4mm}.pt4 .ag h3{font-size:12.5pt}.pt4 .meta{font-size:8.5pt}
 .vote{margin-top:auto;display:flex;align-items:center;gap:5mm;padding-top:2.5mm;border-top:.3mm solid #CBD5E1;font-size:10pt;font-weight:700}.vote label{color:#fff;background:#13233F;padding:.8mm 2.5mm;border-radius:1.2mm;font-size:9pt}.vote em{margin-left:auto;font-style:normal;color:#94A3B8;border-bottom:.3mm solid #CBD5E1;min-width:40mm}
+/* PT용 큰 글씨 (검토 의견 없음) */
+.agpage header b{font-size:20pt}.pbadge{font-size:11.5pt}.pno{font-size:12pt}.agpage footer{font-size:9.5pt}
+.ano{font-size:14pt}.grd{font-size:12pt}.grd b{font-size:15pt}.grd b.fx{color:#15803D}
+.ag h3{font-size:19pt;margin:1.5mm 0 2.5mm}.meta{font-size:11pt;gap:1.2mm 6mm}
+.ab label{font-size:10.5pt;margin-bottom:1mm}.ab p{font-size:13pt;line-height:1.5}
+.vote{font-size:12pt;gap:6mm;padding-top:3mm}.vote label{font-size:10.5pt}.vote span.on{color:#15803D}.vote em{color:#475569;min-width:45mm}.vote em b{color:#15803D;font-size:14pt;margin-left:2mm}
+.pt1 .ag h3{font-size:24pt}.pt1 .meta{font-size:12.5pt}.pt1 .ab label{font-size:12pt}.pt1 .ab.main p{font-size:17pt;-webkit-line-clamp:10}.pt1 .ab p{font-size:15pt;-webkit-line-clamp:4}.pt1 .vote{font-size:14pt}.pt1 .grd{font-size:14pt}.pt1 .grd b{font-size:18pt}.pt1 .ano{font-size:16pt}
+.vote>*{white-space:nowrap}.pt2 .vote{gap:4mm;font-size:11.5pt}.pt2 .vote em{min-width:30mm}.pt2 .ab.main p{font-size:14pt;-webkit-line-clamp:9}.pt2 .ab p{font-size:13pt;-webkit-line-clamp:3}
+.pt4 .ag h3{font-size:14pt}.pt4 .meta{font-size:9.5pt}.pt4 .ab label{font-size:9pt}.pt4 .ab.main p{font-size:11.5pt;-webkit-line-clamp:3}.pt4 .ab p{font-size:10.5pt;-webkit-line-clamp:1}.pt4 .vote{font-size:10.5pt;gap:4mm}.pt4 .vote em{min-width:30mm}.pt4 .ano{font-size:11pt}.pt4 .grd{font-size:10pt}.pt4 .grd b{font-size:12pt}
 /* ---- 데이터 현황 보고서 (A4 세로) ---- */
 #printArea{display:none}
 .rp{font-family:'Pretendard','Noto Sans KR','Malgun Gothic',sans-serif;color:#13233F;font-size:9.5pt}
@@ -306,21 +319,22 @@ details.paste .btn{margin-top:6px}
    <div class="bar"><div class="tabs"><button class="subtab on" data-sub="list">접수 내역</button><button class="subtab" data-sub="people">제출자별 집계</button></div><span class="dim">머리글을 누르면 정렬 · 저장 엑셀에도 같은 순서로 들어갑니다</span></div>
    <div class="tw" id="stTbl"></div><div id="stPager" class="pagerx"></div>
   </div>
-  <p class="foot">소속은 제출 당시(최초 등록 부서) 기준입니다. 완료 = 조치완료 · 반영 완료 · 위원회 의결. 미확인 = KEY 범위 밖 인원(KEY 발급 이후 신규 인원 등).</p>
+  <p class="foot">소속은 제출 당시(최초 등록 부서) 기준입니다. 완료 = 조치완료 · 반영 완료 · 위원회 의결. 개선제안 등급 = 제안등급 → 결정등급(1 · 2차 결재) → 최종등급(산안위 의결). 미확인 = KEY 범위 밖 인원(KEY 발급 이후 신규 인원 등).</p>
  </div>
 </section>
-</div>
 <section id="vCom" class="hidden">
- <div class="ph"><h1>③ 산안위 의결</h1><p>위원회 의결예정 개선제안 · 연도 · 분기별 현황과 의안 보고서(가로 PDF)</p></div>
+ <div class="ph"><h1>③ 산안위 의결</h1><p>위원회 의결예정 개선제안 · 연도 · 분기별 현황 · 의결 결과 입력 · 의안 보고서(가로 PDF)</p></div>
  <div class="comgrid">
   <aside class="ctrl">
    <h4>연도</h4><div class="tgs" id="comYears"></div>
-   <h4>분기</h4><div class="tgs" id="comQs"><button class="tg" data-cq="all">전체</button><button class="tg" data-cq="1">1분기</button><button class="tg" data-cq="2">2분기</button><button class="tg" data-cq="3">3분기</button><button class="tg" data-cq="4">4분기</button></div>
+   <h4>분기 <button class="lk" id="comQAll" type="button">전체 선택</button></h4><div class="tgs q4" id="comQs"><button class="tg" data-cq="1">1분기</button><button class="tg" data-cq="2">2분기</button><button class="tg" data-cq="3">3분기</button><button class="tg" data-cq="4">4분기</button></div>
    <h4>분기 기준</h4><div class="tgs" id="comBasis"><button class="tg" data-cb="closed">의결예정 결정일</button><button class="tg" data-cb="at">제출일</button></div>
    <h4>한 페이지에</h4><div class="tgs" id="comPer"><button class="tg" data-cp="1">1건</button><button class="tg" data-cp="2">2건</button><button class="tg" data-cp="4">4건</button></div>
    <label class="chkl"><input type="checkbox" id="comNames" checked> 제안자 실명 · 사번 표시</label>
    <h4>안건 선택</h4><div class="tgs"><button class="tg" id="comSelAll">전체 선택</button><button class="tg" id="comSelNone">선택 해제</button></div>
    <div class="ccount" id="comCount"></div>
+   <h4>의결 결과 입력</h4><button class="btn big" id="comVoteAll" disabled>☑ 선택 안건 원안 의결</button>
+   <p class="hint">목록의 [의결 결과] · [최종등급]에서 건별로 입력합니다. 원안 의결 = 결정등급 그대로 · 수정 의결 = 최종등급 선택 · 부결 = 최종등급 없음. 입력한 결과는 데이터 현황 · 백업 · 브라우저 저장에 함께 들어갑니다.</p>
    <button class="btn pri big" id="comPrint" disabled>🖨 의안 보고서 PDF 출력</button>
    <p class="hint">A4 가로 · PT 형식 · 순번(의안 제N호) · 인쇄 창에서 <b>PDF로 저장</b>을 고르세요.</p>
   </aside>
