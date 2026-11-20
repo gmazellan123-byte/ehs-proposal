@@ -162,7 +162,7 @@ details.paste .btn{margin-top:6px}
 .warnbar .btn{margin-left:auto}
 #saveBtn:disabled{opacity:.45;cursor:not-allowed}
 .sstore{margin-top:14px;padding:9px 11px;border-radius:10px;background:rgba(255,255,255,.08);font-size:12px;line-height:1.5}.sstore i{display:inline-block;width:8px;height:8px;border-radius:50%;background:#94A3B8;margin-right:6px}.sstore i.on{background:#4ADE80}.sstore small{opacity:.75}
-.ph .acts{margin-left:auto;display:flex;gap:6px}#storeBtn.on{background:#EEF9F2;border-color:#9ED8B4;color:#166534}
+.ph .acts{margin-left:auto;display:flex;gap:6px}#storeBtn.on{background:#EEF9F2;border-color:#9ED8B4;color:#166534}#storeDelBtn{color:#B91C1C;border-color:#FCA5A5}#storeDelBtn:hover{background:#FEF2F2}
 .savedbar{display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px 14px;border-radius:11px;background:#EFF6FF;border:1px solid #BFDBFE;font-size:13px}.savedbar .r{margin-left:auto;display:flex;gap:6px}
 .mm{position:fixed;inset:0;background:rgba(15,25,45,.45);display:none;align-items:center;justify-content:center;padding:24px;z-index:60}.mm.open{display:flex}
 .mmbox{width:640px;max-width:96vw;background:#fff;border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,.3);overflow:hidden}.mmbox.sm{width:420px}
@@ -290,7 +290,7 @@ tr.vdone td{background:#F3FBF6}.st.sv{background:#DCFCE7;color:#166534}b.xg{colo
 </section>
 <section id="vStat" class="hidden">
  <div class="ph"><h1>② 데이터 현황</h1><p>조회 · 현황 · 백업 · 보고서</p>
-  <div class="acts"><button class="btn" id="ioBtn">📥 불러오기 · 머지</button><button class="btn" id="bkBtn">📤 백업 내보내기</button><button class="btn" id="storeBtn">💾 브라우저 저장</button><button class="btn sm" id="saveNowBtn" title="지금 저장">지금 저장</button></div></div>
+  <div class="acts"><button class="btn" id="ioBtn">📥 불러오기 · 머지</button><button class="btn" id="bkBtn">📤 백업 내보내기</button><button class="btn" id="storeBtn">💾 브라우저 저장</button><button class="btn sm" id="saveNowBtn" title="지금 저장">지금 저장</button><button class="btn sm del hidden" id="storeDelBtn" title="이 PC 브라우저에 저장한 데이터 삭제">🗑 저장 삭제</button></div></div>
  <div class="savedSlot"></div>
  <div id="statLock" class="lock"><b>아직 넣은 데이터가 없습니다</b><p>① 복호화 탭에서 데이터 파일을 넣으면 여기에서 유형 · 소속 · 기간별 현황을 볼 수 있습니다.</p><button class="btn pri" data-go="dec">① 복호화로 가기</button></div>
  <div id="statMain" class="hidden">

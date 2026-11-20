@@ -444,6 +444,28 @@ input[type=datetime-local]{min-height:46px;}
 .grade-pick.sm button{padding:8px 9px;}
 
 .st-committee{background:#FDEBF3;color:#B4235F;border-color:#F5C2DA;}
+.qchips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-top:7px;padding:1px 18px 3px 1px;-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent);}
+.qchips::-webkit-scrollbar{display:none;}.qchips:empty{display:none;}
+.qc{flex:none;border:1px dashed #B6C4D8;background:#fff;color:var(--ink-soft);font:inherit;font-size:12.5px;font-weight:700;padding:5px 10px;border-radius:999px;white-space:nowrap;cursor:pointer;}
+.qc.on{background:#E8F1FD;border:1px solid #3B82F6;color:#1D4ED8;}.qc.on:before{content:'✓ ';}
+.opt-grid{display:grid;grid-template-columns:300px 1fr;min-height:100%;}
+.opt-nav{border-right:1px solid var(--line);background:#F8FAFD;padding:10px;display:flex;flex-direction:column;gap:4px;}
+.opt-nav .grp{font-size:11.5px;font-weight:800;color:var(--ink-faint);margin:10px 6px 2px;letter-spacing:.3px;}
+.opt-nav button{display:flex;align-items:center;gap:8px;text-align:left;border:1px solid transparent;background:none;border-radius:10px;padding:9px 10px;font:inherit;font-size:13.5px;font-weight:700;color:var(--ink);cursor:pointer;}
+.opt-nav button small{margin-left:auto;font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);}
+.opt-nav button:hover{background:#EEF3F9;}.opt-nav button.on{background:#fff;border-color:#BFD3EE;box-shadow:var(--sh-1);color:var(--brand);}
+.opt-ed{padding:18px 22px;display:flex;flex-direction:column;gap:12px;min-width:0;}
+.opt-ed h3{font-size:18px;font-weight:900;}.opt-ed .where{font-size:13px;color:var(--ink-soft);}
+.opt-rows{display:flex;flex-direction:column;gap:6px;max-width:760px;}
+.opt-row{display:grid;grid-template-columns:30px 1fr 34px 34px 34px;gap:6px;align-items:center;}
+.opt-row .no{font-family:var(--mono);font-size:12px;color:var(--ink-faint);text-align:right;}
+.opt-row input{padding:8px 11px;border:1px solid var(--line2);border-radius:9px;font:inherit;font-size:14px;}
+.opt-row button{height:34px;border:1px solid var(--line2);background:#fff;border-radius:8px;cursor:pointer;color:var(--ink-soft);font-weight:800;}
+.opt-row button:hover{background:#F1F5F9;}.opt-row button.x:hover{background:#FEE2E2;color:#B91C1C;border-color:#FCA5A5;}
+.opt-add{display:flex;gap:8px;max-width:760px;}.opt-add input{flex:1;padding:9px 12px;border:1px dashed #9DB3D1;border-radius:9px;font:inherit;font-size:14px;}
+.opt-acts{display:flex;gap:8px;align-items:center;}.opt-acts .note{margin:0 0 0 6px;}
+.opt-pv{max-width:760px;border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:#FBFCFE;}
+.opt-pv b{display:block;font-size:12px;color:var(--ink-faint);margin-bottom:6px;}.opt-pv select{padding:8px 10px;border-radius:9px;border:1px solid var(--line2);min-width:260px;font:inherit;}
 .appr-tag{display:inline-flex;align-items:center;font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:6px;background:#EEF2FF;color:#3949AB;white-space:nowrap;}
 .appr-tag.mine{background:#3949AB;color:#fff;}
 .appr-line{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:0 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#FAFBFF;font-size:12.5px;}
@@ -1057,9 +1079,9 @@ span.rt-hi{background:#DC2626;} span.rt-md{background:#EA7A0C;} span.rt-lo{backg
         <div class="field"><label class="label"><span class="no">02</span>장소 <span class="req">*</span></label>
           <input type="text" data-f="location" maxlength="100" placeholder="예: B동 2층 출입구, 정문 초소, 지하 주차장"></div>
         <div class="field"><label class="label"><span class="no">03</span>상세 내용 <span class="req">*</span></label>
-          <textarea data-f="detail" maxlength="2000" placeholder="어떤 위험요인이 있는지 구체적으로 작성해주세요 (설비·작업·상황 등)"></textarea><div class="counter" data-count="detail">0 / 2000</div></div>
+          <textarea data-f="detail" maxlength="2000" placeholder="어떤 위험요인이 있는지 구체적으로 작성해주세요 (설비·작업·상황 등)"></textarea><div class="counter" data-count="detail">0 / 2000</div><div class="qchips" data-q="proposal.detail"></div></div>
         <div class="field"><label class="label"><span class="no">04</span>조치 요청사항 <span class="opt">선택</span></label>
-          <textarea data-f="request" maxlength="2000" placeholder="어떻게 개선되었으면 하는지 작성해주세요"></textarea></div>
+          <textarea data-f="request" maxlength="2000" placeholder="어떻게 개선되었으면 하는지 작성해주세요"></textarea><div class="qchips" data-q="proposal.request"></div></div>
         <div class="field"><label class="label"><span class="no">05</span>사진 첨부 <span class="opt">선택</span></label><div data-photo></div>
           <p class="note">보안정책상 촬영이 제한된 사업장에서는 사진 없이 작성해주세요. 사람 얼굴·보안시설이 찍히지 않게 해주세요. 사진의 위치정보(GPS)는 업로드 전에 자동으로 제거됩니다.</p></div>
       </form>
@@ -1070,7 +1092,7 @@ span.rt-hi{background:#DC2626;} span.rt-md{background:#EA7A0C;} span.rt-lo{backg
           <input type="text" data-f="location" maxlength="100" placeholder="예: 정문 초소, B동 지하 전기실, 물류 하역장"></div>
         <div class="field"><label class="label"><span class="no">02</span>위험요인 <span class="opt" id="riskCatHint">선택</span></label><select data-f="category"></select></div>
         <div class="field"><label class="label"><span class="no">03</span>내용 <span class="req">*</span></label>
-          <textarea data-f="detail" maxlength="2000" placeholder="어떤 작업·장소에서 어떤 위험이 있는지, 다칠 수 있는 상황을 작성해주세요"></textarea><div class="counter" data-count="detail">0 / 2000</div></div>
+          <textarea data-f="detail" maxlength="2000" placeholder="어떤 작업·장소에서 어떤 위험이 있는지, 다칠 수 있는 상황을 작성해주세요"></textarea><div class="counter" data-count="detail">0 / 2000</div><div class="qchips" data-q="risk.detail"></div></div>
         <div class="field"><label class="label"><span class="no">04</span>위험정도 <span class="req">*</span><span class="opt">다칠 가능성·심각성 기준</span></label>
           <div class="rl-pick" id="riskPick"></div></div>
       </form>
@@ -1082,9 +1104,9 @@ span.rt-hi{background:#DC2626;} span.rt-md{background:#EA7A0C;} span.rt-lo{backg
           <input type="text" data-f="location" maxlength="100" placeholder="예: 지하 주차장 진입로, A동 2층 계단"></div>
         <div class="field"><label class="label"><span class="no">03</span>사고 유형 <span class="opt" id="catHint">선택</span></label><select data-f="category"></select></div>
         <div class="field"><label class="label"><span class="no">04</span>상황 설명 <span class="req">*</span></label>
-          <textarea data-f="detail" maxlength="2000" placeholder="어떤 상황이었는지 육하원칙으로 작성해주세요"></textarea><div class="counter" data-count="detail">0 / 2000</div></div>
+          <textarea data-f="detail" maxlength="2000" placeholder="어떤 상황이었는지 육하원칙으로 작성해주세요"></textarea><div class="counter" data-count="detail">0 / 2000</div><div class="qchips" data-q="nearmiss.detail"></div></div>
         <div class="field"><label class="label"><span class="no">05</span>재발 방지 의견 <span class="opt">선택</span></label>
-          <textarea data-f="prevention" maxlength="2000" placeholder="같은 상황이 반복되지 않으려면 무엇이 필요할지 작성해주세요"></textarea></div>
+          <textarea data-f="prevention" maxlength="2000" placeholder="같은 상황이 반복되지 않으려면 무엇이 필요할지 작성해주세요"></textarea><div class="qchips" data-q="nearmiss.prevention"></div></div>
         <div class="field"><label class="label"><span class="no">06</span>사진 첨부 <span class="opt">선택</span></label><div data-photo></div>
           <p class="note">보안정책상 촬영이 제한된 사업장에서는 사진 없이 작성해주세요. 위치정보(GPS)는 자동으로 제거됩니다.</p></div>
       </form>
@@ -1184,6 +1206,7 @@ span.rt-hi{background:#DC2626;} span.rt-md{background:#EA7A0C;} span.rt-lo{backg
           <button data-dgo="dlist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg>접수 관리</button>
           <button data-dgo="dorg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>조직 · 인원</button>
           <button data-dgo="dpw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.8-9.8"/><path d="m16 6 3 3"/><path d="m19 3 2 2"/></svg>비밀번호 관리</button>
+          <button data-dgo="dopts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M4 12h16M4 18h7"/><circle cx="17" cy="6" r="2"/><circle cx="14" cy="18" r="2"/></svg>입력 항목 관리</button>
           <button data-dgo="dimport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>데이터/KEY 관리</button>
         </nav>
         <div class="side-foot">
@@ -1258,6 +1281,13 @@ span.rt-hi{background:#DC2626;} span.rt-md{background:#EA7A0C;} span.rt-lo{backg
             <div class="dpanel-sub"><span id="pwCount"></span><span class="note">초기화 시 기존 비밀번호는 즉시 무효 · 본인이 [최초 등록]으로 재설정</span><span class="dtools"><span class="pw-direct"><input id="pwEmp" class="mono" placeholder="사번 입력" maxlength="20"><button class="btn btn-ghost" id="pwEmpBtn">사번으로 초기화</button></span><button class="btn btn-danger" id="pwBulk" disabled>선택 초기화</button></span></div>
             <div class="dpanel-b" id="pwWrap"></div>
             <div class="dpanel-f dpager" id="pwPager"></div>
+          </div>
+        </section>
+
+        <section data-dscreen="dopts" class="hidden">
+          <div class="dpanel">
+            <div class="dpanel-h"><span class="dpanel-t">입력 항목 관리 <span class="mono">FORM OPTIONS</span></span><span class="dpanel-meta">위험요인 · 사고 유형 목록과 입력칸 빠른 문구 · 저장하면 모든 휴대폰에 바로 반영 (다음 로그인 · 새로고침 시)</span></div>
+            <div class="dpanel-b"><div class="opt-grid"><nav class="opt-nav" id="optNav"></nav><div class="opt-ed" id="optEd"></div></div></div>
           </div>
         </section>
 
@@ -1380,6 +1410,50 @@ function noOf(n){ return '#' + String(n||0).padStart(6,'0'); }
 function rno(r){ return r && r.rcpt_no ? r.rcpt_no : noOf(r && r.report_no); }
 var POS_LABEL = { part_lead:'SE파트장', team_lead:'SE팀장', group_lead:'그룹장' };
 function posLabel(p){ return POS_LABEL[p] || '그룹장 · 사업팀 · 본사'; }
+/* 입력 항목 (본사 콘솔 [입력 항목 관리]에서 관리 · 서버 목록이 없으면 기본값)
+   hazard : 위험요인 · 사고 유형 / phrase : 입력칸 아래 빠른 입력 문구 */
+var OPT_DEFAULT = {"hazard|": ["넘어짐", "미끄러짐", "떨어짐", "부딪힘", "맞음(낙하물)", "끼임", "베임·찔림", "접질림", "감전", "화재", "화상", "차량 충돌", "근골격계(무리한 동작)", "온열·한랭", "유해환경(분진·소음)", "기타"], "phrase|proposal.detail": ["바닥이 미끄러워 넘어질 위험 있음", "발에 걸려 넘어질 위험 있음", "조도가 낮아 식별이 어려움", "모서리 노출로 부딪힘 위험 있음", "떨어질(낙하) 위험 있음", "손끼임 위험 있음", "감전 위험 있음", "차량과 보행자 동선이 겹침", "파손·노후로 안전사고 우려", "사각지대로 시야 확보 어려움"], "phrase|proposal.request": ["안전표지(스티커) 부착", "미끄럼 방지 매트 설치", "모서리 보호대 설치", "반사띠·반사경 설치", "조명(투광등) 설치", "파손 부위 보수·교체", "전선 몰딩·정리", "고정장치 설치", "시설 점검 요청"], "phrase|risk.detail": ["바닥이 미끄러워 넘어질 위험 있음", "통로에 걸림 요소 있음", "높은 곳 작업·계단 이동 시 떨어질 위험", "차량 통행 구역에서 근무", "무거운 물건 반복 취급", "장시간 선 자세 근무", "폭염·한파 노출", "전기 설비 인접 근무", "조도가 낮아 식별이 어려움"], "phrase|nearmiss.detail": ["이동 중 걸려 넘어질 뻔함", "미끄러져 넘어질 뻔함", "차량과 부딪힐 뻔함", "구조물에 부딪힐 뻔함", "물건이 떨어져 맞을 뻔함", "손이 끼일 뻔함", "날카로운 부분에 베일 뻔함", "감전될 뻔함"], "phrase|nearmiss.prevention": ["안전표지(스티커) 부착", "시설 보수·교체", "미끄럼 방지 조치", "조명 보강", "차량·보행자 동선 분리", "주의 안내·교육", "작업 전 점검 강화", "보호구 착용"], "phrase|cmt.reviewing": ["검토해 보겠습니다.", "현장 확인 후 조치하겠습니다.", "관련 부서와 협의 중입니다.", "고객사에 개선을 요청했습니다.", "예산 확보 후 반영하겠습니다."], "phrase|cmt.done": ["조치 완료했습니다.", "좋은 제안 감사합니다.", "안전표지 부착으로 조치했습니다.", "시설 보수를 완료했습니다.", "순차적으로 교체할 예정입니다.", "전사 확대 적용을 검토하겠습니다."], "phrase|cmt.rejected": ["이미 개선 일정이 잡혀 있습니다.", "고객사 시설로 당사 조치가 어렵습니다.", "중복 접수된 건입니다.", "현장 확인 결과 위험요인이 확인되지 않았습니다.", "내용 보완 후 다시 제출해 주세요."]};
+var OPTS = JSON.parse(JSON.stringify(OPT_DEFAULT));
+var OPT_GROUPS = [
+  ['hazard','', '위험요인 · 사고 유형', '위험성평가 [위험요인] · 아차사고 [사고 유형] 선택 목록', '선택 목록'],
+  ['phrase','proposal.detail', '개선제안 · 상세 내용', '근로자 작성 화면 · 상세 내용 칸 아래', '근로자 작성'],
+  ['phrase','proposal.request', '개선제안 · 조치 요청사항', '근로자 작성 화면 · 조치 요청사항 칸 아래', '근로자 작성'],
+  ['phrase','risk.detail', '위험성평가 · 내용', '근로자 작성 화면 · 내용 칸 아래', '근로자 작성'],
+  ['phrase','nearmiss.detail', '아차사고 · 상황 설명', '근로자 작성 화면 · 상황 설명 칸 아래', '근로자 작성'],
+  ['phrase','nearmiss.prevention', '아차사고 · 재발 방지 의견', '근로자 작성 화면 · 재발 방지 의견 칸 아래', '근로자 작성'],
+  ['phrase','cmt.reviewing', '처리 의견 · 검토중', '관리자 결재 · 처리 화면에서 [검토중]을 고른 경우', '관리자 결재'],
+  ['phrase','cmt.done', '처리 의견 · 승인 · 완료', '관리자 결재 · 처리 화면에서 [승인 · 조치완료]를 고른 경우', '관리자 결재'],
+  ['phrase','cmt.rejected', '처리 의견 · 반려', '관리자 결재 · 처리 화면에서 [반려]를 고른 경우', '관리자 결재']];
+function optList(kind, field){ return OPTS[kind + '|' + (field || '')] || []; }
+async function loadOptions(){
+  try { var rows = await api.options();
+    if (rows && rows.length){ var m = {}; rows.forEach(function(r){ var k = r.kind + '|' + (r.field || ''); (m[k] = m[k] || []).push(r.label); });
+      OPT_GROUPS.forEach(function(g){ var k = g[0] + '|' + g[1]; OPTS[k] = m[k] || []; }); } } catch(e){}
+  applyOptions(); }
+function catOptionsHtml(cur){ var L = optList('hazard', ''); if (cur && L.indexOf(cur) < 0) L = L.concat([cur]);
+  return '<option value="">선택 안 함</option>' + L.map(function(c){ return '<option'+(c === cur ? ' selected' : '')+'>'+esc(c)+'</option>'; }).join(''); }
+function applyOptions(){
+  [['#form-risk [data-f=category]', '#riskCatHint'], ['#form-nearmiss [data-f=category]', '#catHint']].forEach(function(x){ var s = $(x[0]); if (!s) return;
+    var cur = s.value; s.innerHTML = catOptionsHtml(cur); s.disabled = !optList('hazard', '').length; var h = $(x[1]); if (h) h.textContent = '선택'; });
+  $$('.qchips[data-q]').forEach(renderQ); }
+/* 빠른 입력 문구: 누르면 넣고, 다시 누르면 뺌 (한 줄 가로 스크롤) */
+function renderQ(box){ var L = optList('phrase', box.dataset.q);
+  box.innerHTML = L.map(function(t){ return '<button type="button" class="qc" data-qt="'+esc(t)+'">'+esc(t)+'</button>'; }).join(''); syncQ(box); }
+function qTa(box){ var c = box.closest('.field, .proc'); return c ? $('textarea', c) : null; }
+function syncQ(box){ var ta = qTa(box); if (!ta) return; $$('.qc', box).forEach(function(b){ b.classList.toggle('on', ta.value.indexOf(b.dataset.qt) > -1); }); }
+function toggleQ(ta, t, sep){
+  var v = ta.value, i = v.indexOf(t);
+  if (i > -1){ var a = v.slice(0, i), b = v.slice(i + t.length);
+    if (/[ \n]$/.test(a)) a = a.slice(0, -1); else if (/^[ \n]/.test(b)) b = b.slice(1);
+    v = a + b; }
+  else { v = v.replace(/\s+$/, ''); v = v ? v + sep + t : t; }
+  var max = ta.maxLength > 0 ? ta.maxLength : 2000; if (v.length > max) return toast('글자 수 제한(' + max + '자)을 넘습니다', true);
+  ta.value = v; ta.dispatchEvent(new Event('input', { bubbles:true })); }
+document.addEventListener('click', function(e){ var b = e.target.closest('.qc'); if (!b) return; e.preventDefault();
+  var box = b.closest('.qchips'), ta = qTa(box); if (!ta) return;
+  toggleQ(ta, b.dataset.qt, /^cmt\./.test(box.dataset.q) ? ' ' : '\n'); syncQ(box); });
+document.addEventListener('input', function(e){ if (e.target.tagName !== 'TEXTAREA') return; var c = e.target.closest('.field, .proc'), box = c && $('.qchips', c); if (box) syncQ(box); });
+function cmtKey(pick){ return pick === 'done' ? 'cmt.done' : pick === 'rejected' ? 'cmt.rejected' : 'cmt.reviewing'; }
 /* 결재선 판단 (서버 트리거와 같은 규칙) — flow: 결재선이 적용된 개선제안(DB 업데이트 이후) */
 function apprFlow(r){ return !!r && r.type === 'proposal' && r.rcpt_no !== undefined && r.rcpt_no !== null; }
 function apprMine(r, u){ u = u || state.user; return !!(u && r && r.appr_step && u.pos && u.pos === r.appr_pos && u.org_path === r.appr_path); }
@@ -1515,6 +1589,9 @@ function makeRealApi(){
     employees: async function(){ return await pageAll(function(){ return sb.from('employees').select('emp_hash, emp_code, role, team, site, dept, part, org_code, org_path, name_mask, active, registered_at, created_at').order('created_at', { ascending:false }).order('emp_hash'); }); },
     register: function(ids, unit){ return fn('admin_register', { empIds:ids, role:unit.role, orgCode:unit.orgCode }); },
     importEmployees: function(units, rows, batch, meta){ return fn('admin_import', { units:units || [], rows:rows || [], batch:batch || null, meta:meta || {} }); },
+    options: async function(){ var r = await sb.from('form_options').select('kind, field, label, sort').eq('active', true).order('sort').order('id'); return r.error ? null : (r.data || []); },
+    setOptions: async function(kind, field, labels){ var r = await sb.rpc('set_form_options', { p_kind:kind, p_field:field || '', p_labels:labels });
+      if (r.error){ if (/set_form_options|function/i.test(r.error.message || '')) throw new Error('서버에 입력 항목 기능이 없습니다. schema.sql을 다시 실행해 주세요.'); throw dbErr(r.error); } return r.data; },
     importLogs: async function(){ var r = await sb.from('import_logs').select('*').order('created_at', { ascending:false }).limit(20); if (r.error) throw dbErr(r.error); return r.data || []; },
     matchNames: function(ids, kind, withPaths){ return fn('match_names', { empIds:ids, kind:kind, withPaths:!!withPaths }); },
     lookup:   function(empId){ return fn('admin_lookup', { empId:empId }); },
@@ -1543,7 +1620,7 @@ function makeDemoApi(){
   function pickOne(a){ return a[Math.floor(rnd() * a.length)]; }
   function h64(s){ var out=''; for (var k=0;k<8;k++){ var x = 0x811c9dc5 ^ (k*0x9e3779b1); var t='demo|'+k+'|'+s;
       for (var i=0;i<t.length;i++){ x ^= t.charCodeAt(i); x = Math.imul(x, 0x01000193) >>> 0; } out += x.toString(16).padStart(8,'0'); } return out; }
-  var emps = {}, pw = {}, me = null, reports = [], logs = [], seq = 200, logSeq = 0, impLogs = [], impSeq = 0, rcptCnt = {};
+  var emps = {}, pw = {}, me = null, reports = [], logs = [], seq = 200, logSeq = 0, impLogs = [], impSeq = 0, rcptCnt = {}, demoOpts = JSON.parse(JSON.stringify(OPT_DEFAULT));
   /* 접수번호 (서버 트리거와 같은 규칙): 그룹명(그룹 제외)-연도2자리-그룹별 일련번호 4자리 */
   function rcptAssign(r){ var lbl = r.site ? String(r.site).replace(/그룹$/, '') : (r.team && r.team !== '본사' ? r.team : '본사');
     var yr = new Date(r.created_at).getFullYear(), k = lbl + '|' + yr; rcptCnt[k] = (rcptCnt[k] || 0) + 1;
@@ -1706,6 +1783,9 @@ function makeDemoApi(){
       n.closed_at = CLOSED.indexOf(n.status) > -1 ? (r.closed_at && CLOSED.indexOf(r.status) > -1 ? r.closed_at : now) : null;
       n.updated_at = now; Object.assign(r, n); return clone(r); },
     remove: async function(rep){ if (actor().role !== 'hq') throw new Error('권한이 없습니다.'); reports = reports.filter(function(x){ return x.id !== rep.id; }); },
+    options: async function(){ var out = []; Object.keys(demoOpts).forEach(function(k){ var p = k.split('|'); demoOpts[k].forEach(function(l, i){ out.push({ kind:p[0], field:p[1], label:l, sort:i + 1 }); }); }); return out; },
+    setOptions: async function(kind, field, labels){ await wait(); if (actor().role !== 'hq') throw new Error('입력 항목은 본사만 관리할 수 있습니다');
+      demoOpts[kind + '|' + (field || '')] = labels.map(function(x){ return String(x).trim().slice(0, 60); }).filter(Boolean); return labels.length; },
     employees: async function(){ await wait(); var a = actor();
       return clone(Object.keys(emps).map(function(k){ return emps[k]; }).filter(function(e){ return e.emp_hash === me || inScope(a, e.org_path); })); },
     register: async function(ids, unit){ await wait(); var a = staff();
@@ -1894,6 +1974,7 @@ var NAVS = { worker:[['write','작성'],['mine','내 제출내역']], staff:[['d
 async function enterApp(user){
   state.user = user;
   try { state.org = await api.org(); } catch(e){ state.org = []; }
+  loadOptions();
   document.body.classList.remove('login-mode');
   if (deskEligible(user)) return enterDesk(user);
   $('#view-login').classList.add('hidden'); $('#view-main').classList.remove('hidden');
@@ -1943,14 +2024,12 @@ gradeBox.innerHTML = gradePickHtml(null);
 bindGradePick(gradeBox, function(g){ state.grade = g; });
 
 var riskCat = $('#form-risk [data-f=category]');
-if (NM_CATS.length){ riskCat.innerHTML = '<option value="">선택 안 함</option>' + NM_CATS.map(function(c){ return '<option>'+esc(c)+'</option>'; }).join(''); }
-else { riskCat.innerHTML = '<option value="">위험요인 목록 등록 예정</option>'; riskCat.disabled = true; $('#riskCatHint').textContent = '차후 등록 예정'; }
+/* 위험요인 · 사고 유형 목록과 빠른 입력 문구: applyOptions() (로그인 후 서버 목록으로 갱신) */
 var riskBox = $('#riskPick'); riskBox.innerHTML = riskPickHtml(null);
 riskBox.addEventListener('click', function(e){ var b = e.target.closest('[data-r]'); if (!b) return; state.riskLevel = b.dataset.r;
   $$('button', riskBox).forEach(function(x){ x.classList.toggle('on', x === b); }); });
 var catSel = $('#form-nearmiss [data-f=category]');
-if (NM_CATS.length){ catSel.innerHTML = '<option value="">선택 안 함</option>' + NM_CATS.map(function(c){ return '<option>'+esc(c)+'</option>'; }).join(''); }
-else { catSel.innerHTML = '<option value="">사고 유형 목록 등록 예정</option>'; catSel.disabled = true; $('#catHint').textContent = '차후 등록 예정'; }
+applyOptions();
 
 $$('.form-panel').forEach(function(form){
   var ta = $('[data-f=detail]', form), cnt = $('[data-count=detail]', form);
@@ -1987,7 +2066,7 @@ $$('.type-card').forEach(function(card){ card.addEventListener('click', function
 
 function resetForm(t){
   var form = $('#form-' + t); form.reset(); state.photos[t] = null; renderPhoto(form);
-  $('[data-count=detail]', form).textContent = '0 / 2000';
+  $('[data-count=detail]', form).textContent = '0 / 2000'; $$('.qchips', form).forEach(syncQ);
   if (t === 'proposal'){ state.grade = null; $$('button', gradeBox).forEach(function(b){ b.classList.remove('on'); }); }
   if (t === 'risk'){ state.riskLevel = null; $$('button', riskBox).forEach(function(b){ b.classList.remove('on'); }); }
 }
@@ -2110,7 +2189,7 @@ async function openDetail(r, staffView){
       (isR ? '<div id="frWrap"><label class="label" style="margin-top:4px">반영 위험정도 <span class="req">*</span><span class="opt">반영 완료 시 필수</span></label><div class="rl-pick sm" id="frPick">'+riskPickHtml(fr)+'</div></div>' : '') +
       (isP ? '<div id="fgWrap"><label class="label" style="margin-top:4px">결정 등급 <span class="req">*</span><span class="opt">'+(flow ? '승인 시 필수 · 1차 결재자가 확정' : '조치완료 시 필수')+'</span></label><div class="grade-pick sm" id="fgPick">'+gradePickHtml(fg, true)+'</div><div id="fgNote"></div></div>' : '') +
       '<label class="label" style="margin-top:12px">처리 의견 <span class="opt">제출자에게 공개</span></label>' +
-      '<textarea id="cmt" maxlength="2000" placeholder="처리 내용·조치 결과를 입력하세요">'+esc(r.admin_comment||'')+'</textarea>' +
+      '<textarea id="cmt" maxlength="2000" placeholder="처리 내용·조치 결과를 입력하세요">'+esc(r.admin_comment||'')+'</textarea><div class="qchips" id="cmtQ" data-q="'+cmtKey(pick)+'"></div>' +
       '<button class="btn btn-primary" id="saveProc" style="margin-top:10px">'+(flow && !closedP ? '결재 저장' : '처리 내용 저장')+'</button></div>';
   } else if (flow && staffView && inScope(u, r.org_path) && r.appr_step){
     html += '<div class="notice" style="margin-top:12px">지금은 <b>'+r.appr_step+'차 결재('+esc(posLabel(r.appr_pos))+')</b> 차례입니다. 결재자 또는 그룹장 · 사업팀 · 본사만 처리할 수 있어 조회만 가능합니다.</div>';
@@ -2162,7 +2241,8 @@ async function openDetail(r, staffView){
         : '<div class="notice info">'+fg+'등급('+GRADE[fg].desc+') · 저장 시 <b>조치완료</b>로 종료 처리됩니다.</div>';
     }
     $('#stPick').addEventListener('click', function(e){ var b = e.target.closest('button'); if(!b) return; pick = b.dataset.s;
-      $$('#stPick button').forEach(function(x){ x.classList.toggle('on', x === b); }); syncFg(); syncFr(); });
+      $$('#stPick button').forEach(function(x){ x.classList.toggle('on', x === b); }); syncFg(); syncFr(); var q = $('#cmtQ'); if (q){ q.dataset.q = cmtKey(pick); renderQ(q); } });
+    renderQ($('#cmtQ'));
     function syncFr(){ var w = $('#frWrap'); if (w) w.classList.toggle('hidden', pick !== 'done'); }
     if (isR){ syncFr(); $('#frPick').addEventListener('click', function(e){ var b = e.target.closest('[data-r]'); if (!b) return; fr = b.dataset.r;
       $$('#frPick button').forEach(function(x){ x.classList.toggle('on', x === b); }); }); }
@@ -2194,7 +2274,7 @@ async function openDetail(r, staffView){
 /* 작성자 내용 수정 (결재 전 '접수' 상태에서만 · 사진은 그대로 유지) */
 function openEditSheet(r, staffView){
   var t = r.type, g = r.proposed_grade, rl = r.risk_level;
-  var catOpts = NM_CATS.length ? '<select data-e="category"><option value="">선택 안 함</option>' + NM_CATS.map(function(c){ return '<option'+(c === r.category ? ' selected' : '')+'>'+esc(c)+'</option>'; }).join('') + '</select>' : '';
+  var catOpts = optList('hazard', '').length || r.category ? '<select data-e="category">' + catOptionsHtml(r.category || '') + '</select>' : '';
   var occ = r.occurred_at ? (function(){ var d = new Date(r.occurred_at); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0,16); })() : '';
   var f = function(label, inner, req){ return '<div class="field"><label class="label">'+label+(req ? ' <span class="req">*</span>' : ' <span class="opt">선택</span>')+'</label>'+inner+'</div>'; };
   var body = t === 'proposal' ? f('제안 등급', '<div class="grade-pick sm" id="eGrade">'+gradePickHtml(g, true)+'</div>', 1) + f('장소', '<input data-e="location" maxlength="100" value="'+esc(r.location||'')+'">', 1) +
@@ -2723,7 +2803,7 @@ function saveCsv(filename, rows){
   a.href = url; a.download = filename; a.style.display = 'none'; document.body.appendChild(a); a.click();
   setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 4000); toast('CSV 파일을 저장했습니다');
 }
-var APP_VER = '2026.11.20-f';
+var APP_VER = '2026.11.20-g';
 $$('[data-ver]').forEach(function(el){ el.textContent = APP_VER; });
 function wideScreen(){ return window.matchMedia('(min-width: 900px)').matches; }
 async function openExportSheet(){
@@ -2822,7 +2902,7 @@ var DESK = { sort:null, on:false, screen:'ddash', sel:newOrgSel(), f:{ type:'all
   dash:dashDefault(), empSel:newOrgSel(), empQ:'', empRole:'all', empPage:1, imp:null, home:null,
   pw:{ role:'all', join:'joined', q:'', sel:newOrgSel(), page:1, checked:{} } };
 var PAGE = 50;
-var DTITLE = { ddash:['대시보드','사업장 · 유형 · 기간별 개선제안 · 위험성평가 · 아차사고 접수 현황'], dlist:['접수 관리','전사 접수건 조회 · 처리 · 엑셀 다운로드'],
+var DTITLE = { dopts:['입력 항목 관리','위험요인 · 사고 유형 선택 목록과 작성 · 결재 화면의 빠른 입력 문구'], ddash:['대시보드','사업장 · 유형 · 기간별 개선제안 · 위험성평가 · 아차사고 접수 현황'], dlist:['접수 관리','전사 접수건 조회 · 처리 · 엑셀 다운로드'],
   dorg:['조직 · 인원','본사 › 사업팀 › 그룹 › 팀 › 파트 별 인원과 권한 관리'], dpw:['비밀번호 관리','근로자 · 관리자 · 사업팀 계정의 비밀번호 초기화'], dimport:['데이터/KEY 관리','인사명단 한 번으로 조직 · 인원 반영과 실명 확인용 KEY 발급'] };
 var WEEK = ['일','월','화','수','목','금','토'];
 function tickClock(){ var d = new Date(), a = $('#dClockD'), b = $('#dClockT'); if (!a) return;
@@ -2849,6 +2929,48 @@ function leaveDesk(){
 $$('.side-nav button').forEach(function(b){ b.addEventListener('click', function(){ dgo(b.dataset.dgo); }); });
 $('#dLogout').addEventListener('click', function(){ $('#logoutBtn').click(); });
 
+/* ---- 본사: 입력 항목 관리 ---- */
+var OPTED = { i:0, draft:null, dirty:false };
+async function deskOpts(reload){
+  if (reload){ $('#optEd').innerHTML = '<div class="loading"><span class="spin"></span>불러오는 중</div>'; await loadOptions(); OPTED.draft = null; OPTED.dirty = false; }
+  var nav = '', last = '';
+  OPT_GROUPS.forEach(function(g, i){ if (g[4] !== last){ nav += '<div class="grp">' + esc(g[4]) + '</div>'; last = g[4]; }
+    nav += '<button data-oi="' + i + '"' + (i === OPTED.i ? ' class="on"' : '') + '>' + esc(g[2]) + '<small>' + optList(g[0], g[1]).length + '</small></button>'; });
+  $('#optNav').innerHTML = nav;
+  var g = OPT_GROUPS[OPTED.i]; if (!OPTED.draft) OPTED.draft = optList(g[0], g[1]).slice();
+  var D = OPTED.draft, isCat = g[0] === 'hazard';
+  $('#optEd').innerHTML = '<div><h3>' + esc(g[2]) + '</h3><p class="where">' + esc(g[3]) + (isCat ? ' · 사고 유형의 <b>형태</b>만 (예: 넘어짐 · 떨어짐 · 끼임)' : ' · 누르면 입력칸에 들어가고 다시 누르면 빠짐 · <b>짧게</b> (60자 이내)') + '</p></div>' +
+    '<div class="opt-rows">' + (D.length ? D.map(function(v, i){ return '<div class="opt-row"><span class="no">' + (i + 1) + '</span><input data-ov="' + i + '" maxlength="60" value="' + esc(v) + '"><button data-om="up" data-i="' + i + '" title="위로"' + (i ? '' : ' disabled') + '>↑</button><button data-om="down" data-i="' + i + '" title="아래로"' + (i < D.length - 1 ? '' : ' disabled') + '>↓</button><button class="x" data-om="del" data-i="' + i + '" title="삭제">✕</button></div>'; }).join('') : '<p class="note">항목이 없습니다. 아래에서 추가하세요.' + (isCat ? ' (비워 두면 휴대폰에서 선택 칸이 잠깁니다)' : '') + '</p>') + '</div>' +
+    '<div class="opt-add"><input id="optNew" maxlength="60" placeholder="' + (isCat ? '추가할 사고 유형 (예: 넘어짐)' : '추가할 문구 (예: 안전표지 부착)') + '"><button class="btn btn-ghost" data-om="add">+ 추가</button></div>' +
+    '<div class="opt-acts"><button class="btn btn-primary" data-om="save"' + (OPTED.dirty ? '' : ' disabled') + '>저장</button><button class="btn btn-ghost" data-om="revert"' + (OPTED.dirty ? '' : ' disabled') + '>되돌리기</button><button class="btn btn-ghost" data-om="def">기본값 불러오기</button>' +
+      '<span class="note">' + (OPTED.dirty ? '<b style="color:#B45309">저장하지 않은 변경이 있습니다</b>' : D.length + '개 · 위 순서대로 표시') + '</span></div>' +
+    '<div class="opt-pv"><b>휴대폰 미리보기</b>' + (isCat ? '<select>' + '<option>선택 안 함</option>' + D.map(function(c){ return '<option>' + esc(c) + '</option>'; }).join('') + '</select>'
+      : '<div class="qchips" style="-webkit-mask-image:none;mask-image:none;flex-wrap:wrap">' + D.map(function(t){ return '<span class="qc">' + esc(t) + '</span>'; }).join('') + '</div>') + '</div>';
+}
+function optCommitInputs(){ $$('#optEd [data-ov]').forEach(function(inp){ var i = +inp.dataset.ov; if (OPTED.draft[i] !== inp.value){ OPTED.draft[i] = inp.value; OPTED.dirty = true; } }); }
+document.addEventListener('click', async function(e){
+  var n = e.target.closest('#optNav [data-oi]');
+  if (n){ optCommitInputs(); if (OPTED.dirty && !confirm('저장하지 않은 변경이 있습니다. 버리고 이동할까요?')) return; OPTED.i = +n.dataset.oi; OPTED.draft = null; OPTED.dirty = false; return deskOpts(false); }
+  var b = e.target.closest('#optEd [data-om]'); if (!b) return;
+  optCommitInputs(); var D = OPTED.draft, i = +b.dataset.i, g = OPT_GROUPS[OPTED.i], m = b.dataset.om;
+  if (m === 'up' && i > 0){ D.splice(i - 1, 0, D.splice(i, 1)[0]); OPTED.dirty = true; }
+  if (m === 'down' && i < D.length - 1){ D.splice(i + 1, 0, D.splice(i, 1)[0]); OPTED.dirty = true; }
+  if (m === 'del'){ D.splice(i, 1); OPTED.dirty = true; }
+  if (m === 'add'){ var v = $('#optNew').value.trim(); if (!v) return toast('추가할 내용을 입력하세요', true); if (D.indexOf(v) > -1) return toast('이미 있는 항목입니다', true); D.push(v); OPTED.dirty = true; }
+  if (m === 'def'){ OPTED.draft = (OPT_DEFAULT[g[0] + '|' + g[1]] || []).slice(); OPTED.dirty = true; }
+  if (m === 'revert'){ OPTED.draft = null; OPTED.dirty = false; }
+  if (m === 'save'){
+    var L = []; D.forEach(function(x){ x = String(x || '').trim(); if (x && L.indexOf(x) < 0) L.push(x); });
+    b.disabled = true;
+    try { await api.setOptions(g[0], g[1], L); OPTED.draft = null; OPTED.dirty = false; await loadOptions(); toast(g[2] + ' 목록을 저장했습니다 (' + L.length + '개)'); }
+    catch(err){ fail(err); b.disabled = false; return; }
+  }
+  deskOpts(false);
+  if (m === 'add') setTimeout(function(){ var x = $('#optNew'); if (x) x.focus(); }, 0);
+});
+document.addEventListener('keydown', function(e){ if (e.key === 'Enter' && e.target.id === 'optNew'){ e.preventDefault(); var a = $('#optEd [data-om=add]'); if (a) a.click(); } });
+document.addEventListener('input', function(e){ if (e.target.matches && e.target.matches('#optEd [data-ov]') && !OPTED.dirty){ OPTED.dirty = true; var s = $('#optEd [data-om=save]'), r = $('#optEd [data-om=revert]'); if (s) s.disabled = false; if (r) r.disabled = false; } });
+
 function dgo(s){
   DESK.screen = s;
   $$('[data-dscreen]').forEach(function(x){ x.classList.toggle('hidden', x.dataset.dscreen !== s); });
@@ -2861,6 +2983,7 @@ function dgo(s){
   if (s === 'dorg') act.innerHTML = '<button class="btn btn-ghost" data-da="refresh">새로고침</button><button class="btn btn-ghost" data-da="nameEmp">실명 포함 엑셀</button><button class="btn btn-primary dbtn" data-da="xlsEmp">인원 목록 엑셀</button>';
   if (s === 'dimport') act.innerHTML = '<button class="btn btn-ghost dbtn" data-da="tpl">업로드 양식</button><a class="btn btn-primary dbtn dl-tool" href="ehs-offline.html" download="안전보건 개선제안 현황.html">오프라인 정리 도구 받기</a>';
   if (s === 'dpw') act.innerHTML = '<button class="btn btn-ghost" data-da="refresh">새로고침</button>';
+  if (s === 'dopts'){ act.innerHTML = ''; deskOpts(true); }
   if (s === 'ddash') deskLoadDash();
   if (s === 'dlist') deskLoadList();
   if (s === 'dorg') deskLoadOrg();

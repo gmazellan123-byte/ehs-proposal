@@ -506,14 +506,16 @@ async function restoreStore(){
   await finishData();
 }
 async function deleteStore(){
-  if (!confirm('이 PC 브라우저에 저장된 데이터를 삭제할까요? (지금 화면의 데이터와 백업 파일은 그대로입니다)')) return;
-  await stDel(); STORE.on = false; STORE.saved = null; STORE.last = null; storeUi(); toast('브라우저 저장 데이터를 삭제했습니다');
+  if (!STORE.saved && !STORE.on) return toast('이 브라우저에 저장된 데이터가 없습니다', true);
+  if (!confirm('이 PC 브라우저에 저장된 데이터' + (STORE.saved ? ' ' + (STORE.saved.count || 0).toLocaleString() + '건(' + (STORE.saved.saved || '') + ' 저장)' : '') + '를 삭제할까요?\n\n· 자동 저장도 꺼집니다\n· 지금 화면의 데이터와 내보낸 백업 파일은 그대로입니다\n· 삭제 후에는 되돌릴 수 없습니다')) return;
+  await stDel(); STORE.on = false; STORE.saved = null; STORE.last = null; STORE.dirty = false; storeUi(); toast('브라우저에 저장한 데이터를 삭제했습니다 · 자동 저장 꺼짐');
 }
 function storeUi(){
   var b = $('#storeBtn'); if (b){ b.classList.toggle('on', STORE.on); b.innerHTML = STORE.on ? '💾 자동 저장 켜짐' + (STORE.last ? ' · ' + STORE.last.slice(11) : '') : '💾 브라우저 저장'; }
   var side = $('#sideStore'); if (side) side.innerHTML = STORE.on ? '<i class="on"></i>자동 저장 켜짐 · 3분마다' + (STORE.last ? '<br><small>마지막 ' + esc(STORE.last) + '</small>' : '') : STORE.saved ? '<i></i>저장된 데이터 있음' : '<i></i>브라우저 저장 꺼짐';
   var bn = STORE.saved && !STORE.on ? '<div class="savedbar">💾 이 브라우저에 저장된 데이터 <b>' + (STORE.saved.count || 0).toLocaleString() + '건</b> (' + esc(STORE.saved.saved || '') + ' 저장)<span class="r"><button class="btn pri sm" data-store="load">불러오기</button><button class="btn sm" data-store="del">저장 삭제</button></span></div>' : '';
   $$('.savedSlot').forEach(function(el){ el.innerHTML = bn; });
+  var db = $('#storeDelBtn'); if (db) db.classList.toggle('hidden', !(STORE.saved || STORE.on));
 }
 /* 비밀번호 입력 창 */
 function askPw(title, desc, confirmMode){
@@ -674,6 +676,7 @@ document.addEventListener('click', function(e){
 $('#saveBtn').addEventListener('click', saveXlsx);
 $('#reportBtn').addEventListener('click', printReport);
 $('#storeBtn').addEventListener('click', toggleStore);
+$('#storeDelBtn').addEventListener('click', deleteStore);
 $('#saveNowBtn').addEventListener('click', function(){ if (!STORE.on) return toggleStore(); saveNow(); });
 $('#bkBtn').addEventListener('click', function(){ if (!S.rows.length) return toast('내보낼 데이터가 없습니다', true); $('#bkModal').classList.add('open'); });
 $('#ioBtn').addEventListener('click', function(){ $('#ioModal').classList.add('open'); });

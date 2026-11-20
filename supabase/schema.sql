@@ -705,6 +705,57 @@ grant execute on function public.delete_report_log(bigint) to authenticated;
 update public.employees e set role = 'team'
  where e.role in ('worker', 'manager') and e.org_code is not null and public.is_support_unit(e.org_code);
 
+-- 6-6) 입력 항목 관리 (본사 콘솔 [입력 항목 관리])
+--      hazard : 위험요인 · 사고 유형 선택 목록 (위험성평가 · 아차사고)
+--      phrase : 입력칸 아래 빠른 입력 문구 (field = 'proposal.detail' 등 입력칸별)
+create table if not exists public.form_options (
+  id         bigint generated always as identity primary key,
+  kind       text not null check (kind in ('hazard','phrase')),
+  field      text not null default '' check (char_length(field) <= 40),
+  label      text not null check (char_length(label) between 1 and 60),
+  sort       int  not null default 0,
+  active     boolean not null default true,
+  updated_at timestamptz not null default now()
+);
+create index if not exists form_options_kf_idx on public.form_options (kind, field, sort);
+-- 목록 한 번에 바꾸기 (본사만) — 순서 그대로 저장
+create or replace function public.set_form_options(p_kind text, p_field text, p_labels text[])
+returns int language plpgsql security definer set search_path = public as $$
+declare v text; n int := 0;
+begin
+  if public.my_role() is distinct from 'hq' then raise exception '입력 항목은 본사만 관리할 수 있습니다'; end if;
+  if p_kind not in ('hazard','phrase') then raise exception '알 수 없는 항목 종류입니다'; end if;
+  if coalesce(array_length(p_labels, 1), 0) > 60 then raise exception '한 목록은 60개까지 등록할 수 있습니다'; end if;
+  delete from public.form_options where kind = p_kind and field = coalesce(p_field, '');
+  foreach v in array coalesce(p_labels, array[]::text[]) loop
+    v := left(btrim(v), 60);
+    if v <> '' then n := n + 1; insert into public.form_options (kind, field, label, sort) values (p_kind, coalesce(p_field, ''), v, n); end if;
+  end loop;
+  return n;
+end $$;
+revoke all on function public.set_form_options(text, text, text[]) from public, anon;
+grant execute on function public.set_form_options(text, text, text[]) to authenticated;
+-- 기본 목록 (처음 한 번만 · 이미 있으면 그대로 둠) — 휴먼포털 VOC/VOE 안전 분야 접수 내용 분석 기반
+create or replace function public.seed_form_options(p_kind text, p_field text, p_labels text[])
+returns void language plpgsql security definer set search_path = public as $$
+declare v text; n int := 0;
+begin
+  if exists (select 1 from public.form_options where kind = p_kind and field = p_field) then return; end if;
+  foreach v in array p_labels loop n := n + 1; insert into public.form_options (kind, field, label, sort) values (p_kind, p_field, v, n); end loop;
+end $$;
+revoke all on function public.seed_form_options(text, text, text[]) from public, anon, authenticated;
+do $$ begin
+  perform public.seed_form_options('hazard', '', array['넘어짐', '미끄러짐', '떨어짐', '부딪힘', '맞음(낙하물)', '끼임', '베임·찔림', '접질림', '감전', '화재', '화상', '차량 충돌', '근골격계(무리한 동작)', '온열·한랭', '유해환경(분진·소음)', '기타']);
+  perform public.seed_form_options('phrase', 'proposal.detail', array['바닥이 미끄러워 넘어질 위험 있음', '발에 걸려 넘어질 위험 있음', '조도가 낮아 식별이 어려움', '모서리 노출로 부딪힘 위험 있음', '떨어질(낙하) 위험 있음', '손끼임 위험 있음', '감전 위험 있음', '차량과 보행자 동선이 겹침', '파손·노후로 안전사고 우려', '사각지대로 시야 확보 어려움']);
+  perform public.seed_form_options('phrase', 'proposal.request', array['안전표지(스티커) 부착', '미끄럼 방지 매트 설치', '모서리 보호대 설치', '반사띠·반사경 설치', '조명(투광등) 설치', '파손 부위 보수·교체', '전선 몰딩·정리', '고정장치 설치', '시설 점검 요청']);
+  perform public.seed_form_options('phrase', 'risk.detail', array['바닥이 미끄러워 넘어질 위험 있음', '통로에 걸림 요소 있음', '높은 곳 작업·계단 이동 시 떨어질 위험', '차량 통행 구역에서 근무', '무거운 물건 반복 취급', '장시간 선 자세 근무', '폭염·한파 노출', '전기 설비 인접 근무', '조도가 낮아 식별이 어려움']);
+  perform public.seed_form_options('phrase', 'nearmiss.detail', array['이동 중 걸려 넘어질 뻔함', '미끄러져 넘어질 뻔함', '차량과 부딪힐 뻔함', '구조물에 부딪힐 뻔함', '물건이 떨어져 맞을 뻔함', '손이 끼일 뻔함', '날카로운 부분에 베일 뻔함', '감전될 뻔함']);
+  perform public.seed_form_options('phrase', 'nearmiss.prevention', array['안전표지(스티커) 부착', '시설 보수·교체', '미끄럼 방지 조치', '조명 보강', '차량·보행자 동선 분리', '주의 안내·교육', '작업 전 점검 강화', '보호구 착용']);
+  perform public.seed_form_options('phrase', 'cmt.reviewing', array['검토해 보겠습니다.', '현장 확인 후 조치하겠습니다.', '관련 부서와 협의 중입니다.', '고객사에 개선을 요청했습니다.', '예산 확보 후 반영하겠습니다.']);
+  perform public.seed_form_options('phrase', 'cmt.done', array['조치 완료했습니다.', '좋은 제안 감사합니다.', '안전표지 부착으로 조치했습니다.', '시설 보수를 완료했습니다.', '순차적으로 교체할 예정입니다.', '전사 확대 적용을 검토하겠습니다.']);
+  perform public.seed_form_options('phrase', 'cmt.rejected', array['이미 개선 일정이 잡혀 있습니다.', '고객사 시설로 당사 조치가 어렵습니다.', '중복 접수된 건입니다.', '현장 확인 결과 위험요인이 확인되지 않았습니다.', '내용 보완 후 다시 제출해 주세요.']);
+end $$;
+
 -- ---------------------------------------------------------------------
 -- 7. 행 단위 보안(RLS)
 --    근로자 : 본인 제출건만
@@ -717,7 +768,8 @@ alter table public.reports     enable row level security;
 alter table public.report_logs enable row level security;
 alter table public.export_logs enable row level security;
 alter table public.import_logs enable row level security;
-alter table public.rcpt_counters enable row level security;   -- 정책 없음 = 앱에서 직접 접근 불가 (트리거만 사용)
+alter table public.rcpt_counters enable row level security;
+alter table public.form_options enable row level security;   -- 정책 없음 = 앱에서 직접 접근 불가 (트리거만 사용)
 revoke all on public.rcpt_counters from anon, authenticated;
 
 revoke all on public.org_units, public.employees, public.reports, public.report_logs from anon, authenticated;
@@ -773,6 +825,10 @@ drop policy if exists exp_select on public.export_logs;
 create policy exp_select on public.export_logs for select to authenticated using (public.my_role() = 'hq');   -- 대조 기록은 본사만 열람
 drop policy if exists imp_select on public.import_logs;
 create policy imp_select on public.import_logs for select to authenticated using (public.my_role() = 'hq');   -- 백데이터 반영 이력은 본사만 열람
+
+drop policy if exists opt_select on public.form_options;
+create policy opt_select on public.form_options for select to authenticated using (true);   -- 목록은 로그인한 누구나 읽기 · 변경은 set_form_options(본사)만
+grant select on public.form_options to authenticated;
 
 drop function if exists public.in_scope(text, text);   -- v3 이하의 이름 기준 범위 함수 정리
 
